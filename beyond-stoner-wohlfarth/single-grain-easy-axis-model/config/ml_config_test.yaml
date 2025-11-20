@@ -1,0 +1,122 @@
+# ML Pipeline Configuration
+
+data:
+  input_file: "data/magnetic_materials.csv" # it is the same as ../data/toy_model_data_3.csv
+  results_dir: "results"
+  compute_difference: false  # Whether to compute analytical magnetic properties and their differences
+#  results_dir: "results_diff"
+#  compute_difference: true  # Whether to compute analytical magnetic properties and their differences
+
+# preprocessing:
+preprocessing:
+  input_columns:
+    - 'Ms (A/m)'
+    - 'A (J/m)'
+    - 'K (J/m^3)'
+  output_columns:
+    - 'Hc (A/m)'
+    - 'Mr (A/m)'
+    - 'BHmax (J/m^3)'
+  configurations:
+#    NoLogTransformation:
+#      remove_negative: true
+#      convert_to_tesla: false
+#      apply_log_transform: false
+    LogTransformation:
+      remove_negative: true
+      convert_to_tesla: false
+      apply_log_transform: true
+#    LogTransformation_Mr8:
+#      remove_negative: true
+#      convert_to_tesla: false
+#      apply_log_transform: true
+#      remove_smallMr: true
+#    LogTransformation_Mr8_feat:
+#      remove_negative: true
+#      convert_to_tesla: false
+#      apply_log_transform: true
+#      remove_smallMr: true
+#      create_new_features: true
+
+cross_validation:
+  n_folds: 2
+  random_state: 42
+
+clustering:
+  # Clustering method to use: 'threshold', 'kmeans', or 'supervised' (default)
+  method: supervised
+  # Optional path to a pre-trained supervised clustering model
+  # If not specified and method is 'supervised', will try to find the model in the default location
+  # model_path: "plots/supervised_clustering_model.pkl"
+
+
+models:
+
+  random_forest:
+    enabled: true
+    module: train_rf
+    function: train_random_forest
+    params:
+      show_feature_importance: true
+      param_grid:
+        #n_estimators: [100, 200, 300]
+        max_depth: [10, 20] #, 30, null]
+        #min_samples_split: [2, 5, 10]
+        #min_samples_leaf: [1, 2, 4]
+        #max_features: [sqrt, log2, null]
+  
+  neural_network:
+    enabled: true
+    module: train_nn
+    function: train_neural_network
+    params:
+      show_feature_importance: true
+      param_grid:
+        hidden_dim: 64 #[64, 128]
+        num_epochs: 50
+        learning_rate: 1e-3
+        batch_size: 32
+  
+  linear_regression:
+    enabled: true
+    module: train_lr
+    function: train_linear_regression
+    params:
+      param_grid:
+        fit_intercept: [true, false]
+  
+  lasso:
+    enabled: true
+    module: train_lasso
+    function: train_lasso
+    params:
+      alpha: 0.01
+      tol: 1e-4
+  
+  gaussian_process:
+    enabled: true
+    module: train_gp
+    function: train_gaussian_process
+    params:
+      kernel:
+       type: RationalQuadratic
+       alpha: 100.0
+
+       length_scale: 1.5
+
+scaling:
+  enabled_scalers:
+    - standard
+#    - minmax
+
+evaluation:
+  save_models: true
+  generate_plots: true
+  metrics:
+    - mse
+    - mae
+    - r2
+    - adj_r2
+    - mape
+    - gini
+
