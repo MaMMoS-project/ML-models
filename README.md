@@ -20,4 +20,5 @@ Models are organized in different folders of this repository:
     Identify and correct systematic biases in DFT-based simulations of spontaneous magnetization, using statistical modeling of error patterns,
     AI-driven correction functions, data augmentation for missing experimental values (⚠️ Not yet validated and may introduce bias).
 
+   - TODO: add data files. Resolve large file size issue.
 
