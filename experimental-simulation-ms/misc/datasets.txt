@@ -1,0 +1,24 @@
+X - OQMD stable (https://keeper.mpdl.mpg.de/lib/47ff957e-ffc6-4e7c-a9a6-3bfd48ae9217/file/example-datasets/Data_published_from_third_parties/OQMD/oqmd_stable.csv)
+
+Features plain Ms. Missing unit of measure.
+
+X - Literature (https://keeper.mpdl.mpg.de/library/47ff957e-ffc6-4e7c-a9a6-3bfd48ae9217/mammos/example-datasets/Data_published_from_third_parties/RE2Fe14B_literature)
+
+Featuring mu0Ms. Missing unit of measure.
+
+X - DFT Experiment (https://keeper.mpdl.mpg.de/library/47ff957e-ffc6-4e7c-a9a6-3bfd48ae9217/mammos/example-datasets/Data_procuded_by_partners/UU/DFT_to_Experiment)
+
+- Spin-Dynamics Data (https://keeper.mpdl.mpg.de/library/47ff957e-ffc6-4e7c-a9a6-3bfd48ae9217/mammos/example-datasets/Data_procuded_by_partners/UU/Spin_Dynamics)
+
+X - NEMAD (https://keeper.mpdl.mpg.de/library/47ff957e-ffc6-4e7c-a9a6-3bfd48ae9217/mammos/example-datasets/Data_published_from_third_parties/NEMAD)
+
+X - Materials Project (https://keeper.mpdl.mpg.de/library/47ff957e-ffc6-4e7c-a9a6-3bfd48ae9217/mammos/example-datasets/Data_published_from_third_parties/MaterialsProject, Note: stuck on unit conversion)
+
+X Bhandari 2024 (Table 1&4, Appendix B)  -- table IV omitted as reporting values for Hc
+
+================================================================================
+
+TBD:
+- unit conversion into A/m
+- tokenization and creation of pair matching table
+

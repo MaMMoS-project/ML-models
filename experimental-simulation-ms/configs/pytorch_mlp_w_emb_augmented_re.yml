@@ -1,0 +1,24 @@
+experiment: "mat200_logsim2exp-re"
+config_path: "configs/pytorch_mlp_w_emb_augmented_re.yml"
+material_group: 're'
+data_path: "data/re_augmented_data.csv"
+
+input_col: "Ms (ampere/meter)_s"
+target_col: "Ms (ampere/meter)_e_re_augmented"
+
+emb_col: 'mat200'
+embedding_path: 'data/embeddings/element/matscholar200.json'
+
+sim_col: "Ms (ampere/meter)_s"
+exp_col: "Ms (ampere/meter)_e_re_augmented"
+
+# scaler: RobustScaler
+transform: 'log'
+augment: True
+modeltypes: "pytorch"
+threshold: 50000.
+
+artifact_paths:
+  root: "artifacts/"
+  images: "artifacts/images/"
+  models: "artifacts/models/"

@@ -1,0 +1,18 @@
+experiment: "log_sim2exp"
+config_path: "configs/pysr_linear_models_config.yml"
+material_group: None
+data_path: "data/pairwise_df_no_Ms_leq_50000.csv"
+input_col: "Ms (ampere/meter)_s"
+target_col: "Ms (ampere/meter)_e"
+emb_col: None
+sim_col: "Ms (ampere/meter)_s"
+exp_col: "Ms (ampere/meter)_e"
+transform: 'log'
+augment: False
+modeltypes: "pysr_linear"
+threshold: 50000.
+augment: False
+artifact_paths:
+  root: "artifacts/"
+  images: "artifacts/images/"
+  models: "artifacts/models/"

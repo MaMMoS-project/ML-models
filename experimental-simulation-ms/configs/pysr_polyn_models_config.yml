@@ -1,0 +1,19 @@
+experiment: "log_sim2exp"
+config_path: "configs/pysr_polyn_models_config.yml"
+
+data_path: "data/merged_dfs.csv"
+input_col: ["Ms (ampere/meter)_s", "mean"]
+sim_col: ["Ms (ampere/meter)_s", "mean"]
+target_col: ["Ms (ampere/meter)_e", "mean"]
+exp_col: ["Ms (ampere/meter)_e", "mean"]
+
+emb_col: None
+transform: 'log'
+
+modeltypes: "pysr_polyn"
+threshold: 50000.
+
+artifact_paths:
+  root: "artifacts/"
+  images: "artifacts/images/"
+  models: "artifacts/models/"

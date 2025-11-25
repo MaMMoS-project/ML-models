@@ -1,0 +1,20 @@
+experiment: "log_sim2exp_augmented-re_free"
+config_path: "configs/pysr_linear_models_augmented_config_re_free.yml"
+material_group: "re-free"
+data_path: "data/re_free_augmented_data.csv"
+input_col: "Ms (ampere/meter)_s"
+target_col: "Ms (ampere/meter)_e_re_free_augmented"
+emb_col: None
+sim_col: "Ms (ampere/meter)_s"
+exp_col: "Ms (ampere/meter)_e_re_free_augmented"
+transform: 'log'
+
+modeltypes: "pysr_linear"
+threshold: 50000.
+transform: 'log'
+augment: True
+
+artifact_paths:
+  root: "artifacts/"
+  images: "artifacts/images/"
+  models: "artifacts/models/"

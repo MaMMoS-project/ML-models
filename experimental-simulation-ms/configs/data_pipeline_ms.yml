@@ -1,0 +1,18 @@
+experiment: "data_pipeline_ms"
+config_path: "configs/data_pipeline_ms.yml"
+
+# DATA_DIR: "/u/cwinkler/ptmp_link/mammos-ms/data/"
+DATA_DIR: "/home/christina-winkler/Documents/mammos-ms/data/"
+# TO_AUGMENT: "/u/cwinkler/ptmp_link/mammos-ms/data/merged_df_no_Ms_leq_50000.csv"
+
+TO_AUGMENT: "/home/christina-winkler/Documents/mammos-ms/data/merged_df_no_Ms_leq_50000.csv"
+threshold: 50000.
+
+SAVE_AUGMENTED_DATA: "data/merged_dfs_augmented_exp.csv"
+
+sim_col: "Ms (ampere/meter)_s"
+exp_col: "Ms (ampere/meter)_e"
+
+artifact_paths:
+  root: "artifacts/"
+  data_plots: "artifacts/data_plots/"

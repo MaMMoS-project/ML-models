@@ -1,0 +1,23 @@
+experiment: "log_sim2exp-all-augmented"
+config_path: "configs/pytorch_mlp_augmented_all.yml"
+material_group: "all"
+data_path: "data/merged_dfs_augmented_exp.csv"
+
+input_col: "Ms (ampere/meter)_s"
+target_col: "Ms (ampere/meter)_e_all_augmented"
+
+emb_col: None
+threshold: 50000
+
+transform: 'log'
+# scaler: RobustScaler
+augment: True
+sim_col: "Ms (ampere/meter)_s"
+exp_col: "Ms (ampere/meter)_e_all_augmented"
+
+modeltypes: "pytorch"
+
+artifact_paths:
+  root: "artifacts/"
+  images: "artifacts/images/"
+  models: "artifacts/models/"

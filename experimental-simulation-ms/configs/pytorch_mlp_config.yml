@@ -1,0 +1,23 @@
+experiment: "log_sim2exp"
+config_path: "configs/pytorch_mlp_config.yml"
+material_group: None
+data_path: "data/pairwise_df_no_Ms_leq_50000.csv"
+
+input_col: "Ms (ampere/meter)_s"
+target_col: "Ms (ampere/meter)_e"
+
+emb_col: None
+threshold: 50000
+
+transform: 'log'
+# scaler: RobustScaler
+augment: False
+sim_col: "Ms (ampere/meter)_s"
+exp_col: "Ms (ampere/meter)_e"
+
+modeltypes: "pytorch"
+
+artifact_paths:
+  root: "artifacts/"
+  images: "artifacts/images/"
+  models: "artifacts/models/"

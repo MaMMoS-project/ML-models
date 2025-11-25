@@ -1,0 +1,56 @@
+experiment: "mat200log_sim2exp"
+config_path: "configs/scikit_models_w_mat200_config.yml"
+material_group: None
+data_path: "data/pairwise_df_no_Ms_leq_50000.csv"
+
+input_col: "Ms (ampere/meter)_s"
+target_col: "Ms (ampere/meter)_e"
+
+emb_col: 'mat200'
+embedding_path: 'data/embeddings/element/matscholar200.json'
+
+sim_col: "Ms (ampere/meter)_s"
+exp_col: "Ms (ampere/meter)_e"
+
+# scaler: StandardScaler
+transform: 'log'
+augment: False
+modeltypes: "scikit"
+threshold: 50000.
+
+artifact_paths:
+  root: "artifacts/"
+  images: "artifacts/images/"
+  models: "artifacts/models/"
+
+models:
+  LinearRegression:
+    model: LinearRegression
+    parameters:
+      fit_intercept: [true]
+      positive: [true]
+
+  Ridge:
+    model: Ridge
+    parameters:
+      alpha: [0.001, 0.002, 0.003, 0.004]
+      fit_intercept: [true]
+      solver: ['auto']
+
+  Lasso:
+    model: Lasso
+    init_args:
+      max_iter: 10000
+    parameters:
+      alpha: [0.001, 0.002, 0.003, 0.004]
+      fit_intercept: [true]
+      selection: ['cyclic']
+
+  RandomForest:
+    model: RandomForestRegressor
+    parameters:
+      n_estimators: [50, 150]
+      max_depth: [5]
+      min_samples_split: [2]
+      min_samples_leaf: [1, 2]
+      random_state: [42]
