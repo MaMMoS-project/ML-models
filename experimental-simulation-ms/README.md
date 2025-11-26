@@ -51,6 +51,8 @@ This step combines experimental and simulation data from different sources, filt
 
 ### Run the Data Pre-Processing Pipeline
 
+The datasets are stored in data/data.tar.xz. You can extract them by running `tar -xJf data/data.tar.xz`.
+
 ```bash
 python src/data_pipeline.py --config configs/data_pipeline_ms.yml
 ```
