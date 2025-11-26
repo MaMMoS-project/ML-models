@@ -51,7 +51,7 @@ This step combines experimental and simulation data from different sources, filt
 ### Run the Data Pre-Processing Pipeline
 
 ```bash
-python src/data_pipeline.py --config configs/augment_data_ms.yml
+python src/data_pipeline.py --config configs/data_pipeline_ms.yml
 ```
 
 #### Output Files
@@ -61,7 +61,7 @@ python src/data_pipeline.py --config configs/augment_data_ms.yml
 - `merged_df_no_Ms_leq_50000.csv`  
   → Contains all materials after thresholding.
 
-> **Note**: The configuration file (`augment_data_ms.yml`) currently hardcodes paths. Consider refactoring.
+> **Note**: The configuration file (`data_pipeline_ms.yml`) currently hardcodes paths. Consider refactoring.
 
 ---
 
