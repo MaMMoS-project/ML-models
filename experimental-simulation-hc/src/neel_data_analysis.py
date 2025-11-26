@@ -85,7 +85,7 @@ x_Hc_exp = [
 dep_var_hc_exp = { 0 : ['$H_{c}^{exp}$', '(A/m)'] }
 
 covariates_hc_exp = { 0 : ['$h$' , '(nm)'],
-                      1 : ['[Ce]', '()'] }
+                      1 : ['[Ce]', '(1)'] }
 
 Hc_exp_linreg,\
 r2_Hc_exp_train,\
