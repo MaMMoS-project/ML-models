@@ -13,6 +13,7 @@ Identify and correct systematic biases in DFT-based simulations of spontaneous m
 - `pip` (Python package installer)
 - `venv` (for virtual environments)
 - Slurm (for job submission, if running on HPC)
+- PyTorch (version matching your hardware, see: https://pytorch.org/get-started/locally/)
 
 ---
 
