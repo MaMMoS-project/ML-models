@@ -167,7 +167,7 @@ def plot_Hc_exp_and_calc(df, out_folder=None):
 
     # Single shared colorbar
     cbar = fig.colorbar(sc2, ax=axes.ravel().tolist(), pad=0.1)
-    cbar.set_label("A/m", rotation=270, labelpad=15)
+    cbar.set_label("A/m", labelpad=15)
 
     # cbar_ax2 = cbar.ax.twinx()
     # cbar_ax2.set_ylim(vmin*ms_aux.MU_NOUGHT, vmax*ms_aux.MU_NOUGHT)
@@ -277,7 +277,7 @@ def plot_ce_nd_content(df, out_folder):
 
     # Single shared colorbar
     cbar = fig.colorbar(sc2, ax=axes.ravel().tolist(), pad=0.1)
-    cbar.set_label("", rotation=270, labelpad=15)
+    cbar.set_label("1", labelpad=15)
 
     # cbar_ax2 = cbar.ax.twinx()
     # cbar_ax2.set_ylim(vmin*ms_aux.MU_NOUGHT, vmax*ms_aux.MU_NOUGHT)
