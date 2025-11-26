@@ -77,12 +77,12 @@ Use the `--configdir` flag to specify different configuration files. Each config
 #### Example Commands
 
 ```bash
-# Train scikit-learn baseline model
+# Train scikit-learn models (Random Forest, Lasso, Ridge, Linear Regression)
 python src/run_experiments.py --configdir configs/scikit_models_config.yml
 ```
 
 ```bash
-# Train symbolic regression model (interpretable correction function)
+# Train symbolic regression model (performance baseline)
 python src/run_experiments.py --configdir configs/pysr_linear_models_config.yml
 ```
 
@@ -92,12 +92,12 @@ python src/run_experiments.py --configdir configs/pytorch_mlp_config.yml
 ```
 
 ```bash
-# Train scikit models with Mat200 embeddings
+# Train scikit models with Mat200 embeddings (Random Forest, Lasso, Ridge, Linear Regression)
 python src/run_experiments.py --configdir configs/scikit_models_w_mat200_config.yml
 ```
 
 ```bash
-# Train MLP models with Mat200 embeddings
+# Train neural network models with Mat200 embeddings
 python src/run_experiments.py --configdir configs/pytorch_mlp_w_emb_config.yml
 ```
 
