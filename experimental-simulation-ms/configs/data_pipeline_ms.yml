@@ -1,11 +1,8 @@
 experiment: "data_pipeline_ms"
 config_path: "configs/data_pipeline_ms.yml"
 
-# DATA_DIR: "/u/cwinkler/ptmp_link/mammos-ms/data/"
-DATA_DIR: "/home/christina-winkler/Documents/mammos-ms/data/"
-# TO_AUGMENT: "/u/cwinkler/ptmp_link/mammos-ms/data/merged_df_no_Ms_leq_50000.csv"
-
-TO_AUGMENT: "/home/christina-winkler/Documents/mammos-ms/data/merged_df_no_Ms_leq_50000.csv"
+DATA_DIR: "data/"
+TO_AUGMENT: "data/merged_df_no_Ms_leq_50000.csv"
 threshold: 50000.
 
 SAVE_AUGMENTED_DATA: "data/merged_dfs_augmented_exp.csv"

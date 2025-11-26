@@ -62,8 +62,6 @@ python src/data_pipeline.py --config configs/data_pipeline_ms.yml
 - `merged_df_no_Ms_leq_50000.csv`  
   → Contains all materials after thresholding.
 
-> **Note**: The configuration file (`data_pipeline_ms.yml`) currently hardcodes paths. Consider refactoring.
-
 ---
 
 ## 🧪 Model Training
