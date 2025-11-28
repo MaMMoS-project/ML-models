@@ -1,11 +1,15 @@
-ML model for micromagnetic simulations, h and K orientation can change independently on sphere.
+# ML model for micromagnetic simulations, h and K orientation can change independently on sphere.
 
-0. Installation
+## Current version of model
+v0.1
+
+
+# 0. Installation
 Use requirements.txt. In addition pytorch, compatible with your system, must be installed
 
 
 
-1. data preprocessing
+# 1. data preprocessing
 
 run:
 PYTHONPATH=$PYTHONPATH:$(pwd) python3.13 scripts/analyze_magnetic_data.py
@@ -24,7 +28,7 @@ NEEDS:
 
 
 
-2. training of models
+# 2. training of models
 run:
 PYTHONPATH=$PYTHONPATH:$(pwd) python3.13 scripts/train_model.py   --config config/ml_config_test.yaml
 
@@ -38,7 +42,7 @@ OUTPUT:
 - ./results/plots
 - ./results/overall_results.json
 
-3. plots of metrics
+# 3. plots of metrics
 run:
 PYTHONPATH=$PYTHONPATH:$(pwd) python3.13 scripts/plot_metrics.py results
 

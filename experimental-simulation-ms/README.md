@@ -5,6 +5,9 @@ Identify and correct systematic biases in DFT-based simulations of spontaneous m
 - AI-driven correction functions
 - Data augmentation for missing experimental values (⚠️ Not yet validated and may introduce bias.)
 
+## Current version of model
+v0.1
+
 ---
 
 ## 📦 Prerequisites
