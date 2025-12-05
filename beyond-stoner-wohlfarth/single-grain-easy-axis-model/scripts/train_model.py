@@ -131,13 +131,14 @@ class MLPipeline:
                     
                     # Evaluate the model using our evaluator with the scaled data
                     metrics = self.evaluator.evaluate_model(
-                        model, X_train, y_train, X_test, y_test, dataset_name, model_name, errors=errors
+                        model, X_train, y_train, X_test, y_test, dataset_name, model_name, errors=errors, scaler=scaler
                     )
                     
                     # Store results
                     results[f"{dataset_name}_{scaler_type}"] = {
                         'model': model,
                         'best_params': best_params,
+                        'scaler': scaler,
                         'metrics': metrics
                     }
                     

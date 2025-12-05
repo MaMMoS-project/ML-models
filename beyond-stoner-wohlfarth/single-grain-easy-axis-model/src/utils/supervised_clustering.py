@@ -13,6 +13,42 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from .clustering_hardsoft import threshold_clustering
 from src.models.scalers import scale_data
 
+from skl2onnx import convert_sklearn
+from skl2onnx.common.data_types import FloatTensorType
+SKLEARN_ONNX_AVAILABLE = True
+
+
+def _save_pipeline_onnx(pipeline, input_cols, save_path):
+    """Export sklearn pipeline to ONNX format.
+    """
+    
+    onnx_path = f"{save_path}/supervised_clustering_pipeline.onnx"
+    
+    try:
+        # Get input dimension from input columns
+        input_dim = len(input_cols)
+        
+        # Define input type for ONNX conversion
+        initial_type = [('float_input', FloatTensorType([None, input_dim]))]
+        
+        # Convert pipeline to ONNX
+        onnx_model = convert_sklearn(
+            pipeline,
+            initial_types=initial_type,
+            target_opset=11,
+            options={id(pipeline): {'zipmap': False}}  # Return arrays instead of dict
+        )
+        
+        # Save the ONNX model
+        with open(onnx_path, 'wb') as f:
+            f.write(onnx_model.SerializeToString())
+        
+        print(f"Pipeline exported to ONNX: {onnx_path}")
+        
+    except Exception as e:
+        print(f"Warning: Could not export pipeline to ONNX: {e}")
+
+
 def train_and_tune(X_train, y_train):
     """Performs Grid Search for hyperparameter tuning."""
     model = RandomForestClassifier(random_state=24)
@@ -157,6 +193,9 @@ def supervised_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)',
         with open(model_path, 'wb') as f:
             pickle.dump(best_model, f)
         print(f"Model saved to {model_path}")
+        
+        # Export pipeline to ONNX format
+        _save_pipeline_onnx(pipeline, input_cols, save_path)
         
         # Save metrics to a text file
         metrics_path = f"{save_path}/supervised_metrics.txt"
