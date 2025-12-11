@@ -125,9 +125,9 @@ sbatch run_experiments_augmented_ms.sh
 
 ---
 
-```markdown
+
 ## 📊 Model Performance Comparison
-```
+
 ### 📊 Metric Results on Log-Transformed Data
 
 This table summarizes the performance of different models across multiple datasets, comparing results **with and without structural embeddings** (from composition). All metrics are computed on **log-transformed spontaneous magnetization (Ms)** values.
