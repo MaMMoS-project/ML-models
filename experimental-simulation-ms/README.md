@@ -59,14 +59,14 @@ The datasets are stored in data/data.tar.xz. You can extract them by running `ta
 ```bash
 python src/data_pipeline.py --config configs/data_pipeline_ms.yml
 ```
-
 #### Output Files
 
 - `pairwise_df_no_Ms_leq_50000.csv`  
   → Contains only paired simulation/experimental data.
 - `merged_df_no_Ms_leq_50000.csv`  
   → Contains all materials after thresholding.
-
+- `merged_dfs_augmented_exp.csv`
+  → Contains augmented materials data.
 ---
 
 ## 🧪 Model Training
