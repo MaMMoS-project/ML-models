@@ -66,7 +66,7 @@ python src/data_pipeline.py --config configs/data_pipeline_ms.yml
 - `merged_df_no_Ms_leq_50000.csv`  
   → Contains all materials after thresholding.
 - `merged_dfs_augmented_exp.csv`
-  → Contains augmented materials data.
+→ Contains augmented materials data.
 ---
 
 ## 🧪 Model Training
