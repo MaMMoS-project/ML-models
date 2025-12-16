@@ -12,8 +12,11 @@
 module load python-waterboa/2025.06
 
 # Set the path to the virtual environment
-VENV_PATH=/raven/ptmp/cwinkler/mammos-ms/ms-env/
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VENV_PATH="$SCRIPT_DIR/venv/mammos-ms"
 
+echo "SCRIPT_DIR = $SCRIPT_DIR"
+echo "VENV_PATH  = $VENV_PATH"
 echo "Set Paths"
 
 # Activate the virtual environment
