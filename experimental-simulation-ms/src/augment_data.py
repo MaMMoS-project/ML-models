@@ -240,22 +240,3 @@ def augment_data_experimental(config):
                                                'Ms (ampere/meter)_e_re_free_augmented', 'exp-minus-sim']].copy()
     df_combined_re_free.to_csv('data/re_free_augmented_data.csv')
     print(df_combined.head)
-    
-if __name__ == "__main__":
-
-    parser = argparse.ArgumentParser(description="Path to experiment YML config file.")
-    parser.add_argument(
-        "--configdir",
-        type=str,
-        required=True,
-        help="Path to the YAML configuration file.",
-    )
-
-    # python src/augment_data.py --config "configs/augment_data_ms.yml"
-
-    args = parser.parse_args()
-
-    with open(args.configdir, "r") as f:
-        config = yaml.safe_load(f)
-
-    augment_data_experimental(config)

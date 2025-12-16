@@ -293,19 +293,3 @@ def load_data(*datasets, data_path):
         loaded_data[name] = df
 
     return loaded_data
-
-
-if __name__ == '__main__':
-    
-    DATA_PATH = "/raven/ptmp/cwinkler/mammos-ms/data/"
-    
-    query = ['oqmd', 'literature',
-             # 'mtc', 'mtc_nur',  not used atm, idk how to convert Tesla to A/m.
-             'bhandari_i',
-             'bhandari_xii', 'bhandari_xiii',
-             'magnetic_materials_exp', 'magnetic_materials_sim'
-            ]
-            
-    data = load_data(*query, data_path=DATA_PATH)
-    
-    print('Loading done!')

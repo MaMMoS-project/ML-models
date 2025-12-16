@@ -175,12 +175,6 @@ def scatter_plot_data(x, y, title, plot_path, color, nr_samples):
                 alpha=0.5, 
                 label=f'{title}, {nr_samples} samples')
     
-    # plt.scatter(df[sim_col][mask_re_free],
-    #             df[exp_col][mask_re_free],
-    #             color='orange', 
-    #             alpha=0.5, 
-    #             label=f'RE-Free, {nr_re_free_samples} samples')
-    
     plt.grid(True)
     plt.legend()
     plt.xlabel('Ms_s (A/m)')
@@ -188,27 +182,3 @@ def scatter_plot_data(x, y, title, plot_path, color, nr_samples):
     plt.title(title)
     plt.savefig(plot_path)
     plt.close()
-
-#     plt.figure(figsize=(5,5))
-#     plt.scatter(df[sim_col][mask_re], 
-#                 df[exp_col][mask_re],
-#                 color='blue', label=f'RE, {df[sim_col][mask_re].shape[0]} samples')
-#     plt.grid(True)
-#     plt.xlabel('Ms_s (A/m)')
-#     plt.ylabel('Ms_e (A/m)')
-#     plt.title('RE')
-#     plt.legend()
-#     plt.savefig(plot_path + f'data_re_{df[sim_col][mask_re].shape[0]}_samples.png')
-#     plt.close()
-
-#     plt.figure(figsize=(5,5))
-#     plt.scatter(df[sim_col][mask_re_free], 
-#                 df[exp_col][mask_re_free],
-#                 color='orange', label=f'RE-Free, {df[sim_col][mask_re_free].shape[0]} samples')
-#     plt.grid(True)
-#     plt.xlabel('Ms_s (A/m)')
-#     plt.ylabel('Ms_e (A/m)')
-#     plt.title(f'RE-Free, {df[sim_col][mask_re_free].shape[0]} samples')
-#     plt.legend()
-#     plt.savefig(plot_path + f'data_re_free_{df[sim_col][mask_re_free].shape[0]}_samples.png')
-#     plt.close()

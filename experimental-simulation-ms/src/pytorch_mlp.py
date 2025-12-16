@@ -337,13 +337,3 @@ def optimize_mlp(X, y, xlabel, ylabel,
             }
 
     return best_model, {}, best_metrics, grid            
-                                       
-if __name__ == "__main__":
-
-    parser = argparse.ArgumentParser(description="Path to experiment YML config file.")
-    parser.add_argument(
-        "--config",
-        type=str,
-        required=True,
-        help="Path to the YAML configuration file.",
-    )

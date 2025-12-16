@@ -114,24 +114,3 @@ def combine_dataframes(dfs: dict[pd.DataFrame],
     print('Combined DF RE-Free Materials:', final_df[final_df['has_rare_earth']==False].shape[0])
 
     return final_df
-
-
-if __name__ == '__main__':
-    
-    DATA_PATH = "/raven/ptmp/cwinkler/mammos-ms/data/"
-    SAVE_MERGED_DATA = "/raven/ptmp/cwinkler/mammos-ms/data/"
-    
-    query = ['oqmd', 'literature',
-             # 'mtc', 'mtc_nur',  not used atm, idk how to convert Tesla to A/m.
-             'bhandari_i',
-             'bhandari_xii', 'bhandari_xiii',
-             'magnetic_materials_exp', 'magnetic_materials_sim'
-            ]
-            
-    df_list = load_data(*query, data_path=DATA_PATH)
-    
-    print('Loading done!')
-
-    combine_dataframes(dfs=df_list,
-                       merge_key='composition',
-                       save_dir=SAVE_MERGED_DATA)
