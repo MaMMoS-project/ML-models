@@ -1,0 +1,15 @@
+Model Performance on Test Set:
+Accuracy: 0.9833
+Precision: 0.9883
+Recall: 0.9922
+F1 Score: 0.9902
+
+Classification Report:
+              precision    recall  f1-score   support
+
+        Soft       0.95      0.93      0.94        45
+        Hard       0.99      0.99      0.99       255
+
+    accuracy                           0.98       300
+   macro avg       0.97      0.96      0.97       300
+weighted avg       0.98      0.98      0.98       300
