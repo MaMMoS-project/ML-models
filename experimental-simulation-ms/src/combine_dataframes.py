@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np 
 
 from src.load_data import load_data
-import src.ms_aux
+import src.ms_aux as ms_aux
 
 import pdb
 import re
@@ -99,7 +99,7 @@ def combine_dataframes(dfs: dict[pd.DataFrame],
             return ms_aux.has_rare_earth(comp)
         except Exception:
             return None  # mark unparseable compositions as None
-
+        
     final_df["has_rare_earth"] = final_df[merge_key].apply(safe_has_rare_earth)
 
     # Drop rows where rare-earth info could not be computed

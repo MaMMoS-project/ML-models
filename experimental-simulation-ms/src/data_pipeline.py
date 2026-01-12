@@ -25,15 +25,13 @@ def run_data_processing_pipeline(config):
     
     # ------------ Load dataframes ------------  
     df_list = load_data(*query, data_path=DATA_DIR)
-    
+
     print('Loading done!')
     
     # Combine dataframes into one file
     df_combined = combine_dataframes(dfs=df_list,
                                      merge_key='composition',
                                      save_dir=DATA_DIR)
-    
-    pdb.set_trace()
     
     print('Shape combined dataframe from different data sources:', df_combined.shape[0])
 
