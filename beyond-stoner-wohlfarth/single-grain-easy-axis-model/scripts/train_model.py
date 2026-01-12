@@ -8,6 +8,7 @@ from pathlib import Path
 import sys
 import os
 import yaml
+import argparse
 import importlib
 import json
 from typing import Dict, Tuple, Any
@@ -291,11 +292,11 @@ class MLPipeline:
 
 def main():
     """Main entry point."""
-    import argparse
     parser = argparse.ArgumentParser(description='Train and evaluate ML models.')
     parser.add_argument('--config', type=str, default='config/ml_config_test.yaml',
-                      help='Path to the configuration file')
-    args = parser.parse_args()
+                        help='Path to the configuration file')
+    
+    args, _ = parser.parse_args()
     
     print(f"Using config file: {args.config}")
     pipeline = MLPipeline(args.config)
