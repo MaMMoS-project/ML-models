@@ -1,12 +1,11 @@
 import re
-import ms_aux
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import sklearn
 
 import pdb
-
+import src.ms_aux as ms_aux
 
 compound_column_name = 'compound'
 Ms_column_name = 'Ms (ampere/meter)'

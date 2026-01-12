@@ -1,7 +1,7 @@
-from load_data import load_data
-from combine_dataframes import combine_dataframes
-from augment_data import augment_data_experimental
-from pre_process_data import create_pairwise_dataset, remove_small_ms_values
+from src.load_data import load_data
+from src.combine_dataframes import combine_dataframes
+from src.augment_data import augment_data_experimental
+from src.pre_process_data import create_pairwise_dataset, remove_small_ms_values
 
 # Plotting / visualizing
 import seaborn as sns
@@ -11,25 +11,10 @@ import argparse
 import pdb
 import yaml
 
-if __name__ == '__main__':
+def run_data_processing_pipeline(config):
     
-    parser = argparse.ArgumentParser(description="Path to experiment YML config file.")
-    
-    # Parse config yml file
-    parser.add_argument(
-        "--configdir",
-        type=str,
-        required=True,
-        help="Path to the YAML configuration file.",
-    )
-    
-    args = parser.parse_args()
-
-    with open(args.configdir, "r") as f:
-        config = yaml.safe_load(f)   
-        
     DATA_DIR = config['DATA_DIR']
-    THRESHOLD_MS = 50000
+    THRESHOLD_MS = config['threshold']
     
     query = ['oqmd', 'literature',
              # 'mtc', 'mtc_nur',  not used atm, idk how to convert Tesla to A/m.
@@ -70,7 +55,25 @@ if __name__ == '__main__':
     
     df_pairs.to_csv(DATA_DIR + f'pairwise_df_no_Ms_leq_{THRESHOLD_MS}.csv')
     print('Shape Pairwise DF:', df_pairs.shape[0])  
+        
+
+if __name__ == '__main__':
     
-    # python src/data_pipeline.py --configdir "configs/data_pipeline_ms.yml"
+    parser = argparse.ArgumentParser(description="Path to experiment YML config file.")
+    
+    # Parse config yml file
+    parser.add_argument(
+        "--configdir",
+        type=str,
+        required=True,
+        help="Path to the YAML configuration file.",
+    )
+    
+    args = parser.parse_args()
+
+    with open(args.configdir, "r") as f:
+        config = yaml.safe_load(f)   
+        
+    run_data_processing_pipeline(config)
 
     augment_data_experimental(config)
