@@ -8,7 +8,7 @@ from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 
-import ms_aux
+import src.ms_aux as ms_aux
 
 
 # DATA LOADER (RAW DATA)
@@ -211,7 +211,7 @@ def plot_delta_Hc(df, out_folder=None):
     plt.colorbar(label="A/m")
     plt.xlabel("x (mm)")
     plt.ylabel("y (mm)")
-    plt.title("      Difference between measured and computed coercivity \n\n$\Delta H_{c} \colon= H_{c}^{exp} - H_{c}^{sim} $")
+    plt.title(r"Difference between measured and computed coercivity \n\n $\Delta H_{c} \colon= H_{c}^{exp} - H_{c}^{sim} $")
 
     if (out_folder is not None):
         fig_filename = '/'.join([out_folder, 'deltaHc.png'])
@@ -360,7 +360,8 @@ def run_linear_model(x,
                      test_size=.2,
                      random_state=1,
                      out_folder=None):
-    """Fit the linear model y = \sum_i w_i x[i].
+    r"""
+    Fit the linear model y = \sum_i w_i x[i].
 
 
     Parameters
@@ -435,7 +436,7 @@ def run_linear_model(x,
                        scaling=1e-3,
                        out_folder = out_folder):
         
-        abs_res_label = "$|\widehat{" + dep_variable_w_uom[0][0][1:-1] + " } - " + dep_variable_w_uom[0][0][1:-1] +"|$"
+        abs_res_label = r"$|\widehat{" + dep_variable_w_uom[0][0][1:-1] + " } - " + dep_variable_w_uom[0][0][1:-1] +"|$"
         
         
         if(covariates_w_uom[0][1]) == "()":
@@ -477,15 +478,15 @@ def run_linear_model(x,
         # plt.title('  '.join(['$\Delta H_{c} = a_{0} + a_{1} \cdot H_{c}^{c} + a_{2} \cdot h$',  '(R^2 = {0:.2f})'.format(delta_hccalc_height_linreg_score)]))
         cbar = fig.colorbar(im1, ax=[ax1, ax2], shrink=1)
         cbar.set_label(dep_variable_w_uom[0][1][1:-1])
-        cbar.ax.set_title('$\widehat{' + dep_variable_w_uom[0][0][1:-1] + '}$')
+        cbar.ax.set_title(r'$\widehat{' + dep_variable_w_uom[0][0][1:-1] + '}$')
 
-        ax1.set_title('Training residuals ($R^2 =$ {0:.2f})'.format(r2_score_train))
+        ax1.set_title(r'Training residuals ($R^2 =$ {0:.2f})'.format(r2_score_train))
         ax1.legend(*im1.legend_elements(prop="sizes", num=3),
                    title='  '.join([abs_res_label, "(" + '$\\times$' + "{0:.0e} ".format(1/scaling) + dep_variable_w_uom[0][1][1:-1] + ')' ] ) )                 
         ax1.set_xlabel(xlabel)
         ax1.set_ylabel(ylabel)
 
-        ax2.set_title('Test residuals ($R^2 =$ {0:.2f})'.format(r2_score_test))
+        ax2.set_title(r'Test residuals ($R^2 =$ {0:.2f})'.format(r2_score_test))
         ax2.legend(*im2.legend_elements(prop="sizes", num=3),
                    title='  '.join([abs_res_label, "(" + '$\\times$' + "{0:.0e} ".format(1/scaling) + dep_variable_w_uom[0][1][1:-1] + ')' ] ) )                 
         ax2.set_xlabel(xlabel)
