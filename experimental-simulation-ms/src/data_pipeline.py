@@ -33,6 +33,8 @@ def run_data_processing_pipeline(config):
                                      merge_key='composition',
                                      save_dir=DATA_DIR)
     
+    pdb.set_trace()
+    
     print('Shape combined dataframe from different data sources:', df_combined.shape[0])
 
     # ------------ Throw away small Ms values ------------
