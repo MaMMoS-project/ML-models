@@ -1015,7 +1015,7 @@ class CurieTempAugmenter:
         self.print_summary()
 
 
-def main():
+def augment_data():
     """Main execution function."""
     # Determine project root
     script_dir = Path(__file__).parent
@@ -1044,4 +1044,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    augment_data()
