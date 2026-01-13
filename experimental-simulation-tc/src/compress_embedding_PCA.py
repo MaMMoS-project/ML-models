@@ -225,7 +225,7 @@ class PCAEmbeddingCompressor:
         print(f"\n" + "="*60)
 
 
-def main():
+def compress_embeddings_PCA():
     """Main execution function."""
     # Determine paths
     script_dir = Path(__file__).parent
@@ -303,4 +303,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    compress_embeddings_PCA()

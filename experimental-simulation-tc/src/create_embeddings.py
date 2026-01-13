@@ -456,7 +456,7 @@ class EmbeddingCreator:
         print(f"{'='*60}\n")
 
 
-def main():
+def create_embeddings():
     """Main execution function."""
     # Determine paths
     script_dir = Path(__file__).parent
@@ -574,4 +574,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    create_embeddings()
