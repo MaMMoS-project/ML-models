@@ -178,9 +178,13 @@ def plot_Hc_exp_and_calc(df, out_folder=None):
     if (out_folder is not None):
         fig_filename = '/'.join([out_folder, 'H_exp_sim.png'])
         os.makedirs(out_folder, exist_ok=True)
+        plt.show()
         plt.savefig(fig_filename, dpi=300)
+        
     else:
         plt.show()
+    
+    plt.close()
 
 # PLOT DELTA Hc
 def plot_delta_Hc(df, out_folder=None):
@@ -211,15 +215,18 @@ def plot_delta_Hc(df, out_folder=None):
     plt.colorbar(label="A/m")
     plt.xlabel("x (mm)")
     plt.ylabel("y (mm)")
-    plt.title(r"Difference between measured and computed coercivity \n\n $\Delta H_{c} \colon= H_{c}^{exp} - H_{c}^{sim} $")
+    # plt.title(r"Difference between measured and computed coercivity\n\n$\Delta H_{c} \colon= H_{c}^{exp} - H_{c}^{sim}$")
+    plt.title(r"$\Delta H_{c} \colon= H_{c}^{exp} - H_{c}^{sim}$")
 
     if (out_folder is not None):
         fig_filename = '/'.join([out_folder, 'deltaHc.png'])
         os.makedirs(out_folder, exist_ok=True)
+        plt.show()
         plt.savefig(fig_filename, dpi=300, bbox_inches='tight')
     else:
         plt.show()
-
+    
+    plt.close()
         
         
 # PLOT Ce and Nd content
@@ -288,9 +295,12 @@ def plot_ce_nd_content(df, out_folder):
     if (out_folder is not None):
         fig_filename = '/'.join([out_folder, 'ce_nd_content.png'])
         os.makedirs(out_folder, exist_ok=True)
+        plt.show()
         plt.savefig(fig_filename, dpi=300, bbox_inches='tight')
     else:
         plt.show()
+    
+    plt.close()
 
 # PLOT HEIGHT
 def plot_height(df, out_folder):
