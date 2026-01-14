@@ -14,7 +14,7 @@ Use requirements.txt. In addition pytorch, compatible with your system, must be 
 ## 1. data augmentation
 
 run:
-PYTHONPATH=$PYTHONPATH:$(pwd) python3.13 src/src/augment_data.py
+PYTHONPATH=$PYTHONPATH:$(pwd) python3.13 src/augment_data.py
 
 NEEDS:
 - ./data/EC_curie_temp.csv

@@ -27,7 +27,8 @@ import pandas as pd
 import numpy as np
 
 
-def main():
+def training_augmented():
+    
     # Ensure we can import training modules
     script_dir = Path(__file__).parent
     training_dir = script_dir / "training"

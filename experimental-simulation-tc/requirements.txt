@@ -33,8 +33,10 @@ psutil==7.0.0
 ptyprocess==0.7.0
 pure_eval==0.2.3
 Pygments==2.19.2
+pymatgen==2025.10.7
 pyparsing==3.2.3
 python-dateutil==2.9.0.post0
+pysr==1.5.9
 pytz==2025.2
 pyzmq==27.0.0
 scikit-learn==1.7.0

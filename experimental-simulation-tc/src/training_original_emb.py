@@ -29,7 +29,8 @@ import pandas as pd
 import numpy as np
 
 
-def main():
+def train_original_embedding():
+    
     # Ensure we can import training modules
     script_dir = Path(__file__).parent
     training_dir = script_dir / "training"
@@ -529,4 +530,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    train_original_embedding()
