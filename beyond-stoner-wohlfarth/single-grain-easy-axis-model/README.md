@@ -80,3 +80,6 @@ OUTPUT:
 | RF    | MSE: 0.002<br>R²: 0.996 | MSE: 0.006<br>R²: 0.987  | MSE: 0.0004<br>R²: 0.9996 | MSE: 0.0083<br>R²: 0.9933 |
 | GP    | MSE: 0.000<br>R²: 0.999 | MSE: 0.004<br>R²: 0.992  | MSE: 0.000<br>R²: 0.992   | MSE: 0.000<br>R²: 0.999   |
 | FCNN  | MSE: 0.161<br>R²: 0.518 | MSE: 0.182<br>R²: 0.573  | MSE: 0.012<br>R²: 0.988   | MSE: 0.018<br>R²: 0.986   |
+
+For all three targets, both the FCNN and RF models do not show strong over fitting and the per-
+formance is quite comparable.
