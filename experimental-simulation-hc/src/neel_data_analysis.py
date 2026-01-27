@@ -8,9 +8,12 @@ import coercivity_ml as cml
 DATA_FOLDER = '../data'
 PLOTS_FOLDER = '../plots'
 fmdh_filename = '/'.join([DATA_FOLDER, 'full_micromagnetic_with_height.csv'])
+oxide_filename = '/'.join([DATA_FOLDER, 'NdCeFeB_2-7_20251021_ceriumOxide_phase_fractions_mammos_entities.csv'])
 
 # READ CSV
-fmdh_df = cml.read_coercivity_csv(fmdh_filename)
+fmdh_df = cml.create_joined_df(fmdh_filename, oxide_filename)
+
+
 
 # EXTRACT VALID DATA, ADD NEW FEATURES. All relevant data tb analysed is now stored in fmdh_df_valid.
 fmdh_df_valid = cml.preprocess_and_engineering_df(fmdh_df)
@@ -41,7 +44,8 @@ col_corr_matrix = [ # specify desired features
         'Neff',
         'Nd',
         'Ce',
-        'Hc-exp-minus-cal'
+        'Hc-exp-minus-cal',
+        'alpha'
     ]
 corr = cml.get_corr_matrix(fmdh_df, col_corr_matrix) # get the matrix as a pd.DataFrame
 

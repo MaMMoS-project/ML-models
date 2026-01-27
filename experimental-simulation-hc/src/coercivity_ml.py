@@ -13,13 +13,42 @@ import ms_aux
 
 # DATA LOADER (RAW DATA)
 
-def read_coercivity_csv(filepath):
-    """Loader for full_micromagnetic_with_height.csv circulared by CNRS and UWK.
+def read_oxide_csv(filepath):
+    """Loader for NdCeFeB_2-7_20251021_ceriumOxide_phase_fractions_mammos_entities.csv circulared by CNRS and UWK.
 
 
     Parameters
     ----------
     filepath : str
+        Path of the NdCeFeB_2-7_20251021_ceriumOxide_phase_fractions_mammos_entities.csv file.
+
+    Returns
+    -------
+    DataFrame : Pandas DataFrame
+        pd.DataFrame containing all data in NdCeFeB_2-7_20251021_ceriumOxide_phase_fractions_mammos_entities.csv
+
+    """
+    columns = {
+                    'x_pos' : np.int32, # mm
+                    'y_pos' : np.int32, # mm
+                    'alpha' : np.float64 # percent
+                   }
+
+    return pd.read_csv(filepath,
+                       sep=',',
+                       header=0,
+                       names = columns.keys(),
+                       dtype = columns,
+                       index_col=False)
+
+
+def read_coercivity_csv(filepath_micromag):
+    """Loader for full_micromagnetic_with_height.csv circulared by CNRS and UWK.
+
+
+    Parameters
+    ----------
+    filepath_micromag : str
         Path of the full_micromagnetic_with_height.csv file.
 
     Returns
@@ -29,8 +58,8 @@ def read_coercivity_csv(filepath):
 
     """
     fmdh_columns = {
-                    'x_pos' : np.float64, # mm
-                    'y_pos' : np.float64, # mm
+                    'x_pos' : np.int32, # mm
+                    'y_pos' : np.int32, # mm
                     'a' : np.float64, # Angstrom
                     'c' : np.float64, # Angstrom
                     'volume' : np.float64, # Angstrom3
@@ -47,12 +76,36 @@ def read_coercivity_csv(filepath):
                     'Neff' : np.float64
                    }
 
-    return pd.read_csv(filepath,
+    return pd.read_csv(filepath_micromag,
                        sep=',',
                        header=0,
                        names = fmdh_columns.keys(),
                        dtype = fmdh_columns,
                        index_col=False)
+    
+def create_joined_df(filepath_micromag, filepath_oxide):
+    """Loader for the two joined csvs containing all data circulared by CNRS and UWK.
+
+
+    Parameters
+    ----------
+    filepath_micromag : str
+        Path of the full_micromagnetic_with_height.csv file.
+
+    filepath_oxide : str
+        Path of the NdCeFeB_2-7_20251021_ceriumOxide_phase_fractions_mammos_entities.csv file.
+
+    Returns
+    -------
+    DataFrame : Pandas DataFrame
+        pd.DataFrame resulting from the inner join of both input csvs.
+
+    """
+    return pd.merge(read_coercivity_csv(filepath_micromag),
+                    read_oxide_csv(filepath_oxide),
+                    how='inner',
+                    on=['x_pos', 'y_pos'])
+
 
 
 
@@ -99,7 +152,7 @@ def preprocess_and_engineering_df(df):
     def flag_valid_datapoints(df):
         df['valid'] = np.isfinite(df['x_pos'])
 
-        for i in ['y_pos', 'Hc_measured', 'Hc_calculated', 'measured_height']:
+        for i in ['y_pos', 'Hc_measured', 'Hc_calculated', 'measured_height', 'alpha']:
             df['valid'] = df['valid'] & np.isfinite(df[i])
     
     add_element_content_info(df)
