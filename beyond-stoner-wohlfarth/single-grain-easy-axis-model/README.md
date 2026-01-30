@@ -50,3 +50,12 @@ NEEDS:
 OUTPUT:
 - stdout
 - ./results/metrics_tables
+
+## Training data generation
+
+- The training data has been created using micromagnetic simulations.
+- One hysteresis loop for a cube of 50nm edge length was computer for each combination of material parameters A, Ms, K
+- from the hysteresis loops, Hc, Mr and BHmax are computed (that's the input data for the ML model, available at [data/magnetic_materials.csv](data/magnetic_materials.csv).
+- in total 1497 data points were computed
+
+The generation of the training data and details on the simulation software and method are [described in data-generation](data-generation/README.md).
