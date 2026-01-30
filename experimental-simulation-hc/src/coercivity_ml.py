@@ -178,8 +178,8 @@ def plot_Hc_exp_and_calc(df, out_folder=None):
     if (out_folder is not None):
         fig_filename = '/'.join([out_folder, 'H_exp_sim.png'])
         os.makedirs(out_folder, exist_ok=True)
-        plt.show()
         plt.savefig(fig_filename, dpi=300)
+        plt.show()
         
     else:
         plt.show()
@@ -221,8 +221,8 @@ def plot_delta_Hc(df, out_folder=None):
     if (out_folder is not None):
         fig_filename = '/'.join([out_folder, 'deltaHc.png'])
         os.makedirs(out_folder, exist_ok=True)
-        plt.show()
         plt.savefig(fig_filename, dpi=300, bbox_inches='tight')
+        plt.show()
     else:
         plt.show()
     
@@ -295,8 +295,8 @@ def plot_ce_nd_content(df, out_folder):
     if (out_folder is not None):
         fig_filename = '/'.join([out_folder, 'ce_nd_content.png'])
         os.makedirs(out_folder, exist_ok=True)
-        plt.show()
         plt.savefig(fig_filename, dpi=300, bbox_inches='tight')
+        plt.show()
     else:
         plt.show()
     
@@ -336,6 +336,7 @@ def plot_height(df, out_folder):
         fig_filename = '/'.join([out_folder, 'height.png'])
         os.makedirs(out_folder, exist_ok=True)
         plt.savefig(fig_filename, dpi=300, bbox_inches='tight')
+        plt.show()
     else:
         plt.show()
 
