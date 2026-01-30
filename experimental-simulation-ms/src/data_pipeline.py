@@ -42,7 +42,7 @@ def run_data_processing_pipeline(config):
                                              exp_col='Ms (ampere/meter)_e', 
                                              threshold=THRESHOLD_MS)
     
-    df_small_ms_rm.to_csv(DATA_DIR + f'merged_df_no_Ms_leq_{THRESHOLD_MS}.csv')
+    df_small_ms_rm.to_csv(DATA_DIR + f'merged_df_no_Ms_leq_{int(THRESHOLD_MS)}.csv')
     print('Shape DF after rm small Ms values:', df_small_ms_rm.shape[0])
     print('Nr RE Materials after rm small Ms values:', df_small_ms_rm[df_small_ms_rm['has_rare_earth']].shape[0])
     print('Nr RE-Free Materials after rm small Ms values:', df_small_ms_rm[df_small_ms_rm['has_rare_earth']==False].shape[0]) 
@@ -53,8 +53,9 @@ def run_data_processing_pipeline(config):
                                        sim_col='Ms (ampere/meter)_s', 
                                        exp_col='Ms (ampere/meter)_e')
     
-    df_pairs.to_csv(DATA_DIR + f'pairwise_df_no_Ms_leq_{THRESHOLD_MS}.csv')
+    df_pairs.to_csv(DATA_DIR + f'pairwise_df_no_Ms_leq_{int(THRESHOLD_MS)}.csv')
     print('Shape Pairwise DF:', df_pairs.shape[0])  
+    print('Thresholded Pairwise DF saved to:', DATA_DIR + f'pairwise_df_no_Ms_leq_{int(THRESHOLD_MS)}.csv')
         
 
 if __name__ == '__main__':
