@@ -68,5 +68,6 @@ def plot_3d_parameter_space(df, x_col, y_col, z_col, log_scale=False, color_by=N
     if save_path:
         plt.savefig(f"{save_path}/3d_parameter_space.png", bbox_inches='tight', dpi=300)
     plt.show()
+    plt.close()
     
     return fig, ax

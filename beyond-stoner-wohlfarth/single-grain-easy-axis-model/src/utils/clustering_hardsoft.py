@@ -67,6 +67,7 @@ def threshold_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)', threshold=0.6
     if save_path:
         plt.savefig(f"{save_path}/threshold_clustering.png", bbox_inches='tight', dpi=300)
     plt.show()
+    plt.close()
     
     return df_clustered
 
@@ -172,5 +173,7 @@ def kmeans_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)', save_path=None):
     
     if save_path:
         plt.savefig(f"{save_path}/kmeans_clustering.png", bbox_inches='tight', dpi=300)
-    
+        
+    plt.show()
+    plt.close()
     return df_clustered
