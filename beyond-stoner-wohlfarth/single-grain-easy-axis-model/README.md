@@ -83,3 +83,12 @@ OUTPUT:
 
 For all three targets, both the FCNN and RF models do not show strong over fitting and the per-
 formance is quite comparable.
+
+## Training data generation
+
+- The training data has been created using micromagnetic simulations.
+- One hysteresis loop for a cube of 50nm edge length was computed for each combination of material parameters A, Ms, K
+- from the hysteresis loops, Hc, Mr and BHmax are computed (that's the input data for the ML model, available at [data/magnetic_materials.csv](data/magnetic_materials.csv)).
+- in total 1497 data points were computed
+
+The generation of the training data and details on the simulation software and method are [described in data-generation](data-generation/README.md).
