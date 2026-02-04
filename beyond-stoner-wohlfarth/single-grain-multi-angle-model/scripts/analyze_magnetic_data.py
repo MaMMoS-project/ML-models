@@ -21,6 +21,8 @@ def analyze_magnetic_data():
     plots_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'plots')
     os.makedirs(plots_dir, exist_ok=True)
 
+    
+    # TODO: add below 2 linea as args to read 
     #Read the input file with mammos reader. BUT do NOT (yet)use the entities for simplicity
     content_minidrive = me.io.entities_from_csv("./data/mumax3_mindrive_cube_all_params.csv")
     content_relaxdriver = me.io.entities_from_csv("./data/mumax3_relaxdriver_cube_all_params.csv")
