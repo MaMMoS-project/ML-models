@@ -13,13 +13,19 @@ from src.utils.plot_utils import plot_3d_parameter_space
 from src.utils.clustering_hardsoft import threshold_clustering, kmeans_clustering
 from src.utils.supervised_clustering import supervised_clustering
 
-def analyze_magnetic_data():
+def analyze_magnetic_data(data_path=None):
+    
     # Create plots directory 
     plots_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'plots')
     os.makedirs(plots_dir, exist_ok=True)
 
-    #Read the input file with mammos reader. BUT do NOT (yet)use the entities for simplicity
-    content = me.io.entities_from_csv("./data/magnetic_materials.csv")
+    if data_path is None:
+        # Read the input file with mammos reader. BUT do NOT (yet)use the entities for simplicity
+        content = me.io.entities_from_csv("./data/magnetic_materials.csv")
+        
+    else:
+        content = me.io.entities_from_csv(data_path)
+
     df = content.to_dataframe(include_units=False)
     df = df.rename(columns={"Ms": "Ms (A/m)", "A": "A (J/m)", "K1": "K (J/m^3)", "Hc": "Hc (A/m)", "Mr": "Mr (A/m)", "BHmax": "BHmax (J/m^3)"})
 
