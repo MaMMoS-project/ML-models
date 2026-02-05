@@ -1,4 +1,5 @@
 # require Python>=3.12.3
+duecredit==0.11.2
 ipykernel==7.1.0
 mammos-entity==0.11.1
 mammos-units==0.3.2
