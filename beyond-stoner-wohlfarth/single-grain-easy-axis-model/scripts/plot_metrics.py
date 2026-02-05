@@ -311,6 +311,8 @@ def create_metrics_plot(df, dataset, variable_name, output_path, higher_better, 
     if len(models) == 0:
         return
     
+    backend = plt.get_backend()
+    
     # Create a figure with appropriate size
     fig_width = max(10, len(metric_cols) * 1.5)
     fig_height = max(8, len(models) * 1.2)
@@ -392,7 +394,12 @@ def create_metrics_plot(df, dataset, variable_name, output_path, higher_better, 
     safe_variable = sanitize_filename(variable_name)
     fig_path = output_path / f"{safe_dataset}_{safe_variable}_metrics.png"
     plt.savefig(fig_path, dpi=150, bbox_inches='tight')
+    if "inline" not in backend.lower():
+        plt.show()
+    else:
+        plt.ioff()
     plt.close(fig)
+    plt.close()
     print(f"    Saved metrics plot to {fig_path}")
 
 

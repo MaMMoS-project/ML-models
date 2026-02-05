@@ -96,6 +96,8 @@ def supervised_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)',
     
     # Create confusion matrix
     cm = confusion_matrix(y_test, y_test_pred)
+    
+    backend = plt.get_backend()
     plt.figure(figsize=(8, 6))
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
                 xticklabels=['Soft', 'Hard'], 
@@ -106,7 +108,10 @@ def supervised_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)',
     
     if save_path:
         plt.savefig(f"{save_path}/supervised_confusion_matrix.png", bbox_inches='tight', dpi=300)
-    plt.show()
+        
+    if "inline" not in backend.lower():
+        plt.show()
+    plt.close()
     
     # Make predictions on the entire dataset
     # Build a single fitted Pipeline = scaler + classifier
@@ -141,6 +146,7 @@ def supervised_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)',
         os.makedirs(save_path, exist_ok=True)
 
         plt.savefig(f"{save_path}/supervised_clustering.png", bbox_inches='tight', dpi=300)
+        plt.close()
 
         # Save pipeline (recommended with joblib)
         pipe_path = f"{save_path}/supervised_clustering_pipeline.joblib"
@@ -260,5 +266,6 @@ def apply_supervised_clustering(df, model_path=None,
         plt.legend()
         
         plt.savefig(f"{save_path}/supervised_clustering_inference.png", bbox_inches='tight', dpi=300)
+        plt.close()
     
     return df_clustered

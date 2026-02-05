@@ -117,14 +117,12 @@ def compute_and_plot_Mr_over_Ms(Ms_values, Mr_values, A_values, K_values, save_p
             ratio_soft.append(ratio[i])
             ratio_l_soft.append(ratio_l_K_l_A[i])
 
-
-
     print("#Soft magnets:",len(ratio_soft), "out of ",len(ratio))
 
     # Compute min and max
     ratio_min = np.min(ratio)
     ratio_max = np.max(ratio)
-
+    
     # Plot scatter of Ms vs. ratio
     plt.figure(figsize=(6, 4))
     plt.scatter(Ms_arr, ratio, c='blue', edgecolor='k', alpha=0.7, label='Mr/Ms ratio')
@@ -135,6 +133,13 @@ def compute_and_plot_Mr_over_Ms(Ms_values, Mr_values, A_values, K_values, save_p
     plt.tight_layout()
     if save_path:
         plt.savefig(f"{save_path}/Mr_over_Ms.png", bbox_inches='tight', dpi=300)
+        
+    backend = plt.get_backend()
+    if "inline" not in backend.lower():
+        plt.show()
+    else:
+        plt.ioff()
+    plt.close()
 
     # Plot scatter of Ms vs. ratio 
     plt.figure(figsize=(6, 4))
@@ -147,6 +152,12 @@ def compute_and_plot_Mr_over_Ms(Ms_values, Mr_values, A_values, K_values, save_p
     plt.tight_layout()
     if save_path:
         plt.savefig(f"{save_path}/Mr_over_Ms_soft.png", bbox_inches='tight', dpi=300)
+    backend = plt.get_backend()
+    if "inline" not in backend.lower():
+        plt.show()
+    else:
+        plt.ioff()
+    plt.close()
         
     return ratio, ratio_min, ratio_max
 
@@ -288,7 +299,13 @@ def preprocess_data(
             axes[i, j].set_ylabel(out)
 
     plt.tight_layout()
-
+    
+    backend = plt.get_backend()
+    if "inline" not in backend.lower():
+        plt.show()
+    else:
+        plt.ioff()
+    plt.close()
 
     # 5. Prepare X and y
     X = df[input_columns]
@@ -297,4 +314,3 @@ def preprocess_data(
     #print("Y.shape: ",y.shape)
 
     return X, y
-

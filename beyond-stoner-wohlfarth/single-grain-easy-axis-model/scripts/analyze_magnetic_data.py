@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-import pandas as pd
 import sys
 import os
 
@@ -8,6 +6,7 @@ import mammos_units as u
 
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from src.utils.data_preprocessing import preprocess_data, analyze_dataframe, compute_and_plot_Mr_over_Ms
 from src.utils.plot_utils import plot_3d_parameter_space
 from src.utils.clustering_hardsoft import threshold_clustering, kmeans_clustering
@@ -129,3 +128,6 @@ def analyze_magnetic_data(data_path=None):
     print("Number of hard magnets: ", (df_kmeans['Clusters_KMeans'] == 1).sum())
 
     print("\nAnalysis complete. Please check the plots directory for visualizations.")
+
+if __name__ == "__main__":
+    analyze_magnetic_data()

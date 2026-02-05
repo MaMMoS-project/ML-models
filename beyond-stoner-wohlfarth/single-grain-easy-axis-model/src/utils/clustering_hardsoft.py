@@ -66,9 +66,14 @@ def threshold_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)', threshold=0.6
     
     if save_path:
         plt.savefig(f"{save_path}/threshold_clustering.png", bbox_inches='tight', dpi=300)
-    plt.show()
-    plt.close()
-    
+        
+    backend = plt.get_backend()  
+    if "inline" not in backend.lower():
+        plt.show()
+    else:
+        plt.ioff()
+    plt.close()    
+        
     return df_clustered
 
 def get_hard_soft_clusters(df: pd.DataFrame, method: str = 'kmeans', **kwargs) -> Dict[str, pd.DataFrame]:
@@ -154,6 +159,8 @@ def kmeans_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)', save_path=None):
     else:
         df_clustered.insert(len(df_clustered.columns), "Clusters_KMeans", clusters)
     
+    backend = plt.get_backend()
+    
     # Plot the results
     plt.figure(figsize=(10, 6))
     plt.scatter(df[Ms_col][clusters == 0], ratio[clusters == 0], 
@@ -173,7 +180,8 @@ def kmeans_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)', save_path=None):
     
     if save_path:
         plt.savefig(f"{save_path}/kmeans_clustering.png", bbox_inches='tight', dpi=300)
-        
-    plt.show()
+    
+    if "inline" not in backend.lower():
+        plt.show()
     plt.close()
     return df_clustered
