@@ -59,7 +59,7 @@ OUTPUT:
 
 ## Results
 
-### Metrics for the investigated models for the target Hc
+### Metrics for target Hc
 | Model | Soft Train              | Soft Test                | Hard Train              | Hard Test               |
 | ----- | ----------------------- | ------------------------ | ----------------------- | ----------------------- |
 | LR    | MSE: 0.245<br>R²: 0.633 | MSE: 0.282<br>R²: 0.0729 | MSE: 0.122<br>R²: 0.910 | MSE: 0.121<br>R²: 0.923 |
@@ -68,7 +68,7 @@ OUTPUT:
 | GP    | MSE: 0.000<br>R²: 0.999 | MSE: 0.139<br>R²: 0.862  | MSE: 0.000<br>R²: 0.999 | MSE: 0.045<br>R²: 0.971 |
 | FCNN  | MSE: 0.200<br>R²: 0.699 | MSE: 0.368<br>R²: 0.647  | MSE: 0.043<br>R²: 0.968 | MSE: 0.057<br>R²: 0.944 |
 
-### Metrics for the investigated models for the target Mr
+### Metrics for target Mr
 
 | Model | Soft Train              | Soft Test               | Hard Train               | Hard Test               |
 | ----- | ----------------------- | ----------------------- | ------------------------ | ----------------------- |
@@ -78,7 +78,7 @@ OUTPUT:
 | GP    | MSE: 0.000<br>R²: 0.999 | MSE: 0.622<br>R²: 0.723 | MSE: 0.000<br>R²: 0.999  | MSE: 0.072<br>R²: 0.802 |
 | FCNN  | MSE: 0.464<br>R²: 0.540 | MSE: 1.360<br>R²: 0.393 | MSE: 0.014<br>R²: 0.950  | MSE: 0.088<br>R²: 0.770 |
 
-### Metrics for the investigated models for the target (BH)max
+### Metrics for target (BH)max
 
 | Model | Soft Train              | Soft Test                | Hard Train                | Hard Test                 |
 | ----- | ----------------------- | ------------------------ | ------------------------- | ------------------------- |
