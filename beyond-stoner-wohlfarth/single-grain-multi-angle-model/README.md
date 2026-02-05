@@ -9,10 +9,12 @@ Use requirements.txt. In addition pytorch, compatible with your system, must be 
 
 
 
-# 1. data preprocessing
+# 1. Data preprocessing
 
 run:
+```
 PYTHONPATH=$PYTHONPATH:$(pwd) python3.13 scripts/analyze_magnetic_data.py
+```
 
 NEEDS:
 - ./data/mumax3_mindrive_cube_all_params.csv
@@ -28,9 +30,11 @@ NEEDS:
 
 
 
-# 2. training of models
+# 2. Model Training
 run:
-PYTHONPATH=$PYTHONPATH:$(pwd) python3.13 scripts/train_model.py   --config config/ml_config_test.yaml
+```
+PYTHONPATH=$PYTHONPATH:$(pwd) python3.13 scripts/train_model.py --config config/ml_config_test.yaml
+```
 
 NEEDS:
 - ./data/magnetic_materials.csv
@@ -42,9 +46,12 @@ OUTPUT:
 - ./results/plots
 - ./results/overall_results.json
 
-# 3. plots of metrics
+# 3. Metric
 run:
+
+```
 PYTHONPATH=$PYTHONPATH:$(pwd) python3.13 scripts/plot_metrics.py results
+```
 
 NEEDS:
 - ./results of 2.
