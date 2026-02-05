@@ -1,4 +1,4 @@
 exp-sim-hc/
 */.ipynb_checkpoints
 plots/
-*/__pycache__
+*/__pycache__/
