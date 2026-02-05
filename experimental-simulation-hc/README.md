@@ -1,4 +1,4 @@
-# Experimental-Simulation-Hc
+# Error Correction Model - Experimental-Simulation-Hc
 
 ML models for predicting differences between experimentally measured and simulated
 coercivity field Hc
