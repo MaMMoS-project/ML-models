@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import pandas as pd
 import sys
 import os
@@ -15,17 +14,23 @@ from src.utils.plot_utils import plot_3d_parameter_space
 #from src.utils.clustering_hardsoft import threshold_clustering, kmeans_clustering
 #from src.utils.supervised_clustering import supervised_clustering
 
-def analyze_magnetic_data():
+def analyze_magnetic_data(data_path=None):
     
     # Create plots directory 
     plots_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'plots')
     os.makedirs(plots_dir, exist_ok=True)
 
+    # Read the input file with mammos reader. BUT do NOT (yet)use the entities for simplicity
+    if data_path != None:
+        content_minidrive = me.io.entities_from_csv(f"{data_path}mumax3_mindrive_cube_all_params.csv")
+        content_relaxdriver = me.io.entities_from_csv(f"{data_path}mumax3_relaxdriver_cube_all_params.csv")       
     
-    # TODO: add below 2 linea as args to read 
-    #Read the input file with mammos reader. BUT do NOT (yet)use the entities for simplicity
-    content_minidrive = me.io.entities_from_csv("./data/mumax3_mindrive_cube_all_params.csv")
-    content_relaxdriver = me.io.entities_from_csv("./data/mumax3_relaxdriver_cube_all_params.csv")
+    else:
+        content_minidrive = me.io.entities_from_csv("./data/mumax3_mindrive_cube_all_params.csv")
+        content_relaxdriver = me.io.entities_from_csv("./data/mumax3_relaxdriver_cube_all_params.csv")
+        
+    # create procesed data dir
+    os.mkdir('./data/processed/')
 
     df_minidrive = content_minidrive.to_dataframe(include_units=False)
     df_relaxdriver = content_relaxdriver.to_dataframe(include_units=False)
@@ -94,3 +99,6 @@ def analyze_magnetic_data():
     plot_3d_parameter_space(df, x_col='Ms (A/m)', y_col='A (J/m)', z_col='K (J/m^3)', save_path=plots_dir)
 
     print("\nAnalysis complete. Please check the plots directory for visualizations.")
+    
+if __name__ == "__main__":
+    analyze_magnetic_data()
