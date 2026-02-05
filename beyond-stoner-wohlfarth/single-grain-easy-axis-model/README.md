@@ -6,7 +6,7 @@ v0.1
 
 
 ## 0. Installation
-Use requirements.txt. In addition pytorch, compatible with your system, must be installed
+Use requirements.txt. In addition pytorch, compatible with your system, must be installed.
 
 ## Training data generation
 
@@ -20,7 +20,10 @@ The generation of the training data and details on the simulation software and m
 ## 1. Data preprocessing
 
 run:
+
+```
 PYTHONPATH=$PYTHONPATH:$(pwd) python3.13 scripts/analyze_magnetic_data.py
+```
 
 NEEDS:
 - ./data/magnetic_materials.csv
@@ -34,7 +37,10 @@ OUTPUT:
 
 ## 2. Model Training
 run:
+
+```
 PYTHONPATH=$PYTHONPATH:$(pwd) python3.13 scripts/train_model.py   --config config/ml_config_test.yaml
+```
 
 NEEDS:
 - ./data/magnetic_materials.csv
@@ -48,7 +54,10 @@ OUTPUT:
 
 ## 3. Metric Plots
 run:
+
+```
 PYTHONPATH=$PYTHONPATH:$(pwd) python3.13 scripts/plot_metrics.py results
+```
 
 NEEDS:
 - ./results of 2.
