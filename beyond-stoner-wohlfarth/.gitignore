@@ -3,3 +3,6 @@
 */*/*-checkpoint.py
 */plots/
 bs-models/
+*/*/metric_tables/
+*/*/models/
+*/*/plots/
