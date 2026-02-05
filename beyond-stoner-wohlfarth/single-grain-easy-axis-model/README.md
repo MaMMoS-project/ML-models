@@ -17,7 +17,7 @@ Use requirements.txt. In addition pytorch, compatible with your system, must be 
 
 The generation of the training data and details on the simulation software and method are [described in data-generation](data-generation/README.md).
 
-## 1. data preprocessing
+## 1. Data preprocessing
 
 run:
 PYTHONPATH=$PYTHONPATH:$(pwd) python3.13 scripts/analyze_magnetic_data.py
@@ -32,7 +32,7 @@ OUTPUT:
 - ./plots/supervised_clustering_pipeline.joblib
 - ./plots/supervised_metrics.txt
 
-## 2. training of models
+## 2. Model Training
 run:
 PYTHONPATH=$PYTHONPATH:$(pwd) python3.13 scripts/train_model.py   --config config/ml_config_test.yaml
 
@@ -46,7 +46,7 @@ OUTPUT:
 - ./results/plots
 - ./results/overall_results.json
 
-## 3. plots of metrics
+## 3. Metric Plots
 run:
 PYTHONPATH=$PYTHONPATH:$(pwd) python3.13 scripts/plot_metrics.py results
 
