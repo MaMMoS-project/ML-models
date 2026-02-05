@@ -1,5 +1,6 @@
 */*/*.png
 */*/__pycache__/
+*/*/*/__pycache__/
 */*/*-checkpoint.py
 */plots/
 bs-models/
