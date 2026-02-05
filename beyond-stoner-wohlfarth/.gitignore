@@ -3,7 +3,8 @@
 */*/*/__pycache__/
 */*/*-checkpoint.py
 */plots/
-bs-models/
+bsw-models/
 */*/metric_tables/
 */*/models/
 */*/plots/
+*/*/processed/

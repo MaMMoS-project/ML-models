@@ -331,7 +331,11 @@ def plot_predictions_with_metrics_row_confidence(
         ax_test.legend(loc='lower right')
     
     plt.tight_layout()
-
-
-
-
+    
+    backend = plt.get_backend()
+    if "inline" not in backend.lower():
+        plt.show()
+    else:
+        plt.ioff()
+    plt.close(fig)
+    plt.close()

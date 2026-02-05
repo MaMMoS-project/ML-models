@@ -30,7 +30,7 @@ def analyze_magnetic_data(data_path=None):
         content_relaxdriver = me.io.entities_from_csv("./data/mumax3_relaxdriver_cube_all_params.csv")
         
     # create procesed data dir
-    os.mkdir('./data/processed/')
+    os.makedirs('./data/processed/', exist_ok=True)
 
     df_minidrive = content_minidrive.to_dataframe(include_units=False)
     df_relaxdriver = content_relaxdriver.to_dataframe(include_units=False)

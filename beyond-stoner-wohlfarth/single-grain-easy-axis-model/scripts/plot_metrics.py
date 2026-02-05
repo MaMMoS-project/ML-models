@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 Script to visualize metrics from overall_results.json files.
 Creates tables for each dataset and model, highlighting the best metrics.
@@ -404,6 +403,7 @@ def create_metrics_plot(df, dataset, variable_name, output_path, higher_better, 
 
 
 def main():
+    
     parser = argparse.ArgumentParser(description="Generate metric tables from overall_results.json")
     parser.add_argument("results_dir", help="Directory containing overall_results.json")
     parser.add_argument("--output", "-o", default=None, 
@@ -421,7 +421,7 @@ def main():
             output_path = results_path / "metric_tables"
         else:
             output_path = Path(args.output)
-        
+         
         # Create output directory
         output_path.mkdir(parents=True, exist_ok=True)
         
@@ -432,6 +432,7 @@ def main():
         create_metric_tables(results, output_path)
         
         print(f"Tables and plots generated successfully in {output_path}")
+        plt.close()
         
     except Exception as e:
         print(f"Error: {e}")
