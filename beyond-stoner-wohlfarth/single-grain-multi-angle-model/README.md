@@ -68,4 +68,4 @@ For all three targets, the RF models does not show strong over fitting and the p
 
 
 # 4.1 Feature Importance
-![alt text](/results/plots/feature_importance_LogTransformation_all_standard.png)
+![Feature importance – log transformation](/results/plots/feature_importance_LogTransformation_all_standard.png)
