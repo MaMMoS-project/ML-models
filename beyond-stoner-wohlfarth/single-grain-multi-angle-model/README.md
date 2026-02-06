@@ -62,10 +62,10 @@ OUTPUT:
 
 # 4. Best Model
 
-[TODO: add table]
+[TODO: add tables]
 
 For all three targets, the RF models does not show strong over fitting and the performance is the best.
 
 
 # 4.1 Feature Importance
-![Feature importance – log transformation](/results/plots/feature_importance_LogTransformation_all_standard.png)
+![Feature importance – log transformation](results/plots/feature_importance_LogTransformation_all_standard.png)
