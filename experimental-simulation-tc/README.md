@@ -14,7 +14,7 @@ Use requirements.txt. In addition pytorch, compatible with your system, must be 
 
 Run:
 ```
-PYTHONPATH=$PYTHONPATH:$(pwd) python3.13 src/augment_data.py
+python3 src/augment_data.py
 ```
 
 NEEDS:
@@ -44,7 +44,7 @@ OUTPUT:
 Run:
 
 ```
-PYTHONPATH=$PYTHONPATH:$(pwd) python3.13 src/create_embeddings.py 
+python3 src/create_embeddings.py 
 ```
 
 NEEDS:
@@ -73,7 +73,7 @@ OUTPUT:
 Run:
 
 ```
-PYTHONPATH=$PYTHONPATH:$(pwd) python3.13 src/compress_embedding_PCA.py
+python3 src/compress_embedding_PCA.py
 ```
 
 NEEDS:
@@ -91,7 +91,7 @@ OUTPUT:
 
 Run:
 ```
-PYTHONPATH=$PYTHONPATH:$(pwd) python3.13 src/training_original.py
+python3 src/training_original.py
 ```
 
 NEEDS:
@@ -114,7 +114,7 @@ OUTPUT:
 Run:
 
 ```
-PYTHONPATH=$PYTHONPATH:$(pwd) python3.13 src/training_original_emb.py
+python3 src/training_original_emb.py
 ```
 
 NEEDS:
@@ -141,8 +141,9 @@ OUTPUT:
 ## 4.3 Augmented dataset
 
 Run:
+
 ```
-PYTHONPATH=$PYTHONPATH:$(pwd) python3.13 src/training_augmented.py
+python3 src/training_augmented.py
 ```
 
 NEEDS:
@@ -169,7 +170,7 @@ OUTPUT:
 
 Run:
 ```
-PYTHONPATH=$PYTHONPATH:$(pwd) python3.13 src/training_augmented_emb.py
+python3 src/training_augmented_emb.py
 ```
 
 NEEDS:
