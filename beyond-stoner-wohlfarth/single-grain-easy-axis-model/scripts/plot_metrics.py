@@ -393,12 +393,15 @@ def create_metrics_plot(df, dataset, variable_name, output_path, higher_better, 
     safe_variable = sanitize_filename(variable_name)
     fig_path = output_path / f"{safe_dataset}_{safe_variable}_metrics.png"
     plt.savefig(fig_path, dpi=150, bbox_inches='tight')
+    
+    
     if "inline" not in backend.lower():
         plt.show()
     else:
         plt.ioff()
     plt.close(fig)
     plt.close()
+
     print(f"    Saved metrics plot to {fig_path}")
 
 

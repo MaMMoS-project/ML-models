@@ -54,7 +54,8 @@ def supervised_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)',
         DataFrame with added 'Clusters_Supervised' column (0: soft, 1: hard)
     """
     # First get threshold clustering labels
-    df_threshold = threshold_clustering(df, Ms_col=Ms_col, Mr_col=Mr_col, save_path=None)
+    df_threshold = threshold_clustering(df, Ms_col=Ms_col, Mr_col=Mr_col, save_path=save_path)
+    
     y = df_threshold['Clusters'].values
     
     # Compute Mr/Ms ratio
@@ -89,15 +90,14 @@ def supervised_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)',
     print(f"Precision: {precision_score(y_test, y_test_pred, zero_division=0):.4f}")
     print(f"Recall: {recall_score(y_test, y_test_pred):.4f}")
     print(f"F1 Score: {f1_score(y_test, y_test_pred):.4f}")
-    
+
     # Print classification report
     print("\nClassification Report:")
     print(classification_report(y_test, y_test_pred, target_names=['Soft', 'Hard']))
     
     # Create confusion matrix
     cm = confusion_matrix(y_test, y_test_pred)
-    
-    backend = plt.get_backend()
+
     plt.figure(figsize=(8, 6))
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
                 xticklabels=['Soft', 'Hard'], 
@@ -106,11 +106,13 @@ def supervised_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)',
     plt.ylabel('True')
     plt.title('Confusion Matrix')
     
-    if save_path:
+    if (save_path is not None):
         plt.savefig(f"{save_path}/supervised_confusion_matrix.png", bbox_inches='tight', dpi=300)
+        plt.ioff()
         
-    if "inline" not in backend.lower():
+    else:
         plt.show()
+        
     plt.close()
     
     # Make predictions on the entire dataset
@@ -126,7 +128,6 @@ def supervised_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)',
         df_clustered['Clusters_Supervised'] = y_pred
     else:
         df_clustered.insert(len(df_clustered.columns), "Clusters_Supervised", y_pred)    
-        
  
     # Plot the results
     plt.figure(figsize=(10, 6))
@@ -142,11 +143,12 @@ def supervised_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)',
     
 
     # 11) Save artifacts
-    if save_path:
+    if (save_path is not None):
+        
         os.makedirs(save_path, exist_ok=True)
 
         plt.savefig(f"{save_path}/supervised_clustering.png", bbox_inches='tight', dpi=300)
-        plt.close()
+        plt.ioff()
 
         # Save pipeline (recommended with joblib)
         pipe_path = f"{save_path}/supervised_clustering_pipeline.joblib"
@@ -176,6 +178,10 @@ def supervised_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)',
             f.write(classification_report(y_test, y_test_pred, target_names=['Soft', 'Hard']))
         print(f"Metrics saved to {metrics_path}")
     
+    else:
+        plt.show()
+    
+    plt.close()
     return df_clustered
 
 
@@ -248,11 +254,12 @@ def apply_supervised_clustering(df, model_path=None,
     
 
     # Plot the results if save_path is provided and Mr column is there
-    if save_path:
+    if (save_path is not None):
+        
         # Compute Mr/Ms ratio for plotting
         ratio = np.divide(df['Mr (A/m)'], df['Ms (A/m)'], 
-                     out=np.zeros_like(df['Mr (A/m)'], dtype=float), 
-                     where=df['Ms (A/m)']!=0)
+                          out=np.zeros_like(df['Mr (A/m)'], dtype=float), 
+                          where=df['Ms (A/m)']!=0)
 
         plt.figure(figsize=(10, 6))
         plt.scatter(df[input_cols[0]][y_pred == 0], ratio[y_pred == 0], 
@@ -266,6 +273,11 @@ def apply_supervised_clustering(df, model_path=None,
         plt.legend()
         
         plt.savefig(f"{save_path}/supervised_clustering_inference.png", bbox_inches='tight', dpi=300)
-        plt.close()
+        plt.ioff()
+        
+    else:
+        plt.show()
+        
+    plt.close()
     
     return df_clustered

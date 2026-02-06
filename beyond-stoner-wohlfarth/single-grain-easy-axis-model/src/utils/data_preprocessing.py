@@ -131,14 +131,14 @@ def compute_and_plot_Mr_over_Ms(Ms_values, Mr_values, A_values, K_values, save_p
     plt.title('Scatter Plot of Mr/Ms vs. Ms')
     plt.legend()
     plt.tight_layout()
-    if save_path:
+    
+    if (save_path is not None):
         plt.savefig(f"{save_path}/Mr_over_Ms.png", bbox_inches='tight', dpi=300)
-        
-    backend = plt.get_backend()
-    if "inline" not in backend.lower():
-        plt.show()
-    else:
         plt.ioff()
+        
+    else:
+        plt.show()
+    
     plt.close()
 
     # Plot scatter of Ms vs. ratio 
@@ -150,13 +150,14 @@ def compute_and_plot_Mr_over_Ms(Ms_values, Mr_values, A_values, K_values, save_p
     plt.title('Scatter Plot of Mr/Ms vs. Ms')
     plt.legend()
     plt.tight_layout()
-    if save_path:
+    
+    if (save_path is not None):
         plt.savefig(f"{save_path}/Mr_over_Ms_soft.png", bbox_inches='tight', dpi=300)
-    backend = plt.get_backend()
-    if "inline" not in backend.lower():
-        plt.show()
-    else:
         plt.ioff()
+    
+    else:
+        plt.show()
+
     plt.close()
         
     return ratio, ratio_min, ratio_max
@@ -299,13 +300,6 @@ def preprocess_data(
             axes[i, j].set_ylabel(out)
 
     plt.tight_layout()
-    
-    backend = plt.get_backend()
-    if "inline" not in backend.lower():
-        plt.show()
-    else:
-        plt.ioff()
-    plt.close()
 
     # 5. Prepare X and y
     X = df[input_columns]

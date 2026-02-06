@@ -64,14 +64,13 @@ def threshold_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)', threshold=0.6
     plt.title('Threshold-based Clustering of Magnetic Materials')
     plt.legend()
     
-    if save_path:
+    if (save_path is not None):
         plt.savefig(f"{save_path}/threshold_clustering.png", bbox_inches='tight', dpi=300)
-        
-    backend = plt.get_backend()  
-    if "inline" not in backend.lower():
-        plt.show()
-    else:
         plt.ioff()
+        
+    else:
+        plt.show()
+        
     plt.close()    
         
     return df_clustered
@@ -159,8 +158,6 @@ def kmeans_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)', save_path=None):
     else:
         df_clustered.insert(len(df_clustered.columns), "Clusters_KMeans", clusters)
     
-    backend = plt.get_backend()
-    
     # Plot the results
     plt.figure(figsize=(10, 6))
     plt.scatter(df[Ms_col][clusters == 0], ratio[clusters == 0], 
@@ -178,10 +175,11 @@ def kmeans_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)', save_path=None):
     plt.title('K-means Clustering of Magnetic Materials')
     plt.legend()
     
-    if save_path:
+    if (save_path is not None):
         plt.savefig(f"{save_path}/kmeans_clustering.png", bbox_inches='tight', dpi=300)
     
-    if "inline" not in backend.lower():
+    else:
         plt.show()
+        
     plt.close()
     return df_clustered

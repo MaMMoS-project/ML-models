@@ -20,10 +20,10 @@ def analyze_magnetic_data(data_path=None):
 
     if data_path is None:
         # Read the input file with mammos reader. BUT do NOT (yet)use the entities for simplicity
-        content = me.io.entities_from_csv("./data/magnetic_materials.csv")
+        content = me.io.entities_from_file("./data/magnetic_materials.csv")
         
     else:
-        content = me.io.entities_from_csv(data_path)
+        content = me.io.entities_from_file(data_path)
 
     df = content.to_dataframe(include_units=False)
     df = df.rename(columns={"Ms": "Ms (A/m)", "A": "A (J/m)", "K1": "K (J/m^3)", "Hc": "Hc (A/m)", "Mr": "Mr (A/m)", "BHmax": "BHmax (J/m^3)"})
@@ -65,7 +65,7 @@ def analyze_magnetic_data(data_path=None):
         apply_log_transform=True,
         save_path=plots_dir
     )
-
+    
     # 3. Log transform excluding Ms and Mr
     X_processed_log_noM, y_processed_log_noM = preprocess_data(
         df,
@@ -105,18 +105,20 @@ def analyze_magnetic_data(data_path=None):
 
     # Plot 3D parameter space
     plot_3d_parameter_space(df, x_col='Ms (A/m)', y_col='A (J/m)', z_col='K (J/m^3)', save_path=plots_dir)
-
+    
     # Perform clustering analysis
     print("\nPerforming clustering analysis...")
 
     # Threshold-based clustering
     df_threshold = threshold_clustering(df, save_path=plots_dir)
+
     print("\nThreshold clustering results:")
     print("Number of soft magnets: ", (df_threshold['Clusters'] == 0).sum())
     print("Number of hard magnets: ", (df_threshold['Clusters'] == 1).sum())
 
     # Supervised clustering
     df_supervised = supervised_clustering(df, save_path=plots_dir)
+
     print("\nSupervised clustering results:")
     print("Number of soft magnets: ", (df_supervised['Clusters_Supervised'] == 0).sum())
     print("Number of hard magnets: ", (df_supervised['Clusters_Supervised'] == 1).sum())
@@ -126,7 +128,6 @@ def analyze_magnetic_data(data_path=None):
     print("\nK-means clustering results:")
     print("Number of soft magnets: ", (df_kmeans['Clusters_KMeans'] == 0).sum())
     print("Number of hard magnets: ", (df_kmeans['Clusters_KMeans'] == 1).sum())
-
     print("\nAnalysis complete. Please check the plots directory for visualizations.")
 
 if __name__ == "__main__":

@@ -19,10 +19,10 @@ The generation of the training data and details on the simulation software and m
 
 ## 1. Data preprocessing
 
-run:
+Run:
 
 ```
-PYTHONPATH=$PYTHONPATH:$(pwd) python3.13 scripts/analyze_magnetic_data.py
+python3 scripts/analyze_magnetic_data.py
 ```
 
 NEEDS:
@@ -36,10 +36,10 @@ OUTPUT:
 - ./plots/supervised_metrics.txt
 
 ## 2. Model Training
-run:
+Run:
 
 ```
-PYTHONPATH=$PYTHONPATH:$(pwd) python3.13 scripts/train_model.py   --config config/ml_config_test.yaml
+python3 scripts/train_model.py   --config config/ml_config_test.yaml
 ```
 
 NEEDS:
@@ -53,10 +53,10 @@ OUTPUT:
 - ./results/overall_results.json
 
 ## 3. Metric Plots
-run:
+Run:
 
 ```
-PYTHONPATH=$PYTHONPATH:$(pwd) python3.13 scripts/plot_metrics.py results
+python3 scripts/plot_metrics.py results
 ```
 
 NEEDS:
