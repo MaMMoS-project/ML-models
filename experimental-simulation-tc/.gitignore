@@ -2,7 +2,8 @@ artifacts/
 data/*.csv
 outputs/
 */__pycache__
-mammos-ms/
 */*/__pycache__
+mammos-ms/
 */.ipynb_checkpoints
 */*/.ipynb_checkpoints
+exp-sim-tc/
