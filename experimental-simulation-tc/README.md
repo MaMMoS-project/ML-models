@@ -11,7 +11,7 @@ Use requirements.txt. In addition pytorch, compatible with your system, must be 
 
 ## 1. Data augmentation
 
-run:
+Run:
 ```
 PYTHONPATH=$PYTHONPATH:$(pwd) python3.13 src/augment_data.py
 ```
@@ -69,7 +69,7 @@ OUTPUT:
 ```
 
 ## 3. compress embeddings with PCA
-run:
+Run:
 
 ```
 PYTHONPATH=$PYTHONPATH:$(pwd) python3.13 src/compress_embedding_PCA.py
@@ -88,7 +88,7 @@ OUTPUT:
 
 ## 4.1 orginal dataset
 
-run:
+Run:
 ```
 PYTHONPATH=$PYTHONPATH:$(pwd) python3.13 src/training_original.py
 ```
@@ -110,7 +110,7 @@ OUTPUT:
 
 ## 4.2 orginal dataset with embedding
 
-run:
+Run:
 
 ```
 PYTHONPATH=$PYTHONPATH:$(pwd) python3.13 src/training_original_emb.py
@@ -139,7 +139,7 @@ OUTPUT:
 
 ## 4.3 Augmented dataset
 
-run:
+Run:
 ```
 PYTHONPATH=$PYTHONPATH:$(pwd) python3.13 src/training_augmented.py
 ```
@@ -166,7 +166,7 @@ OUTPUT:
 
 ## 4.4 Augmented dataset with stoichiometry embedding
 
-run:
+Run:
 ```
 PYTHONPATH=$PYTHONPATH:$(pwd) python3.13 src/training_augmented_emb.py
 ```
