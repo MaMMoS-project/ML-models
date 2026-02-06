@@ -221,7 +221,7 @@ def plot_delta_Hc(df, out_folder=None):
         fig_filename = '/'.join([out_folder, 'deltaHc.png'])
         os.makedirs(out_folder, exist_ok=True)
         plt.savefig(fig_filename, dpi=300, bbox_inches='tight')
-        plt.show()
+        plt.ioff()
     else:
         plt.show()
     
@@ -295,7 +295,8 @@ def plot_ce_nd_content(df, out_folder):
         fig_filename = '/'.join([out_folder, 'ce_nd_content.png'])
         os.makedirs(out_folder, exist_ok=True)
         plt.savefig(fig_filename, dpi=300, bbox_inches='tight')
-        plt.show()
+        plt.ioff()
+        
     else:
         plt.show()
     
@@ -335,7 +336,8 @@ def plot_height(df, out_folder):
         fig_filename = '/'.join([out_folder, 'height.png'])
         os.makedirs(out_folder, exist_ok=True)
         plt.savefig(fig_filename, dpi=300, bbox_inches='tight')
-        plt.show()
+        plt.ioff()
+        
     else:
         plt.show()
 
@@ -509,8 +511,12 @@ def run_linear_model(x,
                                     ])
             os.makedirs(out_folder, exist_ok=True)
             plt.savefig(fig_filename, dpi=300, bbox_inches='tight')
+            plt.ioff()
+            
         else:
             plt.show()
+        
+        plt.close()
    
     
     n_covariates = len(x)
