@@ -71,7 +71,7 @@ OUTPUT:
 - stdout
 - ./outputs/*embeddings_PCA.pkl
 
-## 4. training of models
+## 4. Model Training
 
 ## 4.1 orginal dataset
 
@@ -116,7 +116,7 @@ OUTPUT:
 - ./results/figures/RE_Pairs_[model]_[None|pca_*].png
 
 
-## 4.3 augmented dataset
+## 4.3 Augmented dataset
 
 run:
 PYTHONPATH=$PYTHONPATH:$(pwd) python3.13 src/training_augmented.py
@@ -140,7 +140,7 @@ OUTPUT:
 
 
 
-## 4.4 augmeted dataset with embedding
+## 4.4 Augmented dataset with stoichiometry embedding
 
 run:
 PYTHONPATH=$PYTHONPATH:$(pwd) python3.13 src/training_augmented_emb.py
