@@ -39,7 +39,7 @@ OUTPUT:
 - ./outputs/distribution_plots/*.png
 ```
 
-## 2. creation of embeddings
+## 2. Creation of embeddings
 Run:
 
 ```
@@ -68,7 +68,7 @@ OUTPUT:
 - ./outputs/*embeddings.pkl
 ```
 
-## 3. compress embeddings with PCA
+## 3. Compress embeddings with PCA
 Run:
 
 ```
@@ -86,7 +86,7 @@ OUTPUT:
 
 ## 4. Model Training
 
-## 4.1 orginal dataset
+## 4.1 Orginal dataset
 
 Run:
 ```
@@ -108,7 +108,7 @@ OUTPUT:
 - ./results/original_comparision/*.csv
 ```
 
-## 4.2 orginal dataset with embedding
+## 4.2 Orginal dataset with stoichiometric embedding
 
 Run:
 
