@@ -1,11 +1,11 @@
-# Error Correction Model - Experimental-Simulation-Hc
+# Error Correction Model - Experimental-Simulated-Hc
 
 ML models for predicting differences between experimentally measured and simulated
 coercivity field Hc
 
 ## How to run the code
 
-Prerequisites: Python >= 3.10.9 < 3.13, numpy >= 1.23.5, pandas >= 1.5.3, sklearn 1.2.2, matplotlib >= 3.7.0.
+Prerequisites: Python >= 3.10.9 < 3.13, numpy >= 1.23.5, pandas >= 1.5.3, sklearn 1.2.2, matplotlib >= 3.7.0. (see requirements.txt). Run:
 
 ```
 python src/neel_data_analysis.py
