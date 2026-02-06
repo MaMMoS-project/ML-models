@@ -134,9 +134,9 @@ python src/post_process_results.py --dir "artifacts/"
 ```
 
 
-## 📊 Model Performance Comparison
+##  📈 Model Performance Comparison
 
-### 📊 Metric Results on Log-Transformed Data
+### Metric Results on Log-Transformed Data
 
 This table summarizes the performance of different models across multiple datasets, comparing results **with and without structural embeddings** (from composition). All metrics are computed on **log-transformed spontaneous magnetization (Ms)** values.
 
