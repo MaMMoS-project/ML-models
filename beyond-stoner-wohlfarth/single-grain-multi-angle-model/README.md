@@ -28,7 +28,6 @@ NEEDS:
 - ./data/magnetic_materials.csv
 
 
-
 # 2. Model Training
 Run:
 
@@ -59,3 +58,14 @@ NEEDS:
 OUTPUT:
 - stdout
 - ./results/metrics_tables
+
+
+# 4. Best Model
+
+[TODO: add table]
+
+For all three targets, the RF models does not show strong over fitting and the performance is the best.
+
+
+# 4.1 Feature Importance
+![alt text](results/plots/feature_importance_LogTransformation_all_standard.png)
