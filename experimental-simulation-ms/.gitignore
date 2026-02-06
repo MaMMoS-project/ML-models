@@ -1,4 +1,5 @@
 artifacts/
+data/*.csv
 outputs/
 */__pycache__
 mammos-ms/
