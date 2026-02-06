@@ -125,7 +125,7 @@ sbatch run_experiments_augmented_ms.sh
 
 ---
 
-## 📊 Post process results
+## 📊 Post-process results
 
 Post-process results and generate metric tables stored in respective experiment directory in the artifacts folder.
 
