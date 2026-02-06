@@ -243,4 +243,4 @@ def training_augmented():
 
 
 if __name__ == "__main__":
-    main()
+    training_augmented()

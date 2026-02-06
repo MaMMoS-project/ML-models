@@ -8,6 +8,7 @@ v0.1
 
 ## 0. Installation
 Use requirements.txt. In addition pytorch, compatible with your system, must be installed
+- PyTorch (version matching your hardware, see: https://pytorch.org/get-started/locally/)
 
 ## 1. Data augmentation
 
