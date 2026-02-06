@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import sklearn
 
 import pdb
-import src.ms_aux as ms_aux
+import ms_aux as ms_aux
 
 compound_column_name = 'compound'
 Ms_column_name = 'Ms (ampere/meter)'

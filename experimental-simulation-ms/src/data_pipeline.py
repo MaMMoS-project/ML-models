@@ -1,7 +1,7 @@
-from src.load_data import load_data
-from src.combine_dataframes import combine_dataframes
-from src.augment_data import augment_data_experimental
-from src.pre_process_data import create_pairwise_dataset, remove_small_ms_values
+from load_data import load_data
+from combine_dataframes import combine_dataframes
+from augment_data import augment_data_experimental
+from pre_process_data import create_pairwise_dataset, remove_small_ms_values
 
 # Plotting / visualizing
 import seaborn as sns

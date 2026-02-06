@@ -1,8 +1,8 @@
 import pandas as pd
 import numpy as np 
 
-from src.load_data import load_data
-import src.ms_aux as ms_aux
+from load_data import load_data
+import ms_aux as ms_aux
 
 import pdb
 import re
