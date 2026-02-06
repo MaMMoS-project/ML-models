@@ -9,7 +9,7 @@ v0.1
 ## 0. Installation
 Use requirements.txt. In addition pytorch, compatible with your system, must be installed
 
-## 1. data augmentation
+## 1. Data augmentation
 
 run:
 ```
