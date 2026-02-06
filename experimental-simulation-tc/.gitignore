@@ -8,3 +8,4 @@ mammos-ms/
 */__pycache__/
 */*/.ipynb_checkpoints
 exp-sim-tc/
+results/
