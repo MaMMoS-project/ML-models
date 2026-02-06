@@ -179,11 +179,10 @@ def plot_Hc_exp_and_calc(df, out_folder=None):
         fig_filename = '/'.join([out_folder, 'H_exp_sim.png'])
         os.makedirs(out_folder, exist_ok=True)
         plt.savefig(fig_filename, dpi=300)
-        plt.show()
+        plt.ioff()
         
     else:
         plt.show()
-    
     plt.close()
 
 # PLOT DELTA Hc
