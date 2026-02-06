@@ -1,6 +1,6 @@
 import pandas as pd
-import src.ms_aux as ms_aux
-import src.coercivity_ml as cml
+import ms_aux as ms_aux
+import coercivity_ml as cml
 
 def analyze_neel_data(DATA_FOLDER, PLOTS_FOLDER, fmdh_filename):
 
@@ -60,7 +60,7 @@ def analyze_neel_data(DATA_FOLDER, PLOTS_FOLDER, fmdh_filename):
                fmdh_df_valid['measured_height']
               ]
 
-    dep_var_delta = { 0 : ['$\Delta H_{c}$' , '(A/m)'] } # LABELS: dependent variable name (\Delta Hc) + unit of measure
+    dep_var_delta = { 0 : [r'$\Delta H_{c}$' , '(A/m)'] } # LABELS: dependent variable name (\Delta Hc) + unit of measure
 
     covariates_delta = { 0 : ["$H_{c}^{sim}$", '(A/m)'], # LABELS: covariates names + unit of measure
                          1 : ['$h$'          , '(nm)'] }
@@ -98,3 +98,13 @@ def analyze_neel_data(DATA_FOLDER, PLOTS_FOLDER, fmdh_filename):
                              dep_var_hc_exp ,
                              covariates_hc_exp,
                              out_folder = PLOTS_FOLDER)
+        
+if __name__ == '__main__':
+    
+    DATA_FOLDER = './data'
+    PLOTS_FOLDER = 'plots'
+    fmdh_filename = '/'.join([DATA_FOLDER, 'full_micromagnetic_with_height.csv'])
+    
+    analyze_neel_data(DATA_FOLDER=DATA_FOLDER,
+                      PLOTS_FOLDER=PLOTS_FOLDER,
+                      fmdh_filename=fmdh_filename)
