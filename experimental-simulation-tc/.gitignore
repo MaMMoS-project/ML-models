@@ -9,3 +9,4 @@ mammos-ms/
 */*/.ipynb_checkpoints
 exp-sim-tc/
 results/
+logs/
