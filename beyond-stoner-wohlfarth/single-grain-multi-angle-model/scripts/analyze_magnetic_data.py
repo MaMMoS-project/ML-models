@@ -7,13 +7,19 @@ import mammos_units as u
 import numpy as np
 
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.utils.data_preprocessing import preprocess_data, analyze_dataframe, compute_and_plot_Mr_over_Ms, make_reduced_dataset
 from src.utils.plot_utils import plot_3d_parameter_space
+from src.utils.log_to_file import log_output
 #from src.utils.clustering_hardsoft import threshold_clustering, kmeans_clustering
 #from src.utils.supervised_clustering import supervised_clustering
+# Create log directory 
 
+log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'logs')
+os.makedirs(log_dir, exist_ok=True)
+    
+@log_output('logs/pre_processing.txt')
 def analyze_magnetic_data(data_path=None):
     
     # Create plots directory 
@@ -22,12 +28,12 @@ def analyze_magnetic_data(data_path=None):
 
     # Read the input file with mammos reader. BUT do NOT (yet)use the entities for simplicity
     if data_path != None:
-        content_minidrive = me.io.entities_from_csv(f"{data_path}mumax3_mindrive_cube_all_params.csv")
-        content_relaxdriver = me.io.entities_from_csv(f"{data_path}mumax3_relaxdriver_cube_all_params.csv")       
+        content_minidrive = me.io.entities_from_file(f"{data_path}mumax3_mindrive_cube_all_params.csv")
+        content_relaxdriver = me.io.entities_from_file(f"{data_path}mumax3_relaxdriver_cube_all_params.csv")       
     
     else:
-        content_minidrive = me.io.entities_from_csv("./data/mumax3_mindrive_cube_all_params.csv")
-        content_relaxdriver = me.io.entities_from_csv("./data/mumax3_relaxdriver_cube_all_params.csv")
+        content_minidrive = me.io.entities_from_file("./data/mumax3_mindrive_cube_all_params.csv")
+        content_relaxdriver = me.io.entities_from_file("./data/mumax3_relaxdriver_cube_all_params.csv")
         
     # create procesed data dir
     os.makedirs('./data/processed/', exist_ok=True)

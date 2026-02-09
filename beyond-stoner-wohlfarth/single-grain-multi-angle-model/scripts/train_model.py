@@ -16,16 +16,17 @@ import pickle
 import torch
 
 # Add the src directory to the Python path
-src_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src'))
-sys.path.append(src_dir)
+# src_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src'))
+# sys.path.append(src_dir)
 
-from utils.data_preprocessing import preprocess_data
+from src.utils.data_preprocessing import preprocess_data
+from src.utils.log_to_file import log_output
 #from utils.clustering_hardsoft import get_hard_soft_clusters, threshold_clustering, kmeans_clustering
 #from utils.supervised_clustering import apply_supervised_clustering
-from utils.labels_preprocessing import add_magnetic_properties
-from models.evaluator import Evaluator
-from models.scalers import scale_data
-from models.train_rf import calculate_jackknife_variance
+from src.utils.labels_preprocessing import add_magnetic_properties
+from src.models.evaluator import Evaluator
+from src.models.scalers import scale_data
+from src.models.train_rf import calculate_jackknife_variance
 
 import mammos_entity as me
 import mammos_units as u
@@ -76,7 +77,7 @@ class MLPipeline:
         """Train and evaluate a specific model."""
         try:
             # Import model module
-            module = importlib.import_module(f"models.{model_config['module']}")
+            module = importlib.import_module(f"src.models.{model_config['module']}")
             train_func = getattr(module, model_config['function'])
             
             results = {}
@@ -152,7 +153,8 @@ class MLPipeline:
             import traceback
             traceback.print_exc()
             return None
-    
+        
+    @log_output('logs/run_ml_pipeline.txt')
     def run(self):
         """Run the complete pipeline."""
         # Create results directory
@@ -162,7 +164,7 @@ class MLPipeline:
         # Read the dataset
         try:
             #df = pd.read_csv(self.config['data']['input_file'])
-            content = me.io.entities_from_csv(self.config['data']['input_file'])
+            content = me.io.entities_from_file(self.config['data']['input_file'])
             df = content.to_dataframe(include_units=False)
             df = df.rename(columns={"Ms": "Ms (A/m)", "A": "A (J/m)", "K1": "K (J/m^3)", "Hc": "Hc (A/m)", "Mr": "Mr (A/m)", "BHmax": "BHmax (J/m^3)"})
             print(df.head())
