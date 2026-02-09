@@ -1,10 +1,9 @@
 import pandas as pd
-import ms_aux as ms_aux
-import coercivity_ml as cml
-
 import sys
 import os
-from log_to_file import log_output
+import src.ms_aux as ms_aux
+import src.coercivity_ml as cml
+from src.log_to_file import log_output
 
 log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'logs')
 os.makedirs(log_dir, exist_ok=True)
