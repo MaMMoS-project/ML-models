@@ -57,7 +57,7 @@ This step combines experimental and simulation data from different sources, filt
 The datasets are stored in data/data.tar.xz. You can extract them by running `tar -xJf data/data.tar.xz`.
 
 ```bash
-python src/data_pipeline.py --config configs/data_pipeline_ms.yml
+python -m src.data_pipeline --config configs/data_pipeline_ms.yml
 ```
 #### Output Files
 
@@ -82,29 +82,28 @@ Use the `--configdir` flag to specify different configuration files. Each config
 
 ```bash
 # Train scikit-learn models (Random Forest, Lasso, Ridge, Linear Regression)
-python src/run_experiments.py --configdir configs/scikit_models_config.yml
+python -m src.run_experiments --configdir configs/scikit_models_config.yml
 ```
 
 ```bash
 # Train symbolic regression model (performance baseline)
-python src/run_experiments.py --configdir configs/pysr_linear_models_config.yml
+python -m src.run_experiments --configdir configs/pysr_linear_models_config.yml
 ```
 
 ```bash
 # Train neural network (PyTorch)
-python src/run_experiments.py --configdir configs/pytorch_mlp_config.yml
+python -m src.run_experiments --configdir configs/pytorch_mlp_config.yml
 ```
 
 ```bash
 # Train scikit models with Mat200 embeddings (Random Forest, Lasso, Ridge, Linear Regression)
-python src/run_experiments.py --configdir configs/scikit_models_w_mat200_config.yml
+python -m src.run_experiments --configdir configs/scikit_models_w_mat200_config.yml
 ```
 
 ```bash
 # Train neural network models with Mat200 embeddings
-python src/run_experiments.py --configdir configs/pytorch_mlp_w_emb_config.yml
+python -m src.run_experiments --configdir configs/pytorch_mlp_w_emb_config.yml
 ```
-
 ---
 
 ### Option 2: Submit to Slurm (HPC)
