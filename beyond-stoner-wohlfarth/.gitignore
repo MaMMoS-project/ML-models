@@ -8,4 +8,5 @@ bsw-models/
 */*/models/
 */*/plots/
 */*/processed/
-*/results/
+*/results/*
+logs/
