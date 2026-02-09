@@ -9,7 +9,7 @@ log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 os.makedirs(log_dir, exist_ok=True)
     
 @log_output('logs/analyze_neel_data.txt')
-def analyze_neel_data(DATA_FOLDER, PLOTS_FOLDER, fmdh_filename):
+def analyze_neel_data(DATA_FOLDER, PLOTS_FOLDER=None, fmdh_filename=None):
 
     # SET DATA AND PLOT FOLDERS, SPECIFY CSV FILEPATH
     # DATA_FOLDER = '../data'
