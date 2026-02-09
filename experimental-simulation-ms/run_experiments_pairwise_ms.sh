@@ -27,29 +27,29 @@ echo "Activated Venv"
 # Execute python commands
 
 echo "Data pipeline ..."
-srun --cpu-bind=none python src/data_pipeline.py --configdir "configs/augment_data_ms.yml"
+srun --cpu-bind=none python -m src.data_pipeline --configdir "configs/augment_data_ms.yml"
 echo "Data pipeline Done!"
 
 echo "Run scikit experiments ..."
-srun --cpu-bind=none python src/run_experiments.py --configdir "configs/scikit_models_config.yml"
+srun --cpu-bind=none python -m src.run_experiments --configdir "configs/scikit_models_config.yml"
 echo "Finished with scikit."
 
 echo "Run scikit experiments with embeddings ..."
-srun --cpu-bind=none python src/run_experiments.py --configdir "configs/scikit_models_w_mat200_config.yml"
+srun --cpu-bind=none python -m src.run_experiments --configdir "configs/scikit_models_w_mat200_config.yml"
 echo "Finished scikit with embds."
 
 echo "Run PySR linear fit experiments ..."
-srun --cpu-bind=none python src/run_experiments.py --configdir "configs/pysr_linear_models_config.yml"
+srun --cpu-bind=none python -m src.run_experiments --configdir "configs/pysr_linear_models_config.yml"
 echo "Finished with PySR."
 
 echo "Run PyTorch experiments ..."
-srun --cpu-bind=none python src/run_experiments.py --configdir "configs/pytorch_mlp.yml"
+srun --cpu-bind=none python -m src.run_experiments --configdir "configs/pytorch_mlp.yml"
 echo "Finished PyTorch experiments."
 
 echo "Run PyTorch experiments with embeddings ..."
-srun --cpu-bind=none python src/run_experiments.py --configdir "configs/pytorch_mlp_w_emb.yml"
+srun --cpu-bind=none python -m src.run_experiments --configdir "configs/pytorch_mlp_w_emb.yml"
 echo "Finished PyTorch experiments with embeddings."
 
 echo "Post process results ..."
-srun --cpu-bind=none python src/post_process_results.py --dir "artifacts/"
+srun --cpu-bind=none python -m src.post_process_results --dir "artifacts/"
 echo "Finished post-processing."
