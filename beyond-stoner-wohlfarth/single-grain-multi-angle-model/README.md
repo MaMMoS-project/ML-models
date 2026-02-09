@@ -12,7 +12,7 @@ Use requirements.txt. In addition pytorch, compatible with your system, must be 
 Run:
 
 ```
-python3 scripts/analyze_magnetic_data.py
+python3 -m scripts.analyze_magnetic_data
 ```
 
 NEEDS:
@@ -32,7 +32,7 @@ NEEDS:
 Run:
 
 ```
-python3 scripts/train_model.py --config config/ml_config_test.yaml
+python3 -m scripts.train_model --config config/ml_config_test.yaml
 ```
 
 NEEDS:
@@ -64,7 +64,7 @@ OUTPUT:
 
 [TODO: add tables]
 
-For all three targets, the RF models does not show strong over fitting and the performance is the best.
+For all three targets, the RF models does not show strong overfitting and the performance is the best.
 
 
 # 4.1 Feature Importance
