@@ -11,17 +11,19 @@ from src.utils.data_preprocessing import preprocess_data, analyze_dataframe, com
 from src.utils.plot_utils import plot_3d_parameter_space
 from src.utils.clustering_hardsoft import threshold_clustering, kmeans_clustering
 from src.utils.supervised_clustering import supervised_clustering
+from src.utils.log_to_file import log_output
 
+# Create log directory 
+log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'logs')
+os.makedirs(log_dir, exist_ok=True)
+    
+@log_output('logs/pre_processing.txt')
 def analyze_magnetic_data(data_path=None):
     
     # Create plots directory 
     plots_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'plots')
     os.makedirs(plots_dir, exist_ok=True)
 
-    # Create results directory 
-    results_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'results')
-    os.makedirs(results_dir, exist_ok=True)
-    
     if data_path is None:
         # Read the input file with mammos reader. BUT do NOT (yet)use the entities for simplicity
         content = me.io.entities_from_file("./data/magnetic_materials.csv")
@@ -33,7 +35,7 @@ def analyze_magnetic_data(data_path=None):
     df = df.rename(columns={"Ms": "Ms (A/m)", "A": "A (J/m)", "K1": "K (J/m^3)", "Hc": "Hc (A/m)", "Mr": "Mr (A/m)", "BHmax": "BHmax (J/m^3)"})
 
     # Basic analysis
-    X, y = analyze_dataframe(df, save_path=plots_dir, results_dir=results_dir)
+    X, y = analyze_dataframe(df, save_path=plots_dir)
     
     # Compute and plot Mr/Ms ratio
     ratio_arr, r_min, r_max = compute_and_plot_Mr_over_Ms(
@@ -41,8 +43,7 @@ def analyze_magnetic_data(data_path=None):
         df['Mr (A/m)'], 
         df['A (J/m)'], 
         df['K (J/m^3)'],
-        save_path=plots_dir,
-        results_dir=results_dir
+        save_path=plots_dir
     )
 
     # Different preprocessing scenarios
@@ -112,28 +113,28 @@ def analyze_magnetic_data(data_path=None):
     plot_3d_parameter_space(df, x_col='Ms (A/m)', y_col='A (J/m)', z_col='K (J/m^3)', save_path=plots_dir)
 
     # Perform clustering analysis
-    print("\nPerforming clustering analysis...", file=open(results_dir + "/clustering_analysis.txt", "w"))
+    print("\nPerforming clustering analysis...")
 
     # Threshold-based clustering
     df_threshold = threshold_clustering(df, save_path=plots_dir)
 
-    print("\nThreshold clustering results:", file=open(results_dir + "/clustering_analysis.txt", "a"))
-    print("Number of soft magnets: ", (df_threshold['Clusters'] == 0).sum(), file=open(results_dir + "/clustering_analysis.txt", "a"))
-    print("Number of hard magnets: ", (df_threshold['Clusters'] == 1).sum(), file=open(results_dir + "/clustering_analysis.txt", "a"))
+    print("\nThreshold clustering results:")
+    print("Number of soft magnets: ", (df_threshold['Clusters'] == 0).sum())
+    print("Number of hard magnets: ", (df_threshold['Clusters'] == 1).sum())
     
     # Supervised clustering
-    df_supervised = supervised_clustering(df, save_path=plots_dir, results_dir=results_dir)
+    df_supervised = supervised_clustering(df, save_path=plots_dir)
 
-    print("\nSupervised clustering results:", file=open(results_dir + "/clustering_analysis.txt", "a"))
-    print("Number of soft magnets: ", (df_supervised['Clusters_Supervised'] == 0).sum(), file=open(results_dir + "/clustering_analysis.txt", "a"))
-    print("Number of hard magnets: ", (df_supervised['Clusters_Supervised'] == 1).sum(), file=open(results_dir + "/clustering_analysis.txt", "a"))
+    print("\nSupervised clustering results:")
+    print("Number of soft magnets: ", (df_supervised['Clusters_Supervised'] == 0).sum())
+    print("Number of hard magnets: ", (df_supervised['Clusters_Supervised'] == 1).sum())
 
     # K-means clustering
     df_kmeans = kmeans_clustering(df, save_path=plots_dir)
-    print("\nK-means clustering results:", file=open(results_dir + "/clustering_analysis.txt", "a"))
-    print("Number of soft magnets: ", (df_kmeans['Clusters_KMeans'] == 0).sum(), file=open(results_dir + "/clustering_analysis.txt", "a"))
-    print("Number of hard magnets: ", (df_kmeans['Clusters_KMeans'] == 1).sum(), file=open(results_dir + "/clustering_analysis.txt", "a"))
-    print("\nAnalysis complete. Please check the plots directory for visualizations.", file=open(results_dir + "/clustering_analysis.txt", "a"))
+    print("\nK-means clustering results:")
+    print("Number of soft magnets: ", (df_kmeans['Clusters_KMeans'] == 0).sum())
+    print("Number of hard magnets: ", (df_kmeans['Clusters_KMeans'] == 1).sum())
+    print("\nAnalysis complete. Please check the plots directory for visualizations.")
 
 if __name__ == "__main__":
     analyze_magnetic_data()

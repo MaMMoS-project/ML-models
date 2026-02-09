@@ -12,6 +12,9 @@ from src.models.regression_metrics import multioutput_mape, adjusted_r_squared, 
 from src.models.plot_models import plot_predictions_with_metrics_row_confidence, plot_predictions_jackknife
 from src.models.plot_diagnostics import plot_diagnostics
 
+from src.utils.log_to_file import log_output
+
+
 class Evaluator:
     """Model evaluator (uses same data as training) """
     
@@ -169,6 +172,7 @@ class Evaluator:
                 errors
             )
             plt.savefig(plot_dir / 'predictions_jackknife.png')
+            plt.ioff()
             plt.close(fig)
             
             # Also generate the standard prediction plot for comparison
@@ -178,7 +182,9 @@ class Evaluator:
                 feature_names
             )
             plt.savefig(plot_dir / 'predictions.png')
+            plt.ioff()
             plt.close()
+            
         else:
             # For other models, use the standard prediction plot
             plot_predictions_with_metrics_row_confidence(
@@ -187,11 +193,13 @@ class Evaluator:
                 feature_names
             )
             plt.savefig(plot_dir / 'predictions.png')
+            plt.ioff()
             plt.close()
         
         # Generate diagnostic plots
         plot_diagnostics(y_test, y_test_pred, feature_names)
         plt.savefig(plot_dir / 'diagnostics.png')
+        plt.ioff()
         plt.close()
         
     def _save_model(self, model, dataset_name, model_name, metrics):

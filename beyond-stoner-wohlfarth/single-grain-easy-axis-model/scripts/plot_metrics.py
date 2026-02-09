@@ -14,6 +14,7 @@ from matplotlib.colors import LinearSegmentedColormap
 from pathlib import Path
 import re
 
+from src.utils.log_to_file import log_output
 
 def load_results(results_dir):
     """Load the overall_results.json file from the specified directory."""

@@ -11,21 +11,21 @@ def analyze_dataframe(df, output_columns = ['Hc (A/m)','Mr (A/m)','BHmax (J/m^3)
     df_numeric = df.select_dtypes(include=[np.number])
     
     # Verify shape of the DataFrame
-    print("Shape of the DataFrame:", df_numeric.shape, file=open(results_dir + "/analyze_df.txt", "w"))
+    print("Shape of the DataFrame:", df_numeric.shape)
     
     # Check for missing values
     if df_numeric.isnull().sum().sum() > 0:
-        print("Warning: There are missing values in the DataFrame.", file=open(results_dir + "/analyze_df.txt", "a"))
+        print("Warning: There are missing values in the DataFrame.")
         # Optional: You can handle missing values here, e.g., by filling or dropping them
         # df_numeric = df_numeric.fillna(method='ffill')  # Example: forward fill
     else:
-        print("No missing values in the DataFrame.", file=open(results_dir + "/analyze_df.txt", "a"))
+        print("No missing values in the DataFrame.")
     
     # Display basic statistics and range of values
     stats = df_numeric.describe()
     stats.loc['range'] = stats.loc['max'] - stats.loc['min']  # Add range row
-    print("Basic statistics:",file=open(results_dir + "/analyze_df.txt", "a"))
-    print(stats, file=open(results_dir + "/analyze_df.txt", "a"))
+    print("Basic statistics:")
+    print(stats)
     
     # Plot histograms for all numeric columns
     df_numeric.hist(figsize=(10, 10), bins=20)
@@ -103,7 +103,7 @@ def compute_and_plot_Mr_over_Ms(Ms_values, Mr_values, A_values, K_values, save_p
 
     ratio_l_K_l_A = np.divide(l_K, l_A, out=np.zeros_like(Mr_arr, dtype=float), where=Mr_arr!=0)
 
-    print(Mr_arr[0],Ms_arr[0],ratio[0], Mr_arr[0]/Ms_arr[0],l_K[0],l_A[0],l_K[0]/l_A[0], file=open(results_dir + "/compute_and_plot_Mr_over_Ms.txt", "w"))
+    print(Mr_arr[0],Ms_arr[0],ratio[0], Mr_arr[0]/Ms_arr[0],l_K[0],l_A[0],l_K[0]/l_A[0])
 
     Mr_arr_soft=[Mr_arr[0]]
     Ms_arr_soft=[Ms_arr[0]]
@@ -117,7 +117,7 @@ def compute_and_plot_Mr_over_Ms(Ms_values, Mr_values, A_values, K_values, save_p
             ratio_soft.append(ratio[i])
             ratio_l_soft.append(ratio_l_K_l_A[i])
 
-    print("# Soft magnets:",len(ratio_soft), "out of ",len(ratio), file=open(results_dir + "/compute_and_plot_Mr_over_Ms.txt", "a"))
+    print("# Soft magnets:",len(ratio_soft), "out of ",len(ratio))
 
     # Compute min and max
     ratio_min = np.min(ratio)

@@ -32,8 +32,7 @@ def train_and_tune(X_train, y_train):
 
 def supervised_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)',
                           input_cols=['Ms (A/m)', 'A (J/m)', 'K (J/m^3)'], 
-                          save_path=None,
-                          results_dir=None):
+                          save_path=NotImplemented):
     """
     Cluster magnetic materials into hard and soft using supervised classification based on threshold clustering labels.
     
@@ -79,23 +78,23 @@ def supervised_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)',
     X_train_scaled, X_test_scaled, scaler = scale_data(X_train, X_test, 'standard')
 
     # Train and tune the model
-    print("Training supervised classification model...", file=open(results_dir + "/clustering_analysis.txt", "a"))
+    print("Training supervised classification model...")
     best_model, best_params = train_and_tune(X_train_scaled, y_train)
-    print(f"Best parameters: {best_params}", file=open(results_dir + "/clustering_analysis.txt", "a"))
+    print(f"Best parameters: {best_params}")
     
     # Make predictions on test set
     y_test_pred = best_model.predict(X_test_scaled)
 
     # Calculate metrics on test set
-    print("\nModel Performance on Test Set:", file=open(results_dir + "/clustering_analysis.txt", "a"))
-    print(f"Accuracy: {accuracy_score(y_test, y_test_pred):.4f}", file=open(results_dir + "/clustering_analysis.txt", "a"))
-    print(f"Precision: {precision_score(y_test, y_test_pred, zero_division=0):.4f}", file=open(results_dir + "/clustering_analysis.txt", "a"))
-    print(f"Recall: {recall_score(y_test, y_test_pred):.4f}", file=open(results_dir + "/clustering_analysis.txt", "a"))
-    print(f"F1 Score: {f1_score(y_test, y_test_pred):.4f}", file=open(results_dir + "/clustering_analysis.txt", "a"))
+    print("\nModel Performance on Test Set:")
+    print(f"Accuracy: {accuracy_score(y_test, y_test_pred):.4f}")
+    print(f"Precision: {precision_score(y_test, y_test_pred, zero_division=0):.4f}")
+    print(f"Recall: {recall_score(y_test, y_test_pred):.4f}")
+    print(f"F1 Score: {f1_score(y_test, y_test_pred):.4f}")
 
     # Print classification report
-    print("\nClassification Report:", file=open(results_dir + "/clustering_analysis.txt", "a"))
-    print(classification_report(y_test, y_test_pred, target_names=['Soft', 'Hard']), file=open(results_dir + "/clustering_analysis.txt", "a"))
+    print("\nClassification Report:")
+    print(classification_report(y_test, y_test_pred, target_names=['Soft', 'Hard']))
     
     # Create confusion matrix
     cm = confusion_matrix(y_test, y_test_pred)
@@ -160,13 +159,13 @@ def supervised_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)',
             "label_names": ['Soft', 'Hard'],
             #"meta": {"Ms_col": Ms_col, "Mr_col": Mr_col}
         }, pipe_path)
-        print(f"Pipeline saved to {pipe_path}", file=open(results_dir + "/clustering_analysis.txt", "a"))
+        print(f"Pipeline saved to {pipe_path}")
 
         # Save the trained model
         model_path = f"{save_path}/supervised_clustering_model.pkl"
         with open(model_path, 'wb') as f:
             pickle.dump(best_model, f)
-        print(f"Model saved to {model_path}", file=open(results_dir + "/clustering_analysis.txt", "a"))
+        print(f"Model saved to {model_path}")
         
         # Save metrics to a text file
         metrics_path = f"{save_path}/supervised_metrics.txt"
@@ -178,7 +177,7 @@ def supervised_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)',
             f.write(f"F1 Score: {f1_score(y_test, y_test_pred):.4f}\n\n")
             f.write("Classification Report:\n")
             f.write(classification_report(y_test, y_test_pred, target_names=['Soft', 'Hard']))
-        print(f"Metrics saved to {metrics_path}", file=open(results_dir + "/clustering_analysis.txt", "a"))
+        print(f"Metrics saved to {metrics_path}")
     
     else:
         plt.show()

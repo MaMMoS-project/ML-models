@@ -24,6 +24,7 @@ from src.utils.data_preprocessing import preprocess_data
 from src.utils.clustering_hardsoft import get_hard_soft_clusters, threshold_clustering, kmeans_clustering
 from src.utils.supervised_clustering import apply_supervised_clustering
 from src.utils.labels_preprocessing import add_magnetic_properties
+from src.utils.log_to_file import log_output
 from src.models.evaluator import Evaluator
 from src.models.scalers import scale_data
 from src.models.train_rf import calculate_jackknife_variance
@@ -31,11 +32,16 @@ from src.models.train_rf import calculate_jackknife_variance
 import mammos_entity as me
 import mammos_units as u
 
+# Create log directory 
+log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'logs')
+os.makedirs(log_dir, exist_ok=True)
+
 class MLPipeline:
     """Main class for running the ML pipeline with consistent data handling."""
     
     def __init__(self, config_path: str):
         """Initialize with configuration file path."""
+
         self.config = self._load_config(config_path)
         self.evaluator = Evaluator(self.config)
         
@@ -46,6 +52,7 @@ class MLPipeline:
         # Create results directory if it doesn't exist
         self.results_dir.mkdir(parents=True, exist_ok=True)
         
+    @log_output('logs/run_ml_pipeline.txt')
     def _load_config(self, config_path: str) -> dict:
         """Load configuration from YAML file."""
         with open(config_path, 'r') as f:
@@ -69,6 +76,7 @@ class MLPipeline:
             
             dataset_name = f"{config_name}{cluster_name}"
             all_datasets[dataset_name] = (X_processed, y_processed)
+            
             print(f"Processed dataset: {dataset_name}")
         
         return all_datasets
@@ -154,8 +162,12 @@ class MLPipeline:
             traceback.print_exc()
             return None
     
+    @log_output('logs/run_ml_pipeline.txt')
     def run(self):
         """Run the complete pipeline."""
+        
+        print(f"Using config file: {self.config}")
+        
         # Create results directory
         results_dir = Path(self.config['data']['results_dir'])
         results_dir.mkdir(exist_ok=True)
@@ -298,7 +310,6 @@ def main():
     
     args = parser.parse_args()
     
-    print(f"Using config file: {args.config}")
     pipeline = MLPipeline(args.config)
     pipeline.run()
 
