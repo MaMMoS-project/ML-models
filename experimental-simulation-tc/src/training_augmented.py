@@ -26,7 +26,19 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 
+# Create log directory 
+import os
+import sys
+from src.log_to_file import log_output
+log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'logs')
+os.makedirs(log_dir, exist_ok=True)
 
+import warnings
+from sklearn.exceptions import ConvergenceWarning
+
+warnings.filterwarnings("ignore", category=ConvergenceWarning)
+
+@log_output('logs/training_augmented.txt')   
 def training_augmented():
     
     # Ensure we can import training modules

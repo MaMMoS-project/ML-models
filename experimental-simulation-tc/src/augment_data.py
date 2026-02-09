@@ -41,6 +41,9 @@ import seaborn as sns
 from pathlib import Path
 from typing import Tuple
 
+import sys
+import os
+
 # Set random seed for reproducibility
 RANDOM_SEED = 42
 np.random.seed(RANDOM_SEED)
@@ -48,9 +51,15 @@ np.random.seed(RANDOM_SEED)
 # Configure plotting style
 sns.set_style("whitegrid")
 
+# Create log directory 
+from src.log_to_file import log_output
+log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'logs')
+os.makedirs(log_dir, exist_ok=True)
 
 class CurieTempAugmenter:
-    """Handle data augmentation for Curie temperature datasets."""
+    """
+    Handle data augmentation for Curie temperature datasets.
+    """
     
     def __init__(self, data_path: str, output_dir: str = None):
         """
@@ -977,7 +986,7 @@ class CurieTempAugmenter:
                 print("  Could not compare distributions: insufficient data")
         else:
             print("  Could not compare distributions: missing files")
-            
+       
     def run(self):
         """
         Execute the complete augmentation pipeline.
@@ -1014,7 +1023,7 @@ class CurieTempAugmenter:
         # Print summary
         self.print_summary()
 
-
+@log_output('logs/augment_data.txt')    
 def augment_data():
     """Main execution function."""
     # Determine project root
