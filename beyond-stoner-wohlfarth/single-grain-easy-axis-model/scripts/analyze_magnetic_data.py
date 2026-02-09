@@ -18,6 +18,10 @@ def analyze_magnetic_data(data_path=None):
     plots_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'plots')
     os.makedirs(plots_dir, exist_ok=True)
 
+    # Create results directory 
+    results_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'results')
+    os.makedirs(results_dir, exist_ok=True)
+    
     if data_path is None:
         # Read the input file with mammos reader. BUT do NOT (yet)use the entities for simplicity
         content = me.io.entities_from_file("./data/magnetic_materials.csv")
@@ -29,8 +33,9 @@ def analyze_magnetic_data(data_path=None):
     df = df.rename(columns={"Ms": "Ms (A/m)", "A": "A (J/m)", "K1": "K (J/m^3)", "Hc": "Hc (A/m)", "Mr": "Mr (A/m)", "BHmax": "BHmax (J/m^3)"})
 
     # Basic analysis
-    X, y = analyze_dataframe(df, save_path=plots_dir)
-
+    X, y = analyze_dataframe(df, save_path=plots_dir, results_dir=results_dir)
+    quit()
+    
     # Compute and plot Mr/Ms ratio
     ratio_arr, r_min, r_max = compute_and_plot_Mr_over_Ms(
         df['Ms (A/m)'], 

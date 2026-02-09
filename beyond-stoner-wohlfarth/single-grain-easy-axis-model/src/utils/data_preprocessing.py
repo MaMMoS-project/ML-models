@@ -5,27 +5,27 @@ import seaborn as sns
 
 def analyze_dataframe(df, output_columns = ['Hc (A/m)','Mr (A/m)','BHmax (J/m^3)'], 
                       input_columns = ['Ms (A/m)', 'A (J/m)', 'K (J/m^3)'],
-                      save_path=None):
+                      save_path=None, results_dir=None):
 
     # Drop non-numeric columns
     df_numeric = df.select_dtypes(include=[np.number])
     
     # Verify shape of the DataFrame
-    print("Shape of the DataFrame:", df_numeric.shape)
+    print("Shape of the DataFrame:", df_numeric.shape, file=open(results_dir + "/analyze_df.txt", "w"))
     
     # Check for missing values
     if df_numeric.isnull().sum().sum() > 0:
-        print("Warning: There are missing values in the DataFrame.")
+        print("Warning: There are missing values in the DataFrame.", file=open(results_dir + "/analyze_df.txt", "a"))
         # Optional: You can handle missing values here, e.g., by filling or dropping them
         # df_numeric = df_numeric.fillna(method='ffill')  # Example: forward fill
     else:
-        print("No missing values in the DataFrame.")
+        print("No missing values in the DataFrame.", file=open(results_dir + "/analyze_df.txt", "a"))
     
     # Display basic statistics and range of values
     stats = df_numeric.describe()
     stats.loc['range'] = stats.loc['max'] - stats.loc['min']  # Add range row
-    print("Basic statistics:")
-    print(stats)
+    print("Basic statistics:",file=open(results_dir + "/analyze_df.txt", "a"))
+    print(stats, file=open(results_dir + "/analyze_df.txt", "a"))
     
     # Plot histograms for all numeric columns
     df_numeric.hist(figsize=(10, 10), bins=20)
@@ -117,7 +117,7 @@ def compute_and_plot_Mr_over_Ms(Ms_values, Mr_values, A_values, K_values, save_p
             ratio_soft.append(ratio[i])
             ratio_l_soft.append(ratio_l_K_l_A[i])
 
-    print("#Soft magnets:",len(ratio_soft), "out of ",len(ratio))
+    print("# Soft magnets:",len(ratio_soft), "out of ",len(ratio))
 
     # Compute min and max
     ratio_min = np.min(ratio)
