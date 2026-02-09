@@ -8,9 +8,9 @@ import pickle
 import json
 import torch
 
-from .regression_metrics import multioutput_mape, adjusted_r_squared, gini_coefficient
-from .plot_models import plot_predictions_with_metrics_row_confidence, plot_predictions_jackknife
-from .plot_diagnostics import plot_diagnostics
+from src.models.regression_metrics import multioutput_mape, adjusted_r_squared, gini_coefficient
+from src.models.plot_models import plot_predictions_with_metrics_row_confidence, plot_predictions_jackknife
+from src.models.plot_diagnostics import plot_diagnostics
 
 class Evaluator:
     """Model evaluator (uses same data as training) """

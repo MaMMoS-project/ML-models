@@ -5,7 +5,7 @@ import mammos_entity as me
 import mammos_units as u
 
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.utils.data_preprocessing import preprocess_data, analyze_dataframe, compute_and_plot_Mr_over_Ms
 from src.utils.plot_utils import plot_3d_parameter_space

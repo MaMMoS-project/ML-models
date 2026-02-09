@@ -22,7 +22,7 @@ The generation of the training data and details on the simulation software and m
 Run:
 
 ```
-python3 scripts/analyze_magnetic_data.py
+python3 -m scripts.analyze_magnetic_data
 ```
 
 NEEDS:
@@ -39,7 +39,7 @@ OUTPUT:
 Run:
 
 ```
-python3 scripts/train_model.py --config config/ml_config_test.yaml
+python3 -m scripts.train_model --config config/ml_config_test.yaml
 ```
 
 NEEDS:
