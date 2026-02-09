@@ -34,7 +34,6 @@ def analyze_magnetic_data(data_path=None):
 
     # Basic analysis
     X, y = analyze_dataframe(df, save_path=plots_dir, results_dir=results_dir)
-    quit()
     
     # Compute and plot Mr/Ms ratio
     ratio_arr, r_min, r_max = compute_and_plot_Mr_over_Ms(
@@ -42,7 +41,8 @@ def analyze_magnetic_data(data_path=None):
         df['Mr (A/m)'], 
         df['A (J/m)'], 
         df['K (J/m^3)'],
-        save_path=plots_dir
+        save_path=plots_dir,
+        results_dir=results_dir
     )
 
     # Different preprocessing scenarios
@@ -59,6 +59,7 @@ def analyze_magnetic_data(data_path=None):
         apply_log_transform=False,
         save_path=plots_dir
     )
+    quit()
 
     # 2. With log transform
     X_processed_log, y_processed_log = preprocess_data(

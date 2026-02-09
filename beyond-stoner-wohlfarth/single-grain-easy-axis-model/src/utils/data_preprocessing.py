@@ -62,7 +62,7 @@ def analyze_dataframe(df, output_columns = ['Hc (A/m)','Mr (A/m)','BHmax (J/m^3)
     return X, y
 
 
-def compute_and_plot_Mr_over_Ms(Ms_values, Mr_values, A_values, K_values, save_path=None):
+def compute_and_plot_Mr_over_Ms(Ms_values, Mr_values, A_values, K_values, save_path=None, results_dir=None):
     """
     Compute the ratio Mr/Ms, plot it in a scatter plot,
     and return min and max of the ratio.
@@ -103,7 +103,7 @@ def compute_and_plot_Mr_over_Ms(Ms_values, Mr_values, A_values, K_values, save_p
 
     ratio_l_K_l_A = np.divide(l_K, l_A, out=np.zeros_like(Mr_arr, dtype=float), where=Mr_arr!=0)
 
-    print(Mr_arr[0],Ms_arr[0],ratio[0], Mr_arr[0]/Ms_arr[0],l_K[0],l_A[0],l_K[0]/l_A[0])
+    print(Mr_arr[0],Ms_arr[0],ratio[0], Mr_arr[0]/Ms_arr[0],l_K[0],l_A[0],l_K[0]/l_A[0], file=open(results_dir + "/compute_and_plot_Mr_over_Ms.txt", "w"))
 
     Mr_arr_soft=[Mr_arr[0]]
     Ms_arr_soft=[Ms_arr[0]]
@@ -117,7 +117,7 @@ def compute_and_plot_Mr_over_Ms(Ms_values, Mr_values, A_values, K_values, save_p
             ratio_soft.append(ratio[i])
             ratio_l_soft.append(ratio_l_K_l_A[i])
 
-    print("# Soft magnets:",len(ratio_soft), "out of ",len(ratio))
+    print("# Soft magnets:",len(ratio_soft), "out of ",len(ratio), file=open(results_dir + "/compute_and_plot_Mr_over_Ms.txt", "a"))
 
     # Compute min and max
     ratio_min = np.min(ratio)
