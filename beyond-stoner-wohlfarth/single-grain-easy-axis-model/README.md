@@ -39,7 +39,7 @@ OUTPUT:
 Run:
 
 ```
-python3 scripts/train_model.py   --config config/ml_config_test.yaml
+python3 scripts/train_model.py --config config/ml_config_test.yaml
 ```
 
 NEEDS:
