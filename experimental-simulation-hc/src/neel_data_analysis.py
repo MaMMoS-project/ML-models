@@ -2,6 +2,14 @@ import pandas as pd
 import ms_aux as ms_aux
 import coercivity_ml as cml
 
+import sys
+import os
+from log_to_file import log_output
+
+log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'logs')
+os.makedirs(log_dir, exist_ok=True)
+    
+@log_output('logs/analyze_neel_data.txt')
 def analyze_neel_data(DATA_FOLDER, PLOTS_FOLDER, fmdh_filename):
 
     # SET DATA AND PLOT FOLDERS, SPECIFY CSV FILEPATH
