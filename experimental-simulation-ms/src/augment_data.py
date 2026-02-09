@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 from scipy.stats import norm, laplace, rv_histogram
 import statsmodels
 
-from pre_process_data import create_pairwise_dataset, create_to_augment_exp_val_dataset
+from src.pre_process_data import create_pairwise_dataset, create_to_augment_exp_val_dataset
 
 import argparse
 

@@ -7,13 +7,12 @@ import math
 import argparse
 import matplotlib.pyplot as plt
 
+import torch
 
 import os
 os.environ['PYTHON_JULIACALL_HANDLE_SIGNALS'] = 'yes' # avoid segmentation fault error
 from pysr import PySRRegressor
 from pysr import pysr, best
-
-import torch
 
 import sklearn
 from sklearn.linear_model import LinearRegression, Lasso, Ridge
@@ -24,11 +23,11 @@ import numpy as np
 import pandas as pd
 from datetime import datetime
 
-from pre_process_data import add_mat200_embeddings_to_df, scatter_plot_raw_data
-from scikit_models import optimize_scikit_model
-from pysr_models import optimize_sr_model
-from pytorch_mlp import optimize_mlp
-from utils import get_git_commit_hash 
+from src.pre_process_data import add_mat200_embeddings_to_df, scatter_plot_raw_data
+from src.scikit_models import optimize_scikit_model
+from src.pysr_models import optimize_sr_model
+from src.pytorch_mlp import optimize_mlp
+from src.utils import get_git_commit_hash 
 
 scaler_dict = {'StandardScaler': StandardScaler,
                'MinMaxScaler': MinMaxScaler,
