@@ -5,6 +5,11 @@ from sklearn.gaussian_process.kernels import (
     DotProduct, ConstantKernel as C, WhiteKernel, RBF,
     RationalQuadratic, ExpSineSquared, Matern
 )
+
+from sklearn.exceptions import ConvergenceWarning
+import warnings
+warnings.simplefilter('ignore', ConvergenceWarning)
+
 from typing import Dict, Tuple, Any
 import numpy as np
 

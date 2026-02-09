@@ -24,7 +24,7 @@ def train_and_tune(X_train, y_train):
     
     calibrated_forest = CalibratedClassifierCV(model)
   
-    grid_search = GridSearchCV(calibrated_forest, param_grid, cv=3, verbose=2, n_jobs=-1)
+    grid_search = GridSearchCV(calibrated_forest, param_grid, cv=3, verbose=0, n_jobs=-1)
     grid_search.fit(X_train, y_train)
 
     return grid_search.best_estimator_, grid_search.best_params_
