@@ -102,6 +102,8 @@ For all three targets, both the FCNN and RF models do not show strong over fitti
 
 ![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/beyond-stoner-wohlfarth/single-grain-easy-axis-model/results/best_model/random_forest/predictions_jackknife.png)
 
-#### Feature Importance via Sensitivity Analysis
+#### Feature Importance via Mean Decrease in Impurity
+
+Feature's contribution in a Random Forest model is measured by the average variance reduction across all trees and splits, ranking features by their predictive power during training. Higher values indicate greater importance.
 
 ![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/beyond-stoner-wohlfarth/single-grain-easy-axis-model/results/best_model/random_forest/feature_importance_LogTransformation_cluster1_standard.png)
