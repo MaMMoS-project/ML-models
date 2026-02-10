@@ -64,4 +64,4 @@ For all three targets, the RF models does not show strong overfitting and the pe
 
 
 # 4.1 Feature Importance
-![alt text](results/plots/feature_importance_LogTransformation_all_standard.png)
+![Alt text](results/plots/feature_importance_LogTransformation_all_standard.png)
