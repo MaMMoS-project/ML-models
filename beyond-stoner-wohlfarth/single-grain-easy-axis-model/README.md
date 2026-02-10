@@ -103,3 +103,5 @@ For all three targets, both the FCNN and RF models do not show strong over fitti
 ![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/beyond-stoner-wohlfarth/single-grain-easy-axis-model/results/best_model/random_forest/predictions_jackknife.png)
 
 #### Feature Importance
+
+![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/beyond-stoner-wohlfarth/single-grain-easy-axis-model/results/best_model/random_forest/predictions_jackknife.png)
