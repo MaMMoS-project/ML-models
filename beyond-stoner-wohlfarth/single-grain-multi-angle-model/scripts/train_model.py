@@ -31,6 +31,13 @@ from src.models.train_rf import calculate_jackknife_variance
 import mammos_entity as me
 import mammos_units as u
 
+import warnings
+
+warnings.filterwarnings(
+    "ignore",
+    message="Fitting the empirical bayes prior failed.*"
+)
+
 class MLPipeline:
     """Main class for running the ML pipeline with consistent data handling."""
     
