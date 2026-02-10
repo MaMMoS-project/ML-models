@@ -55,6 +55,8 @@ def analyze_dataframe(df, output_columns = ['Hc (A/m)','Mr (A/m)','BHmax (J/m^3)
     plt.tight_layout()
     if save_path:
         plt.savefig(f"{save_path}/kdeplots.png", bbox_inches='tight', dpi=300)
+        plt.ioff()
+    plt.close()
     
     # Prepare X and y for regression
     X = df[input_columns]
