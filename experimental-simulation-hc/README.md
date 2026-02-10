@@ -25,7 +25,7 @@ Artifacts: the folder ./plots will be created. You'll find all the plots we incl
 ## Prediction Residuals Delta Hc
 ![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/experimental-simulation-hc/results/deltaHc.png)
 
-![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/experimental-simulation-hc/results/prediction_residuals_2026-02-09-13%3A58%3A23.755.png)
+![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/experimental-simulation-hc/results/prediction_residuals_2026-02-09-13%3A58%3A23.357.png)
 
 ## Current version of model
 v0.1
