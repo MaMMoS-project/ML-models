@@ -170,6 +170,17 @@ This table summarizes the performance of different models across multiple datase
 
 ---
 
+# TODO:
+#### Random Forest RE
+![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/experimental-simulation-ms/best_models/mat200log_sim2exp-RandomForest/re.png)
+
+#### Random Forest RE-Free
+
+#### Random Forest RE
+![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/experimental-simulation-ms/best_models/mat200log_sim2exp-RandomForest/re_free.png)
+
+#### Random Forest RE-Free
+
 ## 📌 Notes & TODOs
 
 - **Data filtering** at 50,000 A/m is currently hardcoded. Consider making this configurable.
