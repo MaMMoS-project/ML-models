@@ -100,4 +100,4 @@ For all three targets, both the FCNN and RF models do not show strong over fitti
 
 ### Plots
 
-![Alt text](results/plots/diagnostics.png)
+![Alt text](results/best_model/diagnostics.png)
