@@ -13,6 +13,9 @@ python3 -m src.neel_data_analysis
 
 Artifacts: the folder ./plots will be created. You'll find all the plots we included in the 24-month deliverable therein. Additionally, some lines with the best fit coefficients and some goodness-of-fit metrics will be plotted on the terminal.
 
+## Best model
+
+
 
 ## Current version of model
 v0.1
