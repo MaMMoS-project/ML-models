@@ -13,9 +13,20 @@ python3 -m src.neel_data_analysis
 
 Artifacts: the folder ./plots will be created. You'll find all the plots we included in the 24-month deliverable therein. Additionally, some lines with the best fit coefficients and some goodness-of-fit metrics will be plotted on the terminal.
 
-## Prediction Residuals
-[!Alt text]()
+## Measured and computed Coercivity
+![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/experimental-simulation-hc/results/H_exp_sim.png)
 
+## Ce and Nd contents
+![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/experimental-simulation-hc/results/ce_nd_content.png)
+
+## Prediction Residuals Surrogate Model Experimental Hc
+[!Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/experimental-simulation-hc/results/prediction_residuals_2026-02-09-13%3A58%3A23.755.png)
+
+## Prediction Residuals Delta Hc
+
+[!Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/experimental-simulation-hc/results/deltaHc.png)
+
+[!Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/experimental-simulation-hc/results/prediction_residuals_2026-02-09-13%3A58%3A23.357.png)
 
 ## Current version of model
 v0.1
