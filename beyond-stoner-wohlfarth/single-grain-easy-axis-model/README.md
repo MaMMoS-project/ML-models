@@ -98,6 +98,9 @@ For all three targets, both the FCNN and RF models do not show strong over fitti
 | GP    | MSE: 0.000<br>R²: 0.999 | MSE: 0.004<br>R²: 0.992  | MSE: 0.000<br>R²: 0.992   | MSE: 0.000<br>R²: 0.999   |
 | FCNN  | MSE: 0.161<br>R²: 0.518 | MSE: 0.182<br>R²: 0.573  | MSE: 0.012<br>R²: 0.988   | MSE: 0.018<br>R²: 0.986   |
 
-### Plots
+### Plots Hard-Magnet Random Forest Model
 
 ![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/beyond-stoner-wohlfarth/single-grain-easy-axis-model/results/best_model/random_forest/predictions_jackknife.png)
+
+#### Feature Importance
+[!Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/beyond-stoner-wohlfarth/single-grain-easy-axis-model/results/best_model/random_forest/feature_importance_LogTransformation_cluster1_standard.png)
