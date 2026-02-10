@@ -30,14 +30,26 @@ def analyze_dataframe(df, output_columns = ['Hc (A/m)','Mr (A/m)','BHmax (J/m^3)
     # Plot histograms for all numeric columns
     df_numeric.hist(figsize=(10, 10), bins=20)
     plt.tight_layout()
-    if save_path:
+    if (save_path is not None):
         plt.savefig(f"{save_path}/histograms.png", bbox_inches='tight', dpi=300)
+        plt.ioff()
+        
+    else:
+        plt.show()
+    plt.close()        
     
     # Show correlation matrix as a heatmap
     plt.figure(figsize=(10, 8))
     sns.heatmap(df_numeric.corr(), annot=True, fmt=".2f", cmap='coolwarm')
-    if save_path:
+    
+    if (save_path is not None):
         plt.savefig(f"{save_path}/correlation_heatmap.png", bbox_inches='tight', dpi=300)
+        plt.ioff()
+        
+    else:
+        plt.show()
+    plt.close()
+        
 
     fig, axes = plt.subplots(len(input_columns), len(output_columns), figsize=(15, 10))
     for i, inp in enumerate(input_columns):
