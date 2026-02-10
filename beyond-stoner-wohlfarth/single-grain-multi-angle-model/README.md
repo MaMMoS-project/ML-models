@@ -7,7 +7,7 @@ v0.1
 # 0. Installation
 Use requirements.txt. In addition pytorch, compatible with your system, must be installed
 
-# 1. Data preprocessing
+# 1. Data pre-processing
 
 Run:
 
@@ -23,10 +23,6 @@ OUTPUT:
 - stdout
 - ./plots/*.png  # analysis plots
 - ./data/processed/micromagnetics_angle_dependent_symmetries.csv
-
-NEEDS:
-- ./data/magnetic_materials.csv
-
 
 # 2. Model Training
 Run:
