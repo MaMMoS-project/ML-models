@@ -11,7 +11,7 @@ from src.utils.data_preprocessing import preprocess_data, analyze_dataframe, com
 from src.utils.plot_utils import plot_3d_parameter_space
 from src.utils.clustering_hardsoft import threshold_clustering, kmeans_clustering
 from src.utils.supervised_clustering import supervised_clustering
-from src.utils.log_to_file import log_output
+from src.utils.log_to_file import log_output 
 
 # Create log directory 
 log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'logs')
@@ -141,4 +141,4 @@ if __name__ == "__main__":
     plots_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'plots')
     os.makedirs(plots_dir, exist_ok=True)
     
-    analyze_magnetic_data()
+    analyze_magnetic_data(plots_dir=plots_dir)

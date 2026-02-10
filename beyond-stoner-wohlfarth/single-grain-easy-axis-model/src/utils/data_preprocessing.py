@@ -37,7 +37,7 @@ def analyze_dataframe(df, output_columns = ['Hc (A/m)','Mr (A/m)','BHmax (J/m^3)
     else:
         plt.show()
     plt.close()        
-    
+
     # Show correlation matrix as a heatmap
     plt.figure(figsize=(10, 8))
     sns.heatmap(df_numeric.corr(), annot=True, fmt=".2f", cmap='coolwarm')

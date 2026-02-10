@@ -1,4 +1,4 @@
-# ML model for micromagnetic simulations, h and K aligned in z-direction
+# ML surrogate model for micromagnetic simulations, H and K1 aligned in z-direction
 
 
 ## Current version of model
@@ -119,3 +119,4 @@ Feature's contribution in a Random Forest model is measured by the average varia
 
 ## 4. Inference
 
+[TODO: add pipeline overview]
