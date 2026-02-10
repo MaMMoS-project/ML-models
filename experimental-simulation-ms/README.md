@@ -170,16 +170,17 @@ This table summarizes the performance of different models across multiple datase
 
 ---
 
-# TODO:
 #### Random Forest RE
 ![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/experimental-simulation-ms/best_models/mat200log_sim2exp-RandomForest/re.png)
 
-#### Random Forest RE-Free
-
-#### Random Forest RE
+#### Random Forest RE-Free Materials
 ![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/experimental-simulation-ms/best_models/mat200log_sim2exp-RandomForest/re_free.png)
 
-#### Random Forest RE-Free
+#### Ridge Regression RE Materials
+![Alt text]()
+
+#### Ridge Regression RE-Free Materials
+![Alt text]()
 
 ## 📌 Notes & TODOs
 
