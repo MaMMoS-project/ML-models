@@ -18,11 +18,11 @@ log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 os.makedirs(log_dir, exist_ok=True)
     
 @log_output('logs/pre_processing.txt')
-def analyze_magnetic_data(data_path=None):
+def analyze_magnetic_data(data_path=None, plots_dir=None):
     
-    # Create plots directory 
-    plots_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'plots')
-    os.makedirs(plots_dir, exist_ok=True)
+    # # Create plots directory 
+    # plots_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'plots')
+    # os.makedirs(plots_dir, exist_ok=True)
 
     if data_path is None:
         # Read the input file with mammos reader. BUT do NOT (yet)use the entities for simplicity
@@ -113,12 +113,12 @@ def analyze_magnetic_data(data_path=None):
     plot_3d_parameter_space(df, x_col='Ms (A/m)', y_col='A (J/m)', z_col='K (J/m^3)', save_path=plots_dir)
 
     # Perform clustering analysis
-    print("\nPerforming clustering analysis...")
+    print("\n Performing clustering analysis...")
 
     # Threshold-based clustering
     df_threshold = threshold_clustering(df, save_path=plots_dir)
 
-    print("\nThreshold clustering results:")
+    print("\n Threshold clustering results:")
     print("Number of soft magnets: ", (df_threshold['Clusters'] == 0).sum())
     print("Number of hard magnets: ", (df_threshold['Clusters'] == 1).sum())
     
@@ -137,4 +137,8 @@ def analyze_magnetic_data(data_path=None):
     print("\nAnalysis complete. Please check the plots directory for visualizations.")
 
 if __name__ == "__main__":
+    
+    plots_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'plots')
+    os.makedirs(plots_dir, exist_ok=True)
+    
     analyze_magnetic_data()
