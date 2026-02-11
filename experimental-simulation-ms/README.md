@@ -175,11 +175,6 @@ This table summarizes the performance of different models across multiple datase
 #### Random Forest RE-Free Materials (best model pairwise dataset)
 ![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/experimental-simulation-ms/best_models/mat200log_sim2exp-RandomForest/re_free.png)
 
-#### Random Forest RE Materials (best model augmented dataset)
-![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/experimental-simulation-ms/best_models/mat200log_sim2exp-RandomForest/re.png)
-
-#### Random Forest RE-Free Materials (best model augmented dataset)
-![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/experimental-simulation-ms/best_models/mat200log_sim2exp-RandomForest/re_free.png)
 
 ## 📌 Notes & TODOs
 
