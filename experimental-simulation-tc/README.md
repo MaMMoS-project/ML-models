@@ -1,6 +1,7 @@
 
 # ML model for systematic errors between simulations and experimental measurements of the Curie temperature
 
+This codebase implements various machine learning models to predict experimental Curie temperatures from simulated values. Additionally, chemical property information is incorporated via an embedding representation.
 
 ## Current version of model
 v0.1
@@ -99,6 +100,14 @@ OUTPUT:
 
 ## 4. Model Training
 
+Train baseline models on original (non-augmented, non-embedding) data. Namely, 
+
+· Symbolic regression: stoichiometry was disregarded
+· LASSO regression,
+· RIDGE regression,
+· Random Forest,
+· FCNN.
+
 ## 4.1 Orginal dataset
 
 Run:
@@ -123,6 +132,7 @@ OUTPUT:
 ```
 
 ## 4.2 Orginal dataset with stoichiometric embedding
+Train models on original data with stoichiometric embeddings as additional input to the simulate value.
 
 Run:
 
@@ -153,6 +163,8 @@ OUTPUT:
 
 ## 4.3 Augmented dataset
 
+Train baseline models on augmented data (no embeddings).
+
 Run:
 
 ```
@@ -180,6 +192,7 @@ OUTPUT:
 
 
 ## 4.4 Augmented dataset with stoichiometry embedding
+Train models on augmented data WITH EMBEDDINGS.
 
 Run:
 
