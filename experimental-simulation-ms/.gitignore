@@ -1,9 +1,0 @@
-artifacts/
-data/*.csv
-outputs/
-*/__pycache__
-mammos-ms/
-*/*/__pycache__
-*/.ipynb_checkpoints
-*/*/.ipynb_checkpoints
-*/embeddings/
