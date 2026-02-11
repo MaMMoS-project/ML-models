@@ -160,7 +160,6 @@ This table summarizes the performance of different models across multiple datase
 |                   | Random Forest      | —           | 0.7790   | 0.3790   | 0.2184   |
 |                   | Symbolic Regr.     | —           | 0.7680   | 0.3820   | 0.2240   |
 
-
 > 🔍 **Legend**:
 > - `Mat200`: Uses compositional representations constructed from the Matscholar200 embeddings.
 > - `—`: No embedding used.
@@ -170,17 +169,17 @@ This table summarizes the performance of different models across multiple datase
 
 ---
 
-#### Random Forest RE
-![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/experimental-simulation-ms/best_models/mat200log_sim2exp-RandomForest/re.png)
+#### Ridge RE (best model pairwise dataset)
+![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/experimental-simulation-ms/best_models/mat200log_sim2exp-Ridge/re.png)
 
-#### Random Forest RE-Free Materials
+#### Random Forest RE-Free Materials (best model pairwise dataset)
 ![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/experimental-simulation-ms/best_models/mat200log_sim2exp-RandomForest/re_free.png)
 
-#### Ridge Regression RE Materials
-![Alt text]()
+#### Random Forest RE Materials (best model augmented dataset)
+![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/experimental-simulation-ms/best_models/mat200log_sim2exp-RandomForest/re.png)
 
-#### Ridge Regression RE-Free Materials
-![Alt text]()
+#### Random Forest RE-Free Materials (best model augmented dataset)
+![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/experimental-simulation-ms/best_models/mat200log_sim2exp-RandomForest/re_free.png)
 
 ## 📌 Notes & TODOs
 
