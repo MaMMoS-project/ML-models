@@ -225,12 +225,14 @@ OUTPUT:
 ## 📈 Model Performance Comparison
 | Dataset        | Best Model (Embedding) | Embedding | R2    | RMSE    | Best Model | R2    | RMSE    | Baseline | Baseline R2 | Baseline RMSE |
 |----------------|------------------------|-----------|-------|---------|------------|-------|---------|----------|-------------|---------------|
-| All-Pairs      | Ridge                  | PCA32     | 0.791 | 110.762 | MLP        | **0.849** | **94.323**  | SR       | 0.841       | 96.757        |
-| All-Augm       | MLP                    | PCA32     | 0.927 | **74.566**  | MLP        | **0.928** | 81.235  | SR       | 0.927       | 81.526        |
-| RE-Pairs       | Ridge                  | PCA32     | 0.791 | 110.762 | MLP        | **0.915** | **51.738**  | SR       | 0.913       | 52.234        |
-| RE-Augm        | MLP                    | PCA32     | 0.929 | 73.819  | MLP        | **0.967** | **33.534**  | SR       | **0.967**   | 33.538        |
-| RE-free Pairs  | Ridge                  | PCA32     | **0.791** | **110.762** | MLP        | **0.791** | 129.950 | SR       | 0.789       | 130.640       |
-| RE-free Augm   | MLP                    | PCA8      | **0.927** | **75.583**  | MLP        | 0.904 | 111.992 | SR       | 0.901       | 113.760       |
+| All-Pairs      | Ridge                  | PCA32     | 0.791 | 110.762 | MLP        | <span style="color:blue"><b>0.849</b></span> | <span style="color:blue"><b>94.323</b></span>  | SR       | 0.841       | 96.757        |
+| All-Augm       | MLP                    | PCA32     | 0.927 | <span style="color:blue"><b>74.566</b></span>  | MLP        | <span style="color:blue"><b>0.928</b></span> | 81.235  | SR       | 0.927       | 81.526        |
+| RE-Pairs       | Ridge                  | PCA32     | 0.791 | 110.762 | MLP        | <span style="color:blue"><b>0.915</b></span> | <span style="color:blue"><b>51.738</b></span>  | SR       | 0.913       | 52.234        |
+| RE-Augm        | MLP                    | PCA32     | 0.929 | 73.819  | MLP        | <span style="color:blue"><b>0.967</b></span> | <span style="color:blue"><b>33.534</b></span>  | SR       | <span style="color:blue"><b>0.967</b></span>   | 33.538        |
+| RE-free Pairs  | Ridge                  | PCA32     | <span style="color:blue"><b>0.791</b></span> | <span style="color:blue"><b>110.762</b></span> | MLP        | <span style="color:blue"><b>0.791</b></span> | 129.950 | SR       | 0.789       | 130.640       |
+| RE-free Augm   | MLP                    | PCA8      | <span style="color:blue"><b>0.927</b></span> | <span style="color:blue"><b>75.583</b></span>  | MLP        | 0.904 | 111.992 | SR       | 0.901       | 113.760       |
 
-## Current best model
-Currently the best models are obtained with the augmented dataset and symbolic regression.
+### Current best model
+Currently the best models are obtained on the augmented dataset, symbolic regression and MLP.
+
+
