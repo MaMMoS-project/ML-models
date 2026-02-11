@@ -12,6 +12,8 @@ Use requirements.txt. In addition pytorch, compatible with your system, must be 
 
 ## 1. Data augmentation
 
+Executing the code below performs data augmentation on missing experimental values using bootstrap sampling.
+
 Run:
 
 ```
@@ -42,6 +44,11 @@ OUTPUT:
 ```
 
 ## 2. Creation of embeddings
+
+Stoichiometric embeddings are created from the Matscholar200 embeddings
+using an element-abundance weighted sum approach. For example:
+    H2O embedding = 2 × [H embedding] + 1 × [O embedding]
+
 Run:
 
 ```
@@ -71,6 +78,10 @@ OUTPUT:
 ```
 
 ## 3. Compress embeddings with PCA
+Create PCA-compressed embeddings for the paired Curie temperature dataset.
+It focuses specifically on PCA components of sizes 8, 16, and 32 to ensure they are available
+for the training scripts.
+
 Run:
 
 ```
@@ -198,7 +209,7 @@ OUTPUT:
 - ./results/figures/RE-Free-Augm_[model]_[None|pca_*].png
 - ./results/augmented_emb_comparison/*.csv
 ```
+## 📈 Model Performance Comparison
 
-## 5. Currently best model
-Currently the best models are obtained with the augmented dataset and
-symbolic regression
+## Current best model
+Currently the best models are obtained with the augmented dataset and symbolic regression.
