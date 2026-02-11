@@ -1,4 +1,4 @@
-experiment: "mat200log_sim2exp-all"
+experiment: "mat200log_sim2exp-all-augmented"
 config_path: "configs/scikit_models_w_mat200_config_augmented_all.yml"
 material_group: "all"
 data_path: "data/merged_dfs_augmented_exp.csv"
