@@ -239,6 +239,7 @@ def compress_embeddings_PCA():
     input_dir = project_root / 'outputs'
     # Output directory (same as input but we'll use different filenames)
     output_dir = input_dir
+    embedding_file = project_root / 'data' / 'embeddings' / 'element' / 'matscholar200.json'
     
     print("="*60)
     print("PCA EMBEDDING COMPRESSION PIPELINE")

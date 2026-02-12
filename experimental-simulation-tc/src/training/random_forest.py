@@ -9,7 +9,6 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
 from base_trainer import DataLoader, ModelEvaluator, split_data
 
-
 class RandomForestTrainer:
     """Train and evaluate Random Forest models."""
     
