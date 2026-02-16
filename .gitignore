@@ -29,15 +29,6 @@ plots/
 metric_tables/
 
 # ===============================
-# Venv folders
-# ===============================
-models/
-bsw-models/
-mammos-ms/
-exp-sim-hc/
-exp-sim-tc/
-
-# ===============================
 # Data files
 # ===============================
 *.csv
