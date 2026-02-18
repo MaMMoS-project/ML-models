@@ -1,4 +1,4 @@
-experiment: "mat200log_sim2exp-re"
+experiment: "mat200log_sim2exp-re-augmented"
 material_group: "re"
 config_path: "configs/scikit_models_w_mat200_config_augmented_re.yml"
 

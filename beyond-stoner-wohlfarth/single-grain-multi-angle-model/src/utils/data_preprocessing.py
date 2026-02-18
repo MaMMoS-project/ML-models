@@ -87,12 +87,12 @@ def compute_and_plot_Mr_over_Ms(Ms_values, Mr_values, A_values, K_values, save_p
     ratio_max : float
         Maximum of the ratio.
     """
+    
     # Convert inputs to numpy arrays (if they aren't already)
     Ms_arr = np.array(Ms_values, dtype=float)
     Mr_arr = np.array(Mr_values, dtype=float)
     A_arr = np.array(A_values, dtype=float)
     K_arr = np.array(K_values, dtype=float)
-
 
     # Safely compute Mr/Ms, avoiding division by zero if Ms is zero in any entries
     ratio = np.divide(Mr_arr, Ms_arr, out=np.zeros_like(Mr_arr, dtype=float), where=Ms_arr!=0)

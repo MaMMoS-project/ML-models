@@ -1,4 +1,4 @@
-experiment: "log_sim2exp_augmented"
+experiment: "log_sim2exp_augmented-re-free"
 config_path: "configs/scikit_models_config_augmented_re_free.yml"
 artifact_path: "../artifacts/"
 material_group: "re_free"

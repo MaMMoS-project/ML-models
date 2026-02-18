@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 Script to visualize metrics from overall_results.json files.
 Creates tables for each dataset and model, highlighting the best metrics.
@@ -15,6 +14,7 @@ from matplotlib.colors import LinearSegmentedColormap
 from pathlib import Path
 import re
 
+from src.utils.log_to_file import log_output
 
 def load_results(results_dir):
     """Load the overall_results.json file from the specified directory."""
@@ -60,7 +60,7 @@ def create_metric_tables(results, output_dir):
     
     # Process each cluster type
     for cluster_type in cluster_types:
-        print(f"Processing {cluster_type} data...")
+        # print(f"Processing {cluster_type} data...")
         
         # Get datasets for this cluster type
         cluster_datasets = []
@@ -73,7 +73,7 @@ def create_metric_tables(results, output_dir):
         
         # Process each dataset in this cluster
         for dataset in cluster_datasets:
-            print(f"  Creating tables for dataset: {dataset}")
+            # print(f"  Creating tables for dataset: {dataset}")
             
             # Create tables for overall metrics
             create_overall_metrics_table(results, models, dataset, cluster_type, 
@@ -139,7 +139,7 @@ def create_overall_metrics_table(results, models, dataset, cluster_type, higher_
     # Save to HTML
     html_path = output_path / f"{safe_filename}_overall_metrics.html"
     styled_df.to_html(html_path)
-    print(f"    Saved overall metrics to {html_path}")
+    # print(f"    Saved overall metrics to {html_path}")
     
     # Save to CSV for further analysis
     csv_path = output_path / f"{safe_filename}_overall_metrics.csv"
@@ -170,7 +170,7 @@ def create_per_variable_metrics_tables(results, models, dataset, cluster_type, h
     
     # Process each variable
     for variable in variables:
-        print(f"    Creating table for variable: {variable}")
+        # print(f"    Creating table for variable: {variable}")
         
         # Collect metrics for all models
         metrics_data = {
@@ -234,7 +234,7 @@ def create_per_variable_metrics_tables(results, models, dataset, cluster_type, h
         # Save to HTML
         html_path = output_path / f"{safe_dataset}_{safe_variable}_metrics.html"
         styled_df.to_html(html_path)
-        print(f"    Saved {variable} metrics to {html_path}")
+        # print(f"    Saved {variable} metrics to {html_path}")
         
         # Save to CSV for further analysis
         csv_path = output_path / f"{safe_dataset}_{safe_variable}_metrics.csv"
@@ -392,11 +392,13 @@ def create_metrics_plot(df, dataset, variable_name, output_path, higher_better, 
     safe_variable = sanitize_filename(variable_name)
     fig_path = output_path / f"{safe_dataset}_{safe_variable}_metrics.png"
     plt.savefig(fig_path, dpi=150, bbox_inches='tight')
-    plt.close(fig)
-    print(f"    Saved metrics plot to {fig_path}")
+    plt.close()
+    
+    print(f"Saved metrics plot to {fig_path}")
 
 
 def main():
+    
     parser = argparse.ArgumentParser(description="Generate metric tables from overall_results.json")
     parser.add_argument("results_dir", help="Directory containing overall_results.json")
     parser.add_argument("--output", "-o", default=None, 
@@ -414,7 +416,7 @@ def main():
             output_path = results_path / "metric_tables"
         else:
             output_path = Path(args.output)
-        
+         
         # Create output directory
         output_path.mkdir(parents=True, exist_ok=True)
         
@@ -425,6 +427,7 @@ def main():
         create_metric_tables(results, output_path)
         
         print(f"Tables and plots generated successfully in {output_path}")
+        plt.close()
         
     except Exception as e:
         print(f"Error: {e}")

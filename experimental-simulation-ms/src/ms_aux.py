@@ -1,6 +1,146 @@
 import re
 import numpy as np
 
+# CONVERSION UNITS
+MU_NOUGHT = 4e-7 * np.pi # N/A^2
+MU_B = 9.2740100657e-24 # J⋅T^−1
+AA = 1e-10 # m
+
+# List of periodic table elements
+pd_elements_list = [
+    'H',  # Hydrogen
+    'He',  # Helium
+    'Li',  # Lithium
+    'Be',  # Beryllium
+    'B',  # Boron
+    'C',  # Carbon
+    'N',  # Nitrogen
+    'O',  # Oxygen
+    'F',  # Fluorine
+    'Ne',  # Neon
+    'Na',  # Sodium
+    'Mg',  # Magnesium
+    'Al',  # Aluminum
+    'Si',  # Silicon
+    'P',  # Phosphorus
+    'S',  # Sulfur
+    'Cl',  # Chlorine
+    'Ar',  # Argon
+    'K',  # Potassium
+    'Ca',  # Calcium
+    'Sc',  # Scandium
+    'Ti',  # Titanium
+    'V',  # Vanadium
+    'Cr',  # Chromium
+    'Mn',  # Manganese
+    'Fe',  # Iron
+    'Co',  # Cobalt
+    'Ni',  # Nickel
+    'Cu',  # Copper
+    'Zn',  # Zinc
+    'Ga',  # Gallium
+    'Ge',  # Germanium
+    'As',  # Arsenic
+    'Se',  # Selenium
+    'Br',  # Bromine
+    'Kr',  # Krypton
+    'Rb',  # Rubidium
+    'Sr',  # Strontium
+    'Y',  # Yttrium
+    'Zr',  # Zirconium
+    'Nb',  # Niobium
+    'Mo',  # Molybdenum
+    'Tc',  # Technetium
+    'Ru',  # Ruthenium
+    'Rh',  # Rhodium
+    'Pd',  # Palladium
+    'Ag',  # Silver
+    'Cd',  # Cadmium
+    'In',  # Indium
+    'Sn',  # Tin
+    'Sb',  # Antimony
+    'Te',  # Tellurium
+    'I',  # Iodine
+    'Xe',  # Xenon
+    'Cs',  # Cesium
+    'Ba',  # Barium
+    'La',  # Lanthanum
+    'Ce',  # Cerium
+    'Pr',  # Praseodymium
+    'Nd',  # Neodymium
+    'Pm',  # Promethium
+    'Sm',  # Samarium
+    'Eu',  # Europium
+    'Gd',  # Gadolinium
+    'Tb',  # Terbium
+    'Dy',  # Dysprosium
+    'Ho',  # Holmium
+    'Er',  # Erbium
+    'Tm',  # Thulium
+    'Yb',  # Ytterbium
+    'Lu',  # Lutetium
+    'Hf',  # Hafnium
+    'Ta',  # Tantalum
+    'W',  # Tungsten
+    'Re',  # Rhenium
+    'Os',  # Osmium
+    'Ir',  # Iridium
+    'Pt',  # Platinum
+    'Au',  # Gold
+    'Hg',  # Mercury
+    'Tl',  # Thallium
+    'Pb',  # Lead
+    'Bi',  # Bismuth
+    'Po',  # Polonium
+    'At',  # Astatine
+    'Rn',  # Radon
+    'Fr',  # Francium
+    'Ra',  # Radium
+    'Ac',  # Actinium
+    'Th',  # Thorium
+    'Pa',  # Protactinium
+    'U',  # Uranium
+    'Np',  # Neptunium
+    'Pu',  # Plutonium
+    'Am',  # Americium
+    'Cm',  # Curium
+    'Bk',  # Berkelium
+    'Cf',  # Californium
+    'Es',  # Einsteinium
+    'Fm',  # Fermium
+    'Md',  # Mendelevium
+    'No',  # Nobelium
+    'Lr',  # Lawrencium
+    'Rf',  # Rutherfordium
+    'Db',  # Dubnium
+    'Sg',  # Seaborgium
+    'Bh',  # Bohrium
+    'Hs',  # Hassium
+    'Mt',  # Meitnerium
+    'Ds',  # Darmstadtium
+    'Rg',  # Roentgenium
+    'Cn',  # Copernicium
+    'Nh',  # Nihonium
+    'Fl',  # Flerovium
+    'Mc',  # Moscovium
+    'Lv',  # Livermorium
+    'Ts',  # Tennessine
+    'Og'  # Oganesson
+]
+
+pd_elements_set = set(pd_elements_list)
+
+
+# RARE EARTHS
+RARE_EARTHS_LIST =  ['Sc', 'Y', 'La', 'Ce', 'Pr',  \
+                   'Nd', 'Pm', 'Sm', 'Eu', 'Gd', \
+                   'Tb', 'Dy', 'Ho', 'Er', 'Tm', \
+                   'Yb', 'Lu']
+RARE_EARTHS = set( RARE_EARTHS_LIST )
+
+TOKENIZED_RARE_EARTHS = { k:v for k,v in enumerate(sorted(RARE_EARTHS_LIST)) }
+
+
 # COMPOUND TO ELEMENT CONTENT
 def compound_2_element_content(compound):
     """
@@ -29,6 +169,14 @@ def compound_2_element_content(compound):
     """
     def compound_2_element_content_no_brackets(compound):
         
+        # check if element belongs to the periodic table. If it does, update element_content dict.
+        def update_element_content(el_cont, el, cont):
+            if el in pd_elements_set:
+                el_cont[el] = float(cont)
+            else:
+                raise ValueError('{} does not belong to the periodic table!'.format(el))
+            
+            
         element_content = {}
         element = ''
         content = ''
@@ -42,7 +190,8 @@ def compound_2_element_content(compound):
                     if( i == 0 ):
                         element+=l
                     else:
-                        element_content[element] = float(content)
+                        update_element_content(element_content, element, content)
+                        #element_content[element] = float(content)
                         element = l
                         content = ''
                         
@@ -50,18 +199,21 @@ def compound_2_element_content(compound):
                     if (l.islower()):
                         element+=l
                     if ( l.isupper() ):
-                        element_content[element] = 1.
+                        update_element_content(element_content, element, 1)
+                        # element_content[element] = 1.
                         element = l
                         content = ''
                 if(i == len(compound) -1 ):
-                    element_content[element] = 1.
+                    update_element_content(element_content, element, 1)
+                    # element_content[element] = 1.
                     
             if ( l.isnumeric() or l == '.'):
                 content+=l
                 # if (previous_char.isnumeric()):
                 #     content+=l
                 if(i == len(compound) -1 ):
-                    element_content[element] = float(content)
+                    update_element_content(element_content, element, content)
+                    #element_content[element] = float(content)
                         
             
             previous_char = l
@@ -129,14 +281,6 @@ def compound_2_element_content(compound):
     return element_content
 
 
-# RARE EARTHS
-RARE_EARTHS_LIST =  ['Sc', 'Y', 'La', 'Ce', 'Pr',  \
-                   'Nd', 'Pm', 'Sm', 'Eu', 'Gd', \
-                   'Tb', 'Dy', 'Ho', 'Er', 'Tm', \
-                   'Yb', 'Lu']
-RARE_EARTHS = set( RARE_EARTHS_LIST )
-
-TOKENIZED_RARE_EARTHS = { k:v for k,v in enumerate(sorted(RARE_EARTHS_LIST)) }
 
 def rare_earth_content(compound):
     """
@@ -177,10 +321,3 @@ def has_rare_earth(compound):
     """
     
     return bool(rare_earth_content(compound))
-
-
-# CONVERSION UNITS
-MU_NOUGHT = 4e-7 * np.pi # N/A^2
-MU_B = 9.2740100657e-24 # J⋅T^−1
-AA = 1e-10 # m
-

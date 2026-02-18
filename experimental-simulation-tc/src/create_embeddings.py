@@ -45,6 +45,11 @@ RANDOM_SEED = 42
 np.random.seed(RANDOM_SEED)
 
 
+# Create log directory 
+from src.log_to_file import log_output
+log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'logs')
+os.makedirs(log_dir, exist_ok=True)
+
 class EmbeddingCreator:
     """Create compound embeddings from element embeddings."""
     
@@ -455,8 +460,8 @@ class EmbeddingCreator:
         print(f"Visualizations:     {self.artifacts_dir}")
         print(f"{'='*60}\n")
 
-
-def main():
+@log_output('logs/create_embeddings.txt')   
+def create_embeddings():
     """Main execution function."""
     # Determine paths
     script_dir = Path(__file__).parent
@@ -574,4 +579,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    create_embeddings()

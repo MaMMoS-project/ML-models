@@ -22,8 +22,16 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 
+# Create log directory 
+import os
+import sys
+from src.log_to_file import log_output
+log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'logs')
+os.makedirs(log_dir, exist_ok=True)
 
-def main():
+@log_output('logs/training_original.txt') 
+def training_original():
+    
     # Ensure we can import training modules
     script_dir = Path(__file__).parent
     training_dir = script_dir / "training"
@@ -83,6 +91,7 @@ def main():
             )
             # Use custom loader
             sr_trainer.loader = custom_loader
+            
             sr_metrics = sr_trainer.train_and_evaluate(
                 dataset_name=dataset_name,
                 dataset_type=dataset_type,
@@ -97,6 +106,7 @@ def main():
                 "MAE": sr_metrics["MAE"],
             })
             print(f"  Symbolic Regression - R²: {sr_metrics['R2']:.4f}")
+            
         except Exception as e:
             print(f"Error running Symbolic Regression: {e}")
 
@@ -230,7 +240,7 @@ def main():
             
             pivot_csv = out_dir / "original_comparison_pivot.csv"
             pivot_df.to_csv(pivot_csv, index=False)
-            print("\nR² BY DATASET AND MODEL FAMILY:")
+            print("\n R² BY DATASET AND MODEL FAMILY:")
             print(pivot_df.to_string(index=False))
             print(f"Pivot table saved to: {pivot_csv}")
         except Exception as e:
@@ -238,6 +248,6 @@ def main():
     else:
         print("No results were produced; please check error messages above.")
 
-
+                            
 if __name__ == "__main__":
-    main()
+    training_original()

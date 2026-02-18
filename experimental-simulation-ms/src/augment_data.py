@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 from scipy.stats import norm, laplace, rv_histogram
 import statsmodels
 
-from pre_process_data import create_pairwise_dataset, create_to_augment_exp_val_dataset
+from src.pre_process_data import create_pairwise_dataset, create_to_augment_exp_val_dataset
 
 import argparse
 
@@ -239,4 +239,4 @@ def augment_data_experimental(config):
     df_combined_re_free = df_combined_re_free[['composition', 'material_id', 'Ms (ampere/meter)_s', 'has_rare_earth',
                                                'Ms (ampere/meter)_e_re_free_augmented', 'exp-minus-sim']].copy()
     df_combined_re_free.to_csv('data/re_free_augmented_data.csv')
-    print(df_combined.head)
+    # print(df_combined.head)

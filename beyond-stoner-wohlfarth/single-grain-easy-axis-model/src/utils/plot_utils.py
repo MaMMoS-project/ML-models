@@ -31,6 +31,8 @@ def plot_3d_parameter_space(df, x_col, y_col, z_col, log_scale=False, color_by=N
         The figure and 3D plot for further customization if needed.
     """
 
+    backend = plt.get_backend()  
+    
     fig = plt.figure(figsize=(10, 8))
     ax = fig.add_subplot(111, projection='3d')
     
@@ -67,6 +69,11 @@ def plot_3d_parameter_space(df, x_col, y_col, z_col, log_scale=False, color_by=N
     # Allow interactive zooming, rotating
     if save_path:
         plt.savefig(f"{save_path}/3d_parameter_space.png", bbox_inches='tight', dpi=300)
-    plt.show()
+        plt.ioff()
+        
+    else:
+        plt.show()
+        
+    plt.close()
     
     return fig, ax

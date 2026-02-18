@@ -1,12 +1,12 @@
 # ML-models
-Collection of various ML models for the MaMMoS project
+Collection of various ML models developed for the MaMMoS project
 
 Models are organized in different folders of this repository:
 
 
 - ./beyond-stoner-wolfarth:
 
-   ML models to replace single-grain micromaggnetics simulations by ML predictions for
+   ML models to replace single-grain micromagnetics simulations by ML predictions for:
 
    -- ./beyond-stoner-wolfarth/single-grain-easy-axis-model:
       where the H and K1 vector are aligned along the z-axis of the simulation cube

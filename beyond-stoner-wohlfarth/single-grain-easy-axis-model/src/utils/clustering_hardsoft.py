@@ -64,10 +64,15 @@ def threshold_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)', threshold=0.6
     plt.title('Threshold-based Clustering of Magnetic Materials')
     plt.legend()
     
-    if save_path:
+    if (save_path is not None):
         plt.savefig(f"{save_path}/threshold_clustering.png", bbox_inches='tight', dpi=300)
-    plt.show()
-    
+        plt.ioff()
+        
+    else:
+        plt.show()
+        
+    plt.close()    
+        
     return df_clustered
 
 def get_hard_soft_clusters(df: pd.DataFrame, method: str = 'kmeans', **kwargs) -> Dict[str, pd.DataFrame]:
@@ -170,7 +175,11 @@ def kmeans_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)', save_path=None):
     plt.title('K-means Clustering of Magnetic Materials')
     plt.legend()
     
-    if save_path:
+    if (save_path is not None):
         plt.savefig(f"{save_path}/kmeans_clustering.png", bbox_inches='tight', dpi=300)
     
+    else:
+        plt.show()
+        
+    plt.close()
     return df_clustered

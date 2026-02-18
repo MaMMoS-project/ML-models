@@ -6,7 +6,7 @@ from typing import List, Tuple
 from tqdm import tqdm
 
 from pymatgen.core import Composition
-from composition_data import CompositionData
+from src.composition_data import CompositionData
 
 import torch
 

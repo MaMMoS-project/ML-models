@@ -37,6 +37,10 @@ from src.composition_data import CompositionData
 RANDOM_SEED = 42
 np.random.seed(RANDOM_SEED)
 
+# Create log directory 
+from src.log_to_file import log_output
+log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'logs')
+os.makedirs(log_dir, exist_ok=True)
 
 class PCAEmbeddingCompressor:
     """Compress compound embeddings using PCA - focused on 8, 16, and 32 components."""
@@ -87,7 +91,7 @@ class PCAEmbeddingCompressor:
         print(f"  ✓ Explained variance: {explained_var:.4f} ({explained_var*100:.2f}%)")
         
         return pca, explained_var
-    
+       
     def compress_embeddings(self, df: pd.DataFrame, component_sizes: List[int] = [8, 16, 32]) -> pd.DataFrame:
         """
         Create PCA-compressed versions of embeddings.
@@ -224,8 +228,8 @@ class PCAEmbeddingCompressor:
         
         print(f"\n" + "="*60)
 
-
-def main():
+@log_output('logs/compress_embeddings_PCA.txt') 
+def compress_embeddings_PCA():
     """Main execution function."""
     # Determine paths
     script_dir = Path(__file__).parent
@@ -235,6 +239,7 @@ def main():
     input_dir = project_root / 'outputs'
     # Output directory (same as input but we'll use different filenames)
     output_dir = input_dir
+    embedding_file = project_root / 'data' / 'embeddings' / 'element' / 'matscholar200.json'
     
     print("="*60)
     print("PCA EMBEDDING COMPRESSION PIPELINE")
@@ -303,4 +308,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    compress_embeddings_PCA()

@@ -1,4 +1,4 @@
-experiment: "mat200log_sim2exp-re_free"
+experiment: "mat200log_sim2exp-re_free-augmented"
 config_path: "configs/scikit_models_w_mat200_config_augmented_re_free.yml"
 material_group: "re_free"
 data_path: "data/re_free_augmented_data.csv"

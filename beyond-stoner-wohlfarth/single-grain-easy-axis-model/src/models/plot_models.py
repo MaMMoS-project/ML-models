@@ -2,7 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-from models.regression_metrics import adjusted_r_squared, calculate_mape, singleoutput_mape, gini_coefficient
+
+from src.models.regression_metrics import adjusted_r_squared, calculate_mape, singleoutput_mape, gini_coefficient
 
 def plot_predictions_jackknife(
     y_true_train: np.ndarray,
@@ -331,7 +332,7 @@ def plot_predictions_with_metrics_row_confidence(
         ax_test.legend(loc='lower right')
     
     plt.tight_layout()
-
-
-
-
+    
+    plt.ioff()
+    plt.close(fig)
+    plt.close()

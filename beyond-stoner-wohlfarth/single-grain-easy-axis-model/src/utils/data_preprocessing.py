@@ -5,7 +5,7 @@ import seaborn as sns
 
 def analyze_dataframe(df, output_columns = ['Hc (A/m)','Mr (A/m)','BHmax (J/m^3)'], 
                       input_columns = ['Ms (A/m)', 'A (J/m)', 'K (J/m^3)'],
-                      save_path=None):
+                      save_path=None, results_dir=None):
 
     # Drop non-numeric columns
     df_numeric = df.select_dtypes(include=[np.number])
@@ -30,14 +30,26 @@ def analyze_dataframe(df, output_columns = ['Hc (A/m)','Mr (A/m)','BHmax (J/m^3)
     # Plot histograms for all numeric columns
     df_numeric.hist(figsize=(10, 10), bins=20)
     plt.tight_layout()
-    if save_path:
+    if (save_path is not None):
         plt.savefig(f"{save_path}/histograms.png", bbox_inches='tight', dpi=300)
-    
+        plt.ioff()
+        
+    else:
+        plt.show()
+    plt.close()        
+
     # Show correlation matrix as a heatmap
     plt.figure(figsize=(10, 8))
     sns.heatmap(df_numeric.corr(), annot=True, fmt=".2f", cmap='coolwarm')
-    if save_path:
+    
+    if (save_path is not None):
         plt.savefig(f"{save_path}/correlation_heatmap.png", bbox_inches='tight', dpi=300)
+        plt.ioff()
+        
+    else:
+        plt.show()
+    plt.close()
+        
 
     fig, axes = plt.subplots(len(input_columns), len(output_columns), figsize=(15, 10))
     for i, inp in enumerate(input_columns):
@@ -55,6 +67,8 @@ def analyze_dataframe(df, output_columns = ['Hc (A/m)','Mr (A/m)','BHmax (J/m^3)
     plt.tight_layout()
     if save_path:
         plt.savefig(f"{save_path}/kdeplots.png", bbox_inches='tight', dpi=300)
+        plt.ioff()
+    plt.close()
     
     # Prepare X and y for regression
     X = df[input_columns]
@@ -62,7 +76,7 @@ def analyze_dataframe(df, output_columns = ['Hc (A/m)','Mr (A/m)','BHmax (J/m^3)
     return X, y
 
 
-def compute_and_plot_Mr_over_Ms(Ms_values, Mr_values, A_values, K_values, save_path=None):
+def compute_and_plot_Mr_over_Ms(Ms_values, Mr_values, A_values, K_values, save_path=None, results_dir=None):
     """
     Compute the ratio Mr/Ms, plot it in a scatter plot,
     and return min and max of the ratio.
@@ -117,14 +131,12 @@ def compute_and_plot_Mr_over_Ms(Ms_values, Mr_values, A_values, K_values, save_p
             ratio_soft.append(ratio[i])
             ratio_l_soft.append(ratio_l_K_l_A[i])
 
-
-
-    print("#Soft magnets:",len(ratio_soft), "out of ",len(ratio))
+    print("# Soft magnets:",len(ratio_soft), "out of ",len(ratio))
 
     # Compute min and max
     ratio_min = np.min(ratio)
     ratio_max = np.max(ratio)
-
+    
     # Plot scatter of Ms vs. ratio
     plt.figure(figsize=(6, 4))
     plt.scatter(Ms_arr, ratio, c='blue', edgecolor='k', alpha=0.7, label='Mr/Ms ratio')
@@ -133,8 +145,15 @@ def compute_and_plot_Mr_over_Ms(Ms_values, Mr_values, A_values, K_values, save_p
     plt.title('Scatter Plot of Mr/Ms vs. Ms')
     plt.legend()
     plt.tight_layout()
-    if save_path:
+    
+    if (save_path is not None):
         plt.savefig(f"{save_path}/Mr_over_Ms.png", bbox_inches='tight', dpi=300)
+        plt.ioff()
+        
+    else:
+        plt.show()
+    
+    plt.close()
 
     # Plot scatter of Ms vs. ratio 
     plt.figure(figsize=(6, 4))
@@ -145,8 +164,15 @@ def compute_and_plot_Mr_over_Ms(Ms_values, Mr_values, A_values, K_values, save_p
     plt.title('Scatter Plot of Mr/Ms vs. Ms')
     plt.legend()
     plt.tight_layout()
-    if save_path:
+    
+    if (save_path is not None):
         plt.savefig(f"{save_path}/Mr_over_Ms_soft.png", bbox_inches='tight', dpi=300)
+        plt.ioff()
+    
+    else:
+        plt.show()
+
+    plt.close()
         
     return ratio, ratio_min, ratio_max
 
@@ -289,7 +315,6 @@ def preprocess_data(
 
     plt.tight_layout()
 
-
     # 5. Prepare X and y
     X = df[input_columns]
     #print(output_columns)
@@ -297,4 +322,3 @@ def preprocess_data(
     #print("Y.shape: ",y.shape)
 
     return X, y
-
