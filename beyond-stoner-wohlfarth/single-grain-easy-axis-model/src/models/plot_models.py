@@ -324,15 +324,14 @@ def plot_predictions_with_metrics_row_confidence(
         ax_test.text(
             0.05,
             0.95,
-            f'MSE: {mse:.4f}\nR²: {r2:.4f}',
+            f'MSE: {mse:.4f}\n R²: {r2:.4f}',
             transform=ax_test.transAxes,
             verticalalignment='top',
             bbox=dict(boxstyle='round,pad=0.3', fc='white', ec='black', alpha=0.7)
         )
+        
         ax_test.legend(loc='lower right')
     
     plt.tight_layout()
     
-    plt.ioff()
-    plt.close(fig)
-    plt.close()
+    return fig

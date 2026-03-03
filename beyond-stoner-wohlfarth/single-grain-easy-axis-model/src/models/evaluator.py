@@ -172,34 +172,32 @@ class Evaluator:
                 errors
             )
             plt.savefig(plot_dir / 'predictions_jackknife.png')
-            plt.ioff()
             plt.close(fig)
             
             # Also generate the standard prediction plot for comparison
-            plot_predictions_with_metrics_row_confidence(
+            fig = plot_predictions_with_metrics_row_confidence(
                 y_train, y_train_pred,
                 y_test, y_test_pred,
                 feature_names
             )
+            
             plt.savefig(plot_dir / 'predictions.png')
-            plt.ioff()
-            plt.close()
+            plt.close(fig)
             
         else:
+            
             # For other models, use the standard prediction plot
-            plot_predictions_with_metrics_row_confidence(
+            fig = plot_predictions_with_metrics_row_confidence(
                 y_train, y_train_pred,
                 y_test, y_test_pred,
                 feature_names
             )
             plt.savefig(plot_dir / 'predictions.png')
-            plt.ioff()
-            plt.close()
+            plt.close(fig)
         
         # Generate diagnostic plots
         plot_diagnostics(y_test, y_test_pred, feature_names)
         plt.savefig(plot_dir / 'diagnostics.png')
-        plt.ioff()
         plt.close()
         
     def _save_model(self, model, dataset_name, model_name, metrics):

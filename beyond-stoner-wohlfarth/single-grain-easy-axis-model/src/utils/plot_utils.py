@@ -31,8 +31,6 @@ def plot_3d_parameter_space(df, x_col, y_col, z_col, log_scale=False, color_by=N
         The figure and 3D plot for further customization if needed.
     """
 
-    backend = plt.get_backend()  
-    
     fig = plt.figure(figsize=(10, 8))
     ax = fig.add_subplot(111, projection='3d')
     
