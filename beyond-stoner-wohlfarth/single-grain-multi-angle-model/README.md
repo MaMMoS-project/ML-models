@@ -59,6 +59,8 @@ OUTPUT:
 # 4. Best Model
 For all three targets, the RF models does not show strong overfitting and the performance is the best.
 
+![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/beyond-stoner-wohlfarth/single-grain-multi-angle-model/results/best_model/random_forest/predictions.png)
+
 ![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/beyond-stoner-wohlfarth/single-grain-multi-angle-model/results/best_model/random_forest/predictions_jackknife.png)
 
 # 4.1 Feature Importance
