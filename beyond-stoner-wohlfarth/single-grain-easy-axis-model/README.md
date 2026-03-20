@@ -15,7 +15,7 @@ Use requirements.txt. In addition pytorch, compatible with your system, must be 
 - from the hysteresis loops, Hc, Mr and BHmax are computed (that's the input data for the ML model, available at [data/magnetic_materials.csv](data/magnetic_materials.csv)).
 - in total 1497 data points were computed
 
-The generation of the training data and details on the simulation software and method are [described in data-generation](data-generation/README.md).
+The generation of the V2 training data and details on the simulation software and method are [described in data-generation](https://github.com/MaMMoS-project/BSW_data_generation).
 
 ## 1. Data preprocessing
 
