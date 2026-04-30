@@ -10,7 +10,7 @@ Models are organized in different folders of this repository:
 
    -- ./beyond-stoner-wolfarth/single-grain-easy-axis-model:
       where the H and K1 vector are aligned along the z-axis of the simulation cube
-      Current model version: v0.1
+      Current model version: v1.0
 
 
    -- ./beyond-stoner-wolfarth/single-grain-mutli-angle-model:

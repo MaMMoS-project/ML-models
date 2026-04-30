@@ -11,7 +11,7 @@ from typing import Dict, Tuple, Any
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from sklearn.model_selection import cross_val_score
 
-def threshold_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)', threshold=0.6, save_path=None):
+def threshold_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)', threshold=0.4, save_path=None):
     """
     Cluster magnetic materials into hard and soft using a simple threshold on Mr/Ms ratio.
     
@@ -24,7 +24,7 @@ def threshold_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)', threshold=0.6
     Mr_col : str
         Name of the column containing remanent magnetization values
     threshold : float
-        Threshold value for Mr/Ms ratio (default: 0.6)
+        Threshold value for Mr/Ms ratio (default: 0.4)
     save_path : str, optional
         Path to save the plot
         
@@ -33,6 +33,11 @@ def threshold_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)', threshold=0.6
     pd.DataFrame
         DataFrame with added 'Clusters' column (0: soft, 1: hard)
     """
+
+
+    ## only work on valid points, i.e. drop points if somewhere NaN
+    #df = df.dropna()
+
     # Compute Mr/Ms ratio
     ratio = np.divide(df[Mr_col], df[Ms_col], 
                      out=np.zeros_like(df[Mr_col], dtype=float), 
@@ -89,6 +94,10 @@ def get_hard_soft_clusters(df: pd.DataFrame, method: str = 'kmeans', **kwargs) -
             - cluster0: Soft magnetic materials
             - cluster1: Hard magnetic materials
     """
+
+    ## only work on valid points, i.e. drop points if somewhere NaN
+    #df = df.dropna()
+
     if method == 'kmeans':
         df_clustered = kmeans_clustering(df, **kwargs)
         cluster_col = 'Clusters_KMeans'
@@ -130,6 +139,10 @@ def kmeans_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)', save_path=None):
     pd.DataFrame
         DataFrame with added 'Clusters_KMeans' column (0/1 for soft/hard)
     """
+
+    ## only work on valid points, i.e. drop points if somewhere NaN
+    #df = df.dropna()
+
     # Compute Mr/Ms ratio
     ratio = np.divide(df[Mr_col], df[Ms_col], 
                      out=np.zeros_like(df[Mr_col], dtype=float), 
@@ -183,3 +196,57 @@ def kmeans_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)', save_path=None):
         
     plt.close()
     return df_clustered
+
+
+def invalid_clustering(df, Ms_col='Ms (A/m)', A_col='A (J/m)', K1_col='K (J/m^3)', Mr_col='Mr (A/m)', save_path=None):
+    """
+    Cluster inputs Ms, A and K1, whether they do produce physcial outputs Mr, Hc and Bhmax.
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame containing the magnetic data INCLUDING rows with NaNs
+    Ms_col : str
+        Name of the column containing saturation magnetization values
+    A_col : str
+        Name of the column containing  values
+    K1_col : str
+        Name of the column containing  values
+    Mr_col : str
+        Name of the column containing remanent magnetization values
+    save_path : str, optional
+        Path to save the plot
+        
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with add
+    """
+
+    # Create a copy of the dataframe to avoid modifying the original
+    df_clustered = df.copy()
+
+    # convert NaNs to False
+    df_clustered['Valid_Inputs'] = df_clustered[Mr_col].notna()
+    df_clustered['Valid_Inputs'] = df_clustered['Valid_Inputs'].astype(int)
+    
+    # Plot the results
+    valid_df = df_clustered[df_clustered['Valid_Inputs'] == 1]
+    invalid_df = df_clustered[df_clustered['Valid_Inputs'] == 0]
+
+    plt.figure(figsize=(10, 6))
+    plt.scatter(valid_df[Ms_col], valid_df[K1_col], c=valid_df[Mr_col])
+    plt.scatter(invalid_df[Ms_col], invalid_df[K1_col], marker='x',color='red', label="Invalid inputs")
+
+    plt.xlabel('Ms (A/m)')
+    plt.ylabel('K1 (A/m)')
+    plt.title('Valid/Invalid datapoints')
+    plt.legend()
+
+    if save_path:
+        plt.savefig(f"{save_path}/valid_clustering.png", bbox_inches='tight', dpi=300)
+    else:
+        plt.show()
+    
+    return df_clustered
+

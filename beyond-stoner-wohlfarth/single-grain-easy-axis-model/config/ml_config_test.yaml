@@ -1,7 +1,7 @@
 # ML Pipeline Configuration
 
 data:
-  input_file: "data/magnetic_materials.csv" # it is the same as ../data/toy_model_data_3.csv
+  input_file: "data/single_grain_cube_50nm_aligned.csv" # it is the same as ../data/toy_model_data_3.csv
   results_dir: "results"
   compute_difference: false  # Whether to compute analytical magnetic properties and their differences
 #  results_dir: "results_diff"
@@ -59,14 +59,15 @@ models:
     params:
       show_feature_importance: true
       param_grid:
-        #n_estimators: [100, 200, 300]
-        max_depth: [10, 20] #, 30, null]
-        #min_samples_split: [2, 5, 10]
-        #min_samples_leaf: [1, 2, 4]
+        n_estimators: [100, 200, 300]
+        #max_depth: [10, 20] #, 30, null]
+        max_depth: [10, 20, 30, null]
+        min_samples_split: [2, 5, 10]
+        min_samples_leaf: [1, 2, 4]
         #max_features: [sqrt, log2, null]
   
   neural_network:
-    enabled: true
+    enabled: false
     module: train_nn
     function: train_neural_network
     params:
@@ -78,7 +79,7 @@ models:
         batch_size: 32
   
   linear_regression:
-    enabled: true
+    enabled: false
     module: train_lr
     function: train_linear_regression
     params:
@@ -86,7 +87,7 @@ models:
         fit_intercept: [true, false]
   
   lasso:
-    enabled: true
+    enabled: false
     module: train_lasso
     function: train_lasso
     params:
@@ -94,7 +95,7 @@ models:
       tol: 1e-4
   
   gaussian_process:
-    enabled: true
+    enabled: false
     module: train_gp
     function: train_gaussian_process
     params:

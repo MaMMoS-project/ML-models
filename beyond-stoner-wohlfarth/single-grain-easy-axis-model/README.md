@@ -2,7 +2,7 @@
 
 
 ## Current version of model
-v0.1
+v1.0
 
 
 ## 0. Installation
@@ -12,8 +12,8 @@ Use requirements.txt. In addition pytorch, compatible with your system, must be 
 
 - The training data has been created using micromagnetic simulations.
 - One hysteresis loop for a cube of 50nm edge length was computed for each combination of material parameters A, Ms, K
-- from the hysteresis loops, Hc, Mr and BHmax are computed (that's the input data for the ML model, available at [data/magnetic_materials.csv](data/magnetic_materials.csv)).
-- in total 1497 data points were computed
+- from the hysteresis loops, Hc, Mr and BHmax are computed (that's the input data for the ML model, available at [data/single_grain_cube_50nm_aligned.csv](data/single_grain_cube_50nm_aligned.csv)).
+- in total 10388 data points were computed
 
 The generation of the V2 training data and details on the simulation software and method are [described in data-generation](https://github.com/MaMMoS-project/BSW_data_generation).
 
@@ -80,31 +80,29 @@ For all three targets, both the FCNN and RF models do not show strong over fitti
 ### Metrics for target Hc
 | Model | Soft Train              | Soft Test                | Hard Train              | Hard Test               |
 | ----- | ----------------------- | ------------------------ | ----------------------- | ----------------------- |
-| LR    | MSE: 0.245<br>R²: 0.633 | MSE: 0.282<br>R²: 0.0729 | MSE: 0.122<br>R²: 0.910 | MSE: 0.121<br>R²: 0.923 |
-| LASSO | MSE: 0.245<br>R²: 0.633 | MSE: 0.282<br>R²: 0.729  | MSE: 0.122<br>R²: 0.909 | MSE: 0.122<br>R²: 0.922 |
-| RF    | MSE: 0.022<br>R²: 0.968 | MSE: 0.157<br>R²: 0.850  | MSE: 0.006<br>R²: 0.996 | MSE: 0.080<br>R²: 0.949 |
-| GP    | MSE: 0.000<br>R²: 0.999 | MSE: 0.139<br>R²: 0.862  | MSE: 0.000<br>R²: 0.999 | MSE: 0.045<br>R²: 0.971 |
-| FCNN  | MSE: 0.200<br>R²: 0.699 | MSE: 0.368<br>R²: 0.647  | MSE: 0.043<br>R²: 0.968 | MSE: 0.057<br>R²: 0.944 |
+| LR    | MSE: 0.105<br>R²: 0.530 | MSE: 0.098<br>R²: 0.592  | MSE: 0.124<br>R²: 0.930 | MSE: 0.106<br>R²: 0.939 | x
+| LASSO | MSE: 0.105<br>R²: 0.530 | MSE: 0.099<br>R²: 0.589  | MSE: 0.125<br>R²: 0.930 | MSE: 0.106<br>R²: 0.939 | x
+| RF    | MSE: 0.006<br>R²: 0.972 | MSE: 0.038<br>R²: 0.842  | MSE: 0.002<br>R²: 0.999 | MSE: 0.012<br>R²: 0.993 | x
+| GP    | MSE: 0.000<br>R²: 0.999 | MSE: 0.032<br>R²: 0.867  | MSE: 0.003<br>R²: 0.998 | MSE: 0.045<br>R²: 0.971 | x
+| FCNN  | MSE: 0.048<br>R²: 0.784 | MSE: 0.055<br>R²: 0.770  | MSE: 0.005<br>R²: 0.997 | MSE: 0.04<br>R²: 0.998  | x
 
 ### Metrics for target Mr
-
 | Model | Soft Train              | Soft Test               | Hard Train               | Hard Test               |
 | ----- | ----------------------- | ----------------------- | ------------------------ | ----------------------- |
-| LR    | MSE: 0.510<br>R²: 0.494 | MSE: 1.965<br>R²: 0.466 | MSE: 0.000<br>R²: 0.999  | MSE: 0.072<br>R²: 0.803 |
-| LASSO | MSE: 0.000<br>R²: 0.0   | MSE: 1.192<br>R²: 0.468 | MSE: 0.0002<br>R²: 0.999 | MSE: 0.073<br>R²: 0.802 |
-| RF    | MSE: 0.073<br>R²: 0.927 | MSE: 0.883<br>R²: 0.606 | MSE: 0.001<br>R²: 0.999  | MSE: 0.071<br>R²: 0.807 |
-| GP    | MSE: 0.000<br>R²: 0.999 | MSE: 0.622<br>R²: 0.723 | MSE: 0.000<br>R²: 0.999  | MSE: 0.072<br>R²: 0.802 |
-| FCNN  | MSE: 0.464<br>R²: 0.540 | MSE: 1.360<br>R²: 0.393 | MSE: 0.014<br>R²: 0.950  | MSE: 0.088<br>R²: 0.770 |
+| LR    | MSE: 0.160<br>R²: 0.427 | MSE: 0.128<br>R²: 0.474 | MSE: 0.013<br>R²: 0.996  | MSE: 0.014<br>R²: 0.987 |x
+| LASSO | MSE: 0.161<br>R²: 0.422 | MSE: 0.127<br>R²: 0.478 | MSE: 0.004<br>R²: 0.996  | MSE: 0.014<br>R²: 0.987 |x
+| RF    | MSE: 0.011<br>R²: 0.962 | MSE: 0.038<br>R²: 0.846 | MSE: 0.001<br>R²: 0.999  | MSE: 0.012<br>R²: 0.989 |x
+| GP    | MSE: 0.000<br>R²: 0.999 | MSE: 0.030<br>R²: 0.770 | MSE: 0.000<br>R²: 0.999  | MSE: 0.011<br>R²: 0.990 |x
+| FCNN  | MSE: 0.064<br>R²: 0.769 | MSE: 0.058<br>R²: 0.763 | MSE: 0.004<br>R²: 0.997  | MSE: 0.013<br>R²: 0.989 |x
 
 ### Metrics for target (BH)max
-
 | Model | Soft Train              | Soft Test                | Hard Train                | Hard Test                 |
 | ----- | ----------------------- | ------------------------ | ------------------------- | ------------------------- |
-| LR    | MSE: 0.008<br>R²: 0.975 | MSE: 0.0072<br>R²: 0.984 | MSE: 0.002<br>R²: 0.999   | MSE: 0.002<br>R²: 0.999   |
-| LASSO | MSE: 0.009<br>R²: 0.975 | MSE: 0.007<br>R²: 0.984  | MSE: 0.002<br>R²: 0.999   | MSE: 0.002<br>R²: 0.998   |
-| RF    | MSE: 0.002<br>R²: 0.996 | MSE: 0.006<br>R²: 0.987  | MSE: 0.0004<br>R²: 0.9996 | MSE: 0.0083<br>R²: 0.9933 |
-| GP    | MSE: 0.000<br>R²: 0.999 | MSE: 0.004<br>R²: 0.992  | MSE: 0.000<br>R²: 0.992   | MSE: 0.000<br>R²: 0.999   |
-| FCNN  | MSE: 0.161<br>R²: 0.518 | MSE: 0.182<br>R²: 0.573  | MSE: 0.012<br>R²: 0.988   | MSE: 0.018<br>R²: 0.986   |
+| LR    | MSE: 0.013<br>R²: 0.985 | MSE: 0.012<br>R²: 0.985  | MSE: 0.003<br>R²: 0.999   | MSE: 0.002<br>R²: 0.999   |x
+| LASSO | MSE: 0.013<br>R²: 0.985 | MSE: 0.013<br>R²: 0.988  | MSE: 0.003<br>R²: 0.999   | MSE: 0.002<br>R²: 0.998   |x
+| RF    | MSE: 0.001<br>R²: 0.999 | MSE: 0.006<br>R²: 0.995  | MSE: 0.0001<br>R²: 1.000 | MSE: 0.0003<br>R²: 0.99999 | x
+| GP    | MSE: 0.000<br>R²: 0.999 | MSE: 0.007<br>R²: 0.993  | MSE: 0.000<br>R²: 0.992   | MSE: 0.000<br>R²: 0.999   |
+| FCNN  | MSE: 0.265<br>R²: 0.970 | MSE: 0.041<br>R²: 0.961  | MSE: 0.000<br>R²: 0.999   | MSE: 0.000<br>R²: 0.999   |x
 
 ### Plots Hard-Magnet Random Forest Model
 
@@ -122,4 +120,5 @@ Feature's contribution in a Random Forest model is measured by the average varia
 
 ## 4. Inference
 
-[TODO: add pipeline overview]
+To run an inference please run:
+python3 ./scripts/load_onnx_models.py 
