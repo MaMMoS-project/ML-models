@@ -19,11 +19,11 @@ from skl2onnx.common.data_types import FloatTensorType
 SKLEARN_ONNX_AVAILABLE = True
 
 
-def _save_pipeline_onnx(pipeline, input_cols, save_path):
+def _save_pipeline_onnx(pipeline, input_cols, save_path, filename):
     """Export sklearn pipeline to ONNX format.
     """
     
-    onnx_path = f"{save_path}/supervised_hardsoft_clustering_pipeline.onnx"
+    onnx_path = f"{save_path}"+"/"+filename
     
     try:
         # Get input dimension from input columns
@@ -66,7 +66,7 @@ def train_and_tune(X_train, y_train):
     return grid_search.best_estimator_, grid_search.best_params_
 
 
-def supervised_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)',
+def supervised_hardsoft_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)',
                           input_cols=['Ms (A/m)', 'A (J/m)', 'K (J/m^3)'], 
                           save_path=NotImplemented):
     """
@@ -118,7 +118,7 @@ def supervised_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)',
     X_train_scaled, X_test_scaled, scaler = scale_data(X_train, X_test, 'standard')
 
     # Train and tune the model
-    print("Training supervised classification model...")
+    print("Training supervised classification model for hard/soft...")
     best_model, best_params = train_and_tune(X_train_scaled, y_train)
     print(f"Best parameters: {best_params}")
     
@@ -148,7 +148,7 @@ def supervised_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)',
     plt.title('Confusion Matrix')
     
     if (save_path is not None):
-        plt.savefig(f"{save_path}/supervised_confusion_matrix.png", bbox_inches='tight', dpi=300)
+        plt.savefig(f"{save_path}/supervised_hardsoft_confusion_matrix.png", bbox_inches='tight', dpi=300)
         plt.ioff()
         
     else:
@@ -179,7 +179,7 @@ def supervised_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)',
     
     plt.xlabel('Ms (A/m)')
     plt.ylabel('Mr/Ms ratio')
-    plt.title('Supervised Classification of Magnetic Materials')
+    plt.title('Supervised Classification of hard/soft Magnetic Materials')
     plt.legend()
     
 
@@ -188,11 +188,11 @@ def supervised_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)',
         
         os.makedirs(save_path, exist_ok=True)
 
-        plt.savefig(f"{save_path}/supervised_clustering.png", bbox_inches='tight', dpi=300)
+        plt.savefig(f"{save_path}/supervised_hardsoft_clustering.png", bbox_inches='tight', dpi=300)
         plt.ioff()
 
         # Save pipeline (recommended with joblib)
-        pipe_path = f"{save_path}/supervised_clustering_pipeline.joblib"
+        pipe_path = f"{save_path}/supervised_hardsoft_clustering_pipeline.joblib"
         joblib.dump({
             "pipeline": pipeline,
             "feature_cols": input_cols,
@@ -202,13 +202,14 @@ def supervised_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)',
         print(f"Pipeline saved to {pipe_path}")
 
         # Save the trained model
-        model_path = f"{save_path}/supervised_clustering_model.pkl"
+        model_path = f"{save_path}/supervised_hardsoft_clustering_model.pkl"
         with open(model_path, 'wb') as f:
             pickle.dump(best_model, f)
         print(f"Model saved to {model_path}")
         
         # Export pipeline to ONNX format
-        _save_pipeline_onnx(pipeline, input_cols, save_path)
+        filename="supervised_hardsoft_clustering_pipeline.onnx"
+        _save_pipeline_onnx(pipeline, input_cols, save_path, filename)
         
         # Save metrics to a text file
         metrics_path = f"{save_path}/supervised_metrics.txt"
@@ -258,7 +259,7 @@ def apply_supervised_clustering(df, model_path=None,
     if model_path is None:
         default_path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-            'plots', 'supervised_clustering_pipeline.joblib'
+            'plots', 'supervised_hardsoft_clustering_pipeline.joblib'
         )
         if os.path.exists(default_path):
             model_path = default_path
@@ -313,10 +314,10 @@ def apply_supervised_clustering(df, model_path=None,
         
         plt.xlabel(input_cols[0])
         plt.ylabel(input_cols[1])
-        plt.title('Supervised Classification of Magnetic Materials (Inference)')
+        plt.title('Supervised Classification of hard/soft Magnetic Materials (Inference)')
         plt.legend()
         
-        plt.savefig(f"{save_path}/supervised_clustering_inference.png", bbox_inches='tight', dpi=300)
+        plt.savefig(f"{save_path}/supervised_hardsoft_clustering_inference.png", bbox_inches='tight', dpi=300)
         plt.ioff()
         
     else:
@@ -326,7 +327,7 @@ def apply_supervised_clustering(df, model_path=None,
     
     return df_clustered
 
-def supervised_clustering_valid_points(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)', K_col='K (J/m^3)',
+def supervised_valid_points_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)', K_col='K (J/m^3)',
                           input_cols=['Ms (A/m)', 'A (J/m)', 'K (J/m^3)'], 
                           save_path=None):
     """
@@ -400,7 +401,7 @@ def supervised_clustering_valid_points(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)',
     plt.title('Confusion Matrix')
     
     if save_path:
-        plt.savefig(f"{save_path}/supervised_confusion_matrix_valid-invalid-inputs.png", bbox_inches='tight', dpi=300)
+        plt.savefig(f"{save_path}/supervised_valid-invalid-inputs_confusion_matrix.png", bbox_inches='tight', dpi=300)
     plt.show()
     
     # Make predictions on the entire dataset
@@ -433,10 +434,10 @@ def supervised_clustering_valid_points(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)',
     if save_path:
         os.makedirs(save_path, exist_ok=True)
 
-        plt.savefig(f"{save_path}/supervised_clustering_valid-invalid-inputs.png", bbox_inches='tight', dpi=300)
+        plt.savefig(f"{save_path}/supervised_valid-invalid-inputs_clustering.png", bbox_inches='tight', dpi=300)
 
         # Save pipeline (recommended with joblib)
-        pipe_path = f"{save_path}/supervised_clustering_pipeline-valid-invalid-inputs.joblib"
+        pipe_path = f"{save_path}/supervised_valid-invalid-inputs_clustering_pipeline.joblib"
         joblib.dump({
             "pipeline": pipeline,
             "feature_cols": input_cols,
@@ -446,13 +447,17 @@ def supervised_clustering_valid_points(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)',
         print(f"Pipeline saved to {pipe_path}")
 
         # Save the trained model
-        model_path = f"{save_path}/supervised_clustering_model-valid-invalid-inputs.pkl"
+        model_path = f"{save_path}/supervised_valid-invalid-inputs_clustering_model.pkl"
         with open(model_path, 'wb') as f:
             pickle.dump(best_model, f)
         print(f"Model saved to {model_path}")
         
+        # Export pipeline to ONNX format
+        filename="supervised_valid-invalid-inputs_clustering_pipeline.onnx"
+        _save_pipeline_onnx(pipeline, input_cols, save_path, filename)
+
         # Save metrics to a text file
-        metrics_path = f"{save_path}/supervised_metrics-valid-invalid-inputs.txt"
+        metrics_path = f"{save_path}/supervised_valid-invalid-inputs_metrics.txt"
         with open(metrics_path, 'w') as f:
             f.write("Model Performance on Test Set:\n")
             f.write(f"Accuracy: {accuracy_score(y_test, y_test_pred):.4f}\n")

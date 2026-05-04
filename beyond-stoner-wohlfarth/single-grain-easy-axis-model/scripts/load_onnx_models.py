@@ -5,7 +5,7 @@ import onnxruntime as ort
 
 BASE_DIR = Path(__file__).resolve().parent
 
-VALIDATE_INPUTS_CLASSIFIER_MODEL = BASE_DIR / "../plots/supervised_clustering_valid_points_pipeline.onnx"
+VALIDATE_INPUTS_CLASSIFIER_MODEL = BASE_DIR / "../plots/supervised_valid-invalid-inputs_clustering_pipeline.onnx"
 HARDSOFT_CLASSIFIER_MODEL = BASE_DIR / "../plots/supervised_hardsoft_clustering_pipeline.onnx"
 MODELS = {
     "soft": BASE_DIR / "../results/models/LogTransformation_cluster0/random_forest.onnx",

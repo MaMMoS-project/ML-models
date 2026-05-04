@@ -10,7 +10,7 @@ import mammos_units as u
 from src.utils.data_preprocessing import preprocess_data, analyze_dataframe, compute_and_plot_Mr_over_Ms
 from src.utils.plot_utils import plot_3d_parameter_space
 from src.utils.clustering_hardsoft import threshold_clustering, kmeans_clustering, invalid_clustering
-from src.utils.supervised_clustering import supervised_clustering, supervised_clustering_valid_points
+from src.utils.supervised_clustering import supervised_hardsoft_clustering, supervised_valid_points_clustering
 from src.utils.log_to_file import log_output 
 
 # Create log directory 
@@ -138,7 +138,7 @@ def analyze_magnetic_data(data_path=None, plots_dir=None):
     print("Number of invalid magnets: ", (df_invalid['Valid_Inputs'] == 0).sum())
     
     # Learn this information:
-    df_invalid_supervised = supervised_clustering_valid_points(df_invalid, save_path=plots_dir)
+    df_invalid_supervised = supervised_valid_points_clustering(df_invalid, save_path=plots_dir)
     print("\nSupervised clustering results:")
     print("Number of INVALID inputs: ", (df_invalid_supervised['Invalid_Values_Supervised'] == 0).sum())
     print("Number of VALID inputs: ",   (df_invalid_supervised['Invalid_Values_Supervised'] == 1).sum())
@@ -158,7 +158,7 @@ def analyze_magnetic_data(data_path=None, plots_dir=None):
     print("Number of hard magnets: ", (df_threshold['Clusters'] == 1).sum())
     
     # Supervised clustering
-    df_supervised = supervised_clustering(df, save_path=plots_dir)
+    df_supervised = supervised_hardsoft_clustering(df, save_path=plots_dir)
 
     print("\nSupervised clustering results:")
     print("Number of soft magnets: ", (df_supervised['Clusters_Supervised'] == 0).sum())
