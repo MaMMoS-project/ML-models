@@ -97,12 +97,14 @@ def calculate_jackknife_variance(model, X_train, X_test, y_train) -> Optional[np
         X_test_np = X_test.to_numpy() if hasattr(X_test, 'to_numpy') else X_test
         
         # Get the first output to initialize the errors array
-        output_0 = fci.random_forest_error(model, X_train_np.shape, X_test_np, y_output=0)
+        # calibrate=False avoids an ill-conditioned EB optimisation warning when
+        # n_estimators is large enough that the raw IJ variance is already reliable.
+        output_0 = fci.random_forest_error(model, X_train_np.shape, X_test_np, y_output=0, calibrate=False)
         errors = np.empty((output_0.shape[0], n_outputs))
-        
+
         # Calculate errors for each output dimension
         for i in range(n_outputs):
-            errors[:,i] = fci.random_forest_error(model, X_train_np.shape, X_test_np, y_output=i)
+            errors[:,i] = fci.random_forest_error(model, X_train_np.shape, X_test_np, y_output=i, calibrate=False)
         
         print(f"Jackknife variance computed successfully. Shape: {errors.shape}")
         return errors

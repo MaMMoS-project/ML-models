@@ -5,6 +5,7 @@ Creates tables for each dataset and model, highlighting the best metrics.
 
 import os
 import json
+import shutil
 import argparse
 import numpy as np
 import pandas as pd
@@ -395,42 +396,184 @@ def create_metrics_plot(df, dataset, variable_name, output_path, higher_better, 
     print(f"Saved metrics plot to {fig_path}")
 
 
+_KNOWN_SCALERS = ['standard', 'minmax', 'robust']
+
+# Models that cannot be exported to ONNX and are therefore skipped when
+# selecting the best model for linking.
+_ONNX_UNSUPPORTED_MODELS = {'gaussian_process', 'neural_network'}
+
+
+def find_best_model_per_cluster(results):
+    """Return all models per cluster label, sorted by test R² (best first).
+
+    Returns a dict keyed by cluster label (e.g. 'cluster0', 'cluster1') where
+    each value is a list of candidate dicts with fields: model, result_key,
+    dataset_name, r2 — sorted descending by r2.
+    """
+    candidates = {}
+
+    for model_name, clusters in results.items():
+        for cluster_label, datasets in clusters.items():
+            if 'cluster' not in cluster_label:
+                continue  # skip the 'all' aggregation
+            for result_key, result_data in datasets.items():
+                if 'metrics' not in result_data:
+                    continue  # skip auxiliary entries like rf_errors
+                r2 = result_data['metrics'].get('test', {}).get('r2')
+                if r2 is None:
+                    continue
+
+                # Strip the trailing scaler suffix to recover the dataset_name
+                dataset_name = result_key
+                for scaler in _KNOWN_SCALERS:
+                    if result_key.endswith(f'_{scaler}'):
+                        dataset_name = result_key[: -len(f'_{scaler}')]
+                        break
+
+                candidates.setdefault(cluster_label, []).append({
+                    'model': model_name,
+                    'result_key': result_key,
+                    'dataset_name': dataset_name,
+                    'r2': r2,
+                })
+
+    return {
+        label: sorted(cands, key=lambda c: c['r2'], reverse=True)
+        for label, cands in candidates.items()
+    }
+
+
+def link_best_models(results, results_dir):
+    """Create best_model_<cluster> directories with symlinks to the winning model.
+
+    For each cluster (cluster0, cluster1) the model with the highest test R² is
+    selected, skipping models that have no ONNX export (gaussian_process,
+    neural_network).  Symlinks are created for the .onnx, .pkl, _scaler.pkl and
+    _metrics.json files as well as the plots subdirectory.  A
+    best_model_summary.json is written alongside them.
+
+    Existing symlinks are refreshed so the directory always reflects the latest
+    run.
+    """
+    results_dir = Path(results_dir).resolve()
+    all_candidates = find_best_model_per_cluster(results)
+
+    if not all_candidates:
+        print("No per-cluster results found; skipping best-model linking.")
+        return
+
+    for cluster_label, candidates in sorted(all_candidates.items()):
+        # Pick the highest-ranked model that supports ONNX export.
+        skipped = []
+        info = None
+        for candidate in candidates:
+            if candidate['model'] in _ONNX_UNSUPPORTED_MODELS:
+                skipped.append(candidate)
+            else:
+                info = candidate
+                break
+
+        if info is None:
+            print(f"\nNo ONNX-compatible model found for {cluster_label}; skipping.")
+            continue
+
+        model_name = info['model']
+        dataset_name = info['dataset_name']
+        r2 = info['r2']
+
+        if skipped:
+            skipped_desc = ', '.join(
+                f"{c['model']} (R²={c['r2']:.4f})" for c in skipped
+            )
+            print(
+                f"\nNote: best model(s) for {cluster_label} lack ONNX export and "
+                f"were skipped: {skipped_desc}"
+            )
+            print(
+                f"Using next best model for {cluster_label}: "
+                f"{model_name}  (test R²={r2:.4f})"
+            )
+        else:
+            print(f"\nBest model for {cluster_label}: {model_name}  (test R²={r2:.4f})")
+
+        best_dir = results_dir / f"best_model_{cluster_label}"
+        best_dir.mkdir(exist_ok=True)
+
+        # --- model artefacts ---
+        model_src_dir = results_dir / 'models' / dataset_name
+        for suffix in ['.onnx', '.pkl', '_scaler.pkl', '_metrics.json']:
+            src = model_src_dir / f"{model_name}{suffix}"
+            if not src.exists():
+                continue
+            dst = best_dir / f"{model_name}{suffix}"
+            if dst.is_symlink() or dst.exists():
+                dst.unlink()
+            dst.symlink_to(os.path.relpath(src, best_dir))
+            print(f"  linked {dst.name} -> {os.path.relpath(src, best_dir)}")
+
+        # --- plots directory ---
+        plots_src = results_dir / 'plots' / dataset_name / model_name
+        if plots_src.exists():
+            dst = best_dir / 'plots'
+            if dst.is_symlink():
+                dst.unlink()
+            elif dst.exists():
+                shutil.rmtree(dst)
+            dst.symlink_to(os.path.relpath(plots_src, best_dir))
+            print(f"  linked plots/ -> {os.path.relpath(plots_src, best_dir)}")
+
+        # --- human-readable summary ---
+        summary = {
+            'cluster': cluster_label,
+            'best_model': model_name,
+            'dataset': dataset_name,
+            'test_r2': r2,
+            'result_key': info['result_key'],
+        }
+        with open(best_dir / 'best_model_summary.json', 'w') as f:
+            json.dump(summary, f, indent=2)
+        print(f"  summary -> {best_dir / 'best_model_summary.json'}")
+
+
 def main():
-    
+
     parser = argparse.ArgumentParser(description="Generate metric tables from overall_results.json")
     parser.add_argument("results_dir", help="Directory containing overall_results.json")
-    parser.add_argument("--output", "-o", default=None, 
+    parser.add_argument("--output", "-o", default=None,
                         help="Output directory for tables (default: <results_dir>/metric_tables)")
-    
+
     args = parser.parse_args()
-    
+
     try:
         # Set matplotlib style
         plt.style.use('ggplot')
-        
+
         # Set default output directory as a subdirectory of the input directory
         results_path = Path(args.results_dir)
         if args.output is None:
             output_path = results_path / "metric_tables"
         else:
             output_path = Path(args.output)
-         
+
         # Create output directory
         output_path.mkdir(parents=True, exist_ok=True)
-        
+
         # Load results
         results = load_results(args.results_dir)
-        
+
         # Create tables
         create_metric_tables(results, output_path)
-        
+
         print(f"Tables and plots generated successfully in {output_path}")
         plt.close()
-        
+
+        # Determine and link best models per cluster
+        link_best_models(results, args.results_dir)
+
     except Exception as e:
         print(f"Error: {e}")
         return 1
-    
+
     return 0
 
 

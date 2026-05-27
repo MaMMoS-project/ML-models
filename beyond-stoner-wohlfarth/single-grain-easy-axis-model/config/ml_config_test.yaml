@@ -39,7 +39,7 @@ preprocessing:
 #      create_new_features: true
 
 cross_validation:
-  n_folds: 2
+  n_folds: 5
   random_state: 42
 
 clustering:
@@ -61,9 +61,9 @@ models:
       param_grid:
         n_estimators: [100, 200, 300]
         #max_depth: [10, 20] #, 30, null]
-        max_depth: [10, 20, 30, null]
+        max_depth: [10, 20, null]
         min_samples_split: [2, 5, 10]
-        min_samples_leaf: [1, 2, 4]
+        min_samples_leaf: [1, 2, 4, 8]
         #max_features: [sqrt, log2, null]
   
   neural_network:
@@ -86,13 +86,20 @@ models:
       param_grid:
         fit_intercept: [true, false]
   
-  lasso:
+  lasso_lars:
     enabled: false
     module: train_lasso
-    function: train_lasso
+    function: train_lasso_lars
     params:
       alpha: 0.01
-      tol: 1e-4
+
+  lasso_lars_cv:
+    enabled: false
+    module: train_lasso
+    function: train_lasso_lars_cv
+    params:
+      cv: 5
+      max_iter: 500
   
   gaussian_process:
     enabled: false

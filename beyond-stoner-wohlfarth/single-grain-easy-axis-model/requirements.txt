@@ -1,10 +1,17 @@
 # require Python>=3.12.3
 duecredit==0.11.2
+forestci==0.7
 ipykernel==7.1.0
-mammos-entity==0.11.1
+mammos-entity==0.13.0
 mammos-units==0.3.2
 matplotlib==3.10.8
+ml_dtypes==0.5.4
+numpy>=1.26.4
+onnxruntime==1.25.1
 pandas==3.0.0
+PyYAML==6.0.1
 scikit-learn==1.8.0
+scipy==1.17.1
 seaborn==0.13.2
-forestci==0.7
+skl2onnx==1.20.0
+# pytorch must be installed separately: https://pytorch.org/get-started/locally/
