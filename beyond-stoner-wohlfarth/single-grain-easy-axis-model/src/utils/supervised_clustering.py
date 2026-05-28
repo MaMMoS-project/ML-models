@@ -402,7 +402,8 @@ def supervised_valid_points_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)',
     
     if save_path:
         plt.savefig(f"{save_path}/supervised_valid-invalid-inputs_confusion_matrix.png", bbox_inches='tight', dpi=300)
-    plt.show()
+    else:
+        plt.show()
     
     # Make predictions on the entire dataset
     # Build a single fitted Pipeline = scaler + classifier

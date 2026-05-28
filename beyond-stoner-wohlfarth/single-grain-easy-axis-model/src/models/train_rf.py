@@ -104,7 +104,7 @@ def calculate_jackknife_variance(model, X_train, X_test, y_train) -> Optional[np
 
         # Calculate errors for each output dimension
         for i in range(n_outputs):
-            errors[:,i] = fci.random_forest_error(model, X_train_np.shape, X_test_np, y_output=i, calibrate=False)
+            errors[:,i] = np.maximum(fci.random_forest_error(model, X_train_np.shape, X_test_np, y_output=i, calibrate=False), 0)
         
         print(f"Jackknife variance computed successfully. Shape: {errors.shape}")
         return errors

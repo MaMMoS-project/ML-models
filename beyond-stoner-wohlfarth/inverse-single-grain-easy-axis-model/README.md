@@ -2,7 +2,7 @@
 
 
 ## Current version of model
-t.b.d.
+v1.0
 
 
 ## 0. Installation
@@ -77,10 +77,45 @@ OUTPUT:
 ## Results
 For all three targets, both the FCNN and RF models do not show strong over fitting and the performance is quite comparable. Results below shown from Random Forest model.
 
+### Metrics for target Hc
+| Model | Soft Train              | Soft Test                | Hard Train              | Hard Test               |
+| ----- | ----------------------- | ------------------------ | ----------------------- | ----------------------- |
+| LR    | MSE: 0.105<br>R²: 0.530 | MSE: 0.098<br>R²: 0.592  | MSE: 0.124<br>R²: 0.930 | MSE: 0.106<br>R²: 0.939 | x
+| LASSO | MSE: 0.105<br>R²: 0.530 | MSE: 0.099<br>R²: 0.589  | MSE: 0.125<br>R²: 0.930 | MSE: 0.106<br>R²: 0.939 | x
+| RF    | MSE: 0.006<br>R²: 0.972 | MSE: 0.038<br>R²: 0.842  | MSE: 0.002<br>R²: 0.999 | MSE: 0.012<br>R²: 0.993 | x
+| GP    | MSE: 0.000<br>R²: 0.999 | MSE: 0.032<br>R²: 0.867  | MSE: 0.003<br>R²: 0.998 | MSE: 0.045<br>R²: 0.971 | x
+| FCNN  | MSE: 0.048<br>R²: 0.784 | MSE: 0.055<br>R²: 0.770  | MSE: 0.005<br>R²: 0.997 | MSE: 0.04<br>R²: 0.998  | x
+
+### Metrics for target Mr
+| Model | Soft Train              | Soft Test               | Hard Train               | Hard Test               |
+| ----- | ----------------------- | ----------------------- | ------------------------ | ----------------------- |
+| LR    | MSE: 0.160<br>R²: 0.427 | MSE: 0.128<br>R²: 0.474 | MSE: 0.013<br>R²: 0.996  | MSE: 0.014<br>R²: 0.987 |x
+| LASSO | MSE: 0.161<br>R²: 0.422 | MSE: 0.127<br>R²: 0.478 | MSE: 0.004<br>R²: 0.996  | MSE: 0.014<br>R²: 0.987 |x
+| RF    | MSE: 0.011<br>R²: 0.962 | MSE: 0.038<br>R²: 0.846 | MSE: 0.001<br>R²: 0.999  | MSE: 0.012<br>R²: 0.989 |x
+| GP    | MSE: 0.000<br>R²: 0.999 | MSE: 0.030<br>R²: 0.770 | MSE: 0.000<br>R²: 0.999  | MSE: 0.011<br>R²: 0.990 |x
+| FCNN  | MSE: 0.064<br>R²: 0.769 | MSE: 0.058<br>R²: 0.763 | MSE: 0.004<br>R²: 0.997  | MSE: 0.013<br>R²: 0.989 |x
+
+### Metrics for target (BH)max
+| Model | Soft Train              | Soft Test                | Hard Train                | Hard Test                 |
+| ----- | ----------------------- | ------------------------ | ------------------------- | ------------------------- |
+| LR    | MSE: 0.013<br>R²: 0.985 | MSE: 0.012<br>R²: 0.985  | MSE: 0.003<br>R²: 0.999   | MSE: 0.002<br>R²: 0.999   |x
+| LASSO | MSE: 0.013<br>R²: 0.985 | MSE: 0.013<br>R²: 0.988  | MSE: 0.003<br>R²: 0.999   | MSE: 0.002<br>R²: 0.998   |x
+| RF    | MSE: 0.001<br>R²: 0.999 | MSE: 0.006<br>R²: 0.995  | MSE: 0.0001<br>R²: 1.000 | MSE: 0.0003<br>R²: 0.99999 | x
+| GP    | MSE: 0.000<br>R²: 0.999 | MSE: 0.007<br>R²: 0.993  | MSE: 0.000<br>R²: 0.992   | MSE: 0.000<br>R²: 0.999   |
+| FCNN  | MSE: 0.265<br>R²: 0.970 | MSE: 0.041<br>R²: 0.961  | MSE: 0.000<br>R²: 0.999   | MSE: 0.000<br>R²: 0.999   |x
+
 ### Plots Hard-Magnet Random Forest Model
 
+![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/beyond-stoner-wohlfarth/single-grain-easy-axis-model/results/best_model_hard_magnets/random_forest/predictions.png)
+
+
+![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/beyond-stoner-wohlfarth/single-grain-easy-axis-model/results/best_model_hard_magnets/random_forest/predictions_jackknife.png)
 
 #### Feature Importance via Mean Decrease in Impurity
+
+Feature's contribution in a Random Forest model is measured by the average variance reduction across all trees and splits, ranking features by their predictive power during training. Higher values indicate greater importance.
+
+![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/beyond-stoner-wohlfarth/single-grain-easy-axis-model/results/best_model_hard_magnets/random_forest/feature_importance_LogTransformation_cluster1_standard.png)
 
 
 ## 4. Inference
