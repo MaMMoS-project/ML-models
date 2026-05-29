@@ -79,6 +79,8 @@ OUTPUT:
 ## Results
 For all three targets, both the FCNN and RF models do not show strong over fitting and the performance is quite comparable. Results below shown from Random Forest model.
 
+# TODO: UPDATE TABLES BELOW!
+
 ### Metrics for target Hc
 | Model | Soft Train              | Soft Test                | Hard Train              | Hard Test               |
 | ----- | ----------------------- | ------------------------ | ----------------------- | ----------------------- |
@@ -105,19 +107,6 @@ For all three targets, both the FCNN and RF models do not show strong over fitti
 | RF    | MSE: 0.001<br>R²: 0.999 | MSE: 0.006<br>R²: 0.995  | MSE: 0.0001<br>R²: 1.000 | MSE: 0.0003<br>R²: 0.99999 | x
 | GP    | MSE: 0.000<br>R²: 0.999 | MSE: 0.007<br>R²: 0.993  | MSE: 0.000<br>R²: 0.992   | MSE: 0.000<br>R²: 0.999   |
 | FCNN  | MSE: 0.265<br>R²: 0.970 | MSE: 0.041<br>R²: 0.961  | MSE: 0.000<br>R²: 0.999   | MSE: 0.000<br>R²: 0.999   |x
-
-### Plots Hard-Magnet Random Forest Model
-
-![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/beyond-stoner-wohlfarth/single-grain-easy-axis-model/results/best_model_hard_magnets/random_forest/predictions.png)
-
-
-![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/beyond-stoner-wohlfarth/single-grain-easy-axis-model/results/best_model_hard_magnets/random_forest/predictions_jackknife.png)
-
-#### Feature Importance via Mean Decrease in Impurity
-
-Feature's contribution in a Random Forest model is measured by the average variance reduction across all trees and splits, ranking features by their predictive power during training. Higher values indicate greater importance.
-
-![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/beyond-stoner-wohlfarth/single-grain-easy-axis-model/results/best_model_hard_magnets/random_forest/feature_importance_LogTransformation_cluster1_standard.png)
 
 
 ## 4. Inference
