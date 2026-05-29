@@ -6,15 +6,17 @@ using an element-abundance weighted sum approach. For example:
     H2O embedding = 2 × [H embedding] + 1 × [O embedding]
 
 The script:
-1. Loads paired and augmented datasets from data augmentation step (Pairs_*.csv and Augm_*.csv)
+1. Loads paired and augmented datasets from data augmentation step
+   (Pairs_*_emb.csv, Augm_combined_*_emb.csv, Augm_exp_*_emb.csv, Augm_sim_*_emb.csv)
 2. Creates 200-dimensional compound embeddings
 3. Filters out compositions that cannot be parsed
 4. Generates t-SNE visualizations colored by majority element
 5. Saves datasets with embeddings (_w_embeddings suffix)
 
 File naming convention:
-- Input files: Pairs_*.csv (original data), Augm_*.csv (augmented data)
-- Output files: *_w_embeddings.pkl (with embedding vectors) 
+- Input files: Pairs_*_emb.csv (original pairs), Augm_{variant}_*_emb.csv (augmented)
+- Output files: *_w_embeddings.pkl (with embedding vectors)
+- Augmented variants processed when present: combined, exp (Tc_exp only), sim (Tc_sim only)
 
 Reference:
     Matscholar200 embeddings provide 200-dimensional vectors for each chemical element.
@@ -489,57 +491,68 @@ def create_embeddings():
         print(f"Error: Embedding file not found at {embedding_file}")
         sys.exit(1)
     
-    # Check if embedding-filtered input data exists (original + augmented)
+    # Map input filenames to (dataset key, output filename stem).
+    # Pairs files are required; augmented variants are processed when present.
+    file_to_name = {
+        # Original pairs (required)
+        'Pairs_all_emb.csv':          ('All_orig',        'Pairs_all_emb_w_embeddings'),
+        'Pairs_RE_emb.csv':           ('RE_orig',         'Pairs_RE_emb_w_embeddings'),
+        'Pairs_RE_Free_emb.csv':      ('RE-free_orig',    'Pairs_RE_Free_emb_w_embeddings'),
+        # Combined augmented
+        'Augm_combined_all_emb.csv':      ('All_aug_combined',     'Augm_combined_all_emb_w_embeddings'),
+        'Augm_combined_RE_emb.csv':       ('RE_aug_combined',      'Augm_combined_RE_emb_w_embeddings'),
+        'Augm_combined_RE_Free_emb.csv':  ('RE-free_aug_combined', 'Augm_combined_RE_Free_emb_w_embeddings'),
+        # Tc_exp augmented
+        'Augm_exp_all_emb.csv':       ('All_aug_exp',     'Augm_exp_all_emb_w_embeddings'),
+        'Augm_exp_RE_emb.csv':        ('RE_aug_exp',      'Augm_exp_RE_emb_w_embeddings'),
+        'Augm_exp_RE_Free_emb.csv':   ('RE-free_aug_exp', 'Augm_exp_RE_Free_emb_w_embeddings'),
+        # Tc_sim augmented
+        'Augm_sim_all_emb.csv':       ('All_aug_sim',     'Augm_sim_all_emb_w_embeddings'),
+        'Augm_sim_RE_emb.csv':        ('RE_aug_sim',      'Augm_sim_RE_emb_w_embeddings'),
+        'Augm_sim_RE_Free_emb.csv':   ('RE-free_aug_sim', 'Augm_sim_RE_Free_emb_w_embeddings'),
+    }
+
     required_files = [
         'Pairs_all_emb.csv',
         'Pairs_RE_emb.csv',
         'Pairs_RE_Free_emb.csv',
-        'Augm_all_emb.csv',
-        'Augm_RE_emb.csv',
-        'Augm_RE_Free_emb.csv',
     ]
-    
     for filename in required_files:
-        filepath = augmented_dir / filename
-        if not filepath.exists():
-            print(f"Error: Required file not found: {filepath}")
+        if not (augmented_dir / filename).exists():
+            print(f"Error: Required file not found: {augmented_dir / filename}")
             print("Please run augment_data.py first.")
             sys.exit(1)
-    
+
+    # Collect files to process (required + any optional augmented files present)
+    files_to_process = []
+    for fname, (dataset_name, out_stem) in file_to_name.items():
+        fpath = augmented_dir / fname
+        if fpath.exists():
+            files_to_process.append((fname, dataset_name, out_stem))
+        elif fname not in required_files:
+            print(f"  Skipping {fname} (not found — run augment_data.py to generate it)")
+
     # Create embedding creator
     creator = EmbeddingCreator(str(embedding_file), str(output_dir))
-    
+
     # Load embedding-ready datasets (already filtered by use_for_emb == True)
     print("\n" + "="*60)
     print("LOADING EMBEDDING-READY DATASETS")
     print("="*60)
-    
+
     datasets = {}
-    
-    # Helper to load MammoS-style CSVs via mammos_entity (if available)
+
     def _load_mammos_csv(path: Path) -> pd.DataFrame:
         try:
             import mammos_entity as me  # type: ignore[import]
-            return me.io.entities_from_csv(str(path)).to_dataframe(include_units=False)
+            return me.from_csv(str(path)).to_dataframe(include_units=False)
         except ImportError:
             return pd.read_csv(path, skiprows=4)
-    
-    # Map input filenames to dataset keys
-    file_to_name = {
-        'Pairs_all_emb.csv': 'All_orig',
-        'Pairs_RE_emb.csv': 'RE_orig',
-        'Pairs_RE_Free_emb.csv': 'RE-free_orig',
-        'Augm_all_emb.csv': 'All_aug',
-        'Augm_RE_emb.csv': 'RE_aug',
-        'Augm_RE_Free_emb.csv': 'RE-free_aug',
-    }
 
-    for fname in required_files:
-        dataset_name = file_to_name[fname]
+    for fname, dataset_name, _out_stem in files_to_process:
         print(f"Loading {dataset_name} dataset from {fname}...")
         df = _load_mammos_csv(augmented_dir / fname)
 
-        # Some augmented files may still carry an 'info' column; drop it if present
         if 'info' in df.columns:
             df = df[df['info'] != 'info'].copy()
             df = df.drop(columns=['info'])
@@ -549,30 +562,18 @@ def create_embeddings():
         if len(df) != before_len:
             print(f"  Filtered out {before_len - len(df)} rows with NaN composition ({dataset_name})")
 
-        datasets[dataset_name] = df
+        datasets[dataset_name] = (df, _out_stem)
         print(f"✓ Loaded {dataset_name}: {len(df)} samples")
-    
+
     # Process each dataset
     processed_datasets = {}
-    for name, df in datasets.items():
+    for name, (df, out_stem) in datasets.items():
         df_processed = creator.process_dataset(df, name)
         processed_datasets[name] = df_processed
-        
-        # Create t-SNE visualization
+
         creator.create_tsne_visualization(df_processed, name)
-        
-        # Save dataset
-        filename_map = {
-            'All_orig': 'Pairs_all_emb_w_embeddings',
-            'RE_orig': 'Pairs_RE_emb_w_embeddings',
-            'RE-free_orig': 'Pairs_RE_Free_emb_w_embeddings',
-            'All_aug': 'Augm_all_emb_w_embeddings',
-            'RE_aug': 'Augm_RE_emb_w_embeddings',
-            'RE-free_aug': 'Augm_RE_Free_emb_w_embeddings',
-        }
-        creator.save_dataset(df_processed, filename_map[name])
+        creator.save_dataset(df_processed, out_stem)
     
-    # Print summary
     creator.print_summary(processed_datasets)
     
     print("✓ Embedding creation complete!")

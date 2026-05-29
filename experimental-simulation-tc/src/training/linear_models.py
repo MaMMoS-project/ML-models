@@ -125,13 +125,9 @@ class LinearModelsTrainer:
         """Train LASSO with grid search."""
         param_grid = {
             'alpha': [0.0001, 0.001, 0.01, 0.1, 1, 10, 100],
-            'max_iter': [ 20000, 30000],
-            #'tol': [1e-4, 1e-5, 1e-6]
         }
-        
-        lasso = Lasso(max_iter=10000)
-        # Increase max_iter, set tol, and use warm_start to help with convergence
-        #lasso = Lasso(max_iter=20000, tol=1e-4, warm_start=True)
+
+        lasso = Lasso(max_iter=100000, tol=1e-3, selection='random')
         grid_search = GridSearchCV(
             lasso, param_grid, 
             cv=5, 

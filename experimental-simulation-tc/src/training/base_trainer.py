@@ -1,6 +1,7 @@
 """
 Base training utilities for Curie Temperature Error Correction models.
 """
+import atexit
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -12,14 +13,23 @@ from typing import Tuple, Dict, Optional
 
 sns.set_style("whitegrid")
 
+# Explicitly shut down loky's worker pool at exit so that Python 3.13's
+# resource tracker process is still alive when __del__ handlers run,
+# avoiding the "Exception ignored in ResourceTracker.__del__" race condition.
+try:
+    from joblib.externals.loky import get_reusable_executor
+    atexit.register(lambda: get_reusable_executor().shutdown(wait=True))
+except Exception:
+    pass
+
 
 class DataLoader:
     """Load and prepare datasets for training."""
     
     def __init__(self, data_dir: str = "../../data", pairs_file: str = "Pairs_all.csv", 
-                 augmented_file: str = "Augm_all.csv", re_pairs_file: str = "Pairs_RE.csv", 
-                 re_free_pairs_file: str = "Pairs_RE_Free.csv", re_augmented_file: str = "Augm_RE.csv", 
-                 re_free_augmented_file: str = "Augm_RE_Free.csv"):
+                 augmented_file: str = "Augm_combined_all.csv", re_pairs_file: str = "Pairs_RE.csv",
+                 re_free_pairs_file: str = "Pairs_RE_Free.csv", re_augmented_file: str = "Augm_combined_RE.csv",
+                 re_free_augmented_file: str = "Augm_combined_RE_Free.csv"):
         # Interpret data_dir relative to this file's directory, not the CWD
         base_dir = Path(__file__).parent
         self.data_dir = (base_dir / data_dir).resolve()
@@ -223,7 +233,10 @@ class DataLoader:
 
 class ModelEvaluator:
     """Evaluate and plot model results."""
-    
+
+    def __init__(self):
+        self.figures_subdir: Optional[str] = None
+
     @staticmethod
     def compute_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> Dict[str, float]:
         """Compute R2, MAE, and RMSE."""
@@ -233,8 +246,8 @@ class ModelEvaluator:
             'RMSE': np.sqrt(mean_squared_error(y_true, y_pred))
         }
     
-    @staticmethod
     def plot_predictions(
+        self,
         y_train: np.ndarray,
         y_train_pred: np.ndarray,
         y_test: np.ndarray,
@@ -363,9 +376,11 @@ class ModelEvaluator:
         fig.suptitle(title, fontsize=16, y=1.02)
         plt.tight_layout()
         
-        # Create output directory in project root /results/figures/ if it doesn't exist
+        # Create output directory in project root /results/figures/ (or subdir) if it doesn't exist
         project_root = Path(__file__).parent.parent.parent
         figures_dir = project_root / "results" / "figures"
+        if self.figures_subdir:
+            figures_dir = figures_dir / self.figures_subdir
         figures_dir.mkdir(parents=True, exist_ok=True)
         
         # If output_path is provided, use it but update the directory

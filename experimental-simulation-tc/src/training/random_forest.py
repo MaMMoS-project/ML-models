@@ -118,58 +118,27 @@ class RandomForestTrainer:
     
     def _randomized_search(self, X_train, y_train):
         """Perform randomized search for hyperparameters."""
-        param_distributions_old = {
-            'n_estimators': [50, 100, 200, 300, 500],
-            'max_depth': [None, 10, 20, 30, 40, 50],
+        param_distributions = {
+            'n_estimators': [100, 200, 300, 500],
+            'max_depth': [None, 20, 30, 40, 50],
             'min_samples_split': [2, 5, 10, 20],
             'min_samples_leaf': [1, 2, 4, 8],
             'max_features': ['sqrt', 'log2', None],
             'bootstrap': [True, False]
         }
-        param_distributions = {
-            'n_estimators': [50, 100, 200],#, 300, 500],
-            'max_depth': [None, 10, 20],#, 30],#, 40, 50],
-            'min_samples_split': [2, 5],#, 10, 20],
-            'min_samples_leaf': [2, 5],#, 4, 8],
-            'max_features': ['sqrt', 'log2', None],
-            'bootstrap': [True, False]
-        }
-        
+
         rf = RandomForestRegressor(random_state=42, n_jobs=-1)
-        
+
         random_search = RandomizedSearchCV(
             rf,
             param_distributions,
-            n_iter=50,
+            n_iter=100,
             cv=5,
             scoring='r2',
             n_jobs=-1,
             random_state=42,
             verbose=1
         )
-        
-        '''
-        #removing the randomized approach:
-
-        param_grid = {
-            'n_estimators': [100, 200],
-            'max_depth': [None, 20, 40],
-            'min_samples_split': [2, 5],
-            'max_features': ['sqrt', None]
-        }
-    
-        rf = RandomForestRegressor(random_state=42, n_jobs=-1)
-    
-        grid_search = GridSearchCV(
-            rf,
-            param_grid,
-            cv=5,
-            scoring='r2',
-            n_jobs=-1,
-            verbose=1
-        )
-        '''
-
 
         random_search.fit(X_train, y_train)
         
