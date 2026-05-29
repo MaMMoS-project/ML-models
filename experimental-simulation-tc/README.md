@@ -29,19 +29,31 @@ NEEDS:
 OUTPUT:
 ```
 - stdout
-- ./outputs/Augm_RE.csv
-- ./outputsAugm_RE_Free.csv
-- ./outputs/Augm_RE_Free_emb.csv
-- ./outputs/Augm_RE_emb.csv
-- ./outputs/Augm_all.csv
-- ./outputs/Augm_all_emb.csv
+- ./outputs/Pairs_all.csv
 - ./outputs/Pairs_RE.csv
 - ./outputs/Pairs_RE_Free.csv
-- ./outputs/Pairs_RE_Free_emb.csv
-- ./outputs/Pairs_RE_emb.csv
-- ./outputs/Pairs_all.csv
 - ./outputs/Pairs_all_emb.csv
-- ./outputs/distribution_plots/*.png
+- ./outputs/Pairs_RE_emb.csv
+- ./outputs/Pairs_RE_Free_emb.csv
+- ./outputs/Augm_sim_all.csv          # Phase 1: paired + Tc_sim-only (mock Tc_exp)
+- ./outputs/Augm_sim_RE.csv
+- ./outputs/Augm_sim_RE_Free.csv
+- ./outputs/Augm_sim_all_emb.csv
+- ./outputs/Augm_sim_RE_emb.csv
+- ./outputs/Augm_sim_RE_Free_emb.csv
+- ./outputs/Augm_exp_all.csv          # Phase 2: paired + Tc_exp-only (mock Tc_sim)
+- ./outputs/Augm_exp_RE.csv
+- ./outputs/Augm_exp_RE_Free.csv
+- ./outputs/Augm_exp_all_emb.csv
+- ./outputs/Augm_exp_RE_emb.csv
+- ./outputs/Augm_exp_RE_Free_emb.csv
+- ./outputs/Augm_combined_all.csv     # Phase 3: Phase 1 + Phase 2 (used for training)
+- ./outputs/Augm_combined_RE.csv
+- ./outputs/Augm_combined_RE_Free.csv
+- ./outputs/Augm_combined_all_emb.csv
+- ./outputs/Augm_combined_RE_emb.csv
+- ./outputs/Augm_combined_RE_Free_emb.csv
+- ./outputs/distributions_plots/*.png
 ```
 
 ## 2. Creation of embeddings
@@ -58,18 +70,18 @@ python3 -m src.create_embeddings
 
 NEEDS:
 - ./data/embeddings/element/matscholar200.json
-- ./outputs/Augm_RE.csv
-- ./outputsAugm_RE_Free.csv
-- ./outputs/Augm_RE_Free_emb.csv
-- ./outputs/Augm_RE_emb.csv
-- ./outputs/Augm_all.csv
-- ./outputs/Augm_all_emb.csv
-- ./outputs/Pairs_RE.csv
-- ./outputs/Pairs_RE_Free.csv
-- ./outputs/Pairs_RE_Free_emb.csv
-- ./outputs/Pairs_RE_emb.csv
-- ./outputs/Pairs_all.csv
 - ./outputs/Pairs_all_emb.csv
+- ./outputs/Pairs_RE_emb.csv
+- ./outputs/Pairs_RE_Free_emb.csv
+- ./outputs/Augm_combined_all_emb.csv  (required)
+- ./outputs/Augm_combined_RE_emb.csv   (required)
+- ./outputs/Augm_combined_RE_Free_emb.csv  (required)
+- ./outputs/Augm_exp_all_emb.csv       (optional, processed when present)
+- ./outputs/Augm_exp_RE_emb.csv        (optional)
+- ./outputs/Augm_exp_RE_Free_emb.csv   (optional)
+- ./outputs/Augm_sim_all_emb.csv       (optional)
+- ./outputs/Augm_sim_RE_emb.csv        (optional)
+- ./outputs/Augm_sim_RE_Free_emb.csv   (optional)
 
 OUTPUT:
 ```
@@ -80,7 +92,7 @@ OUTPUT:
 
 ## 3. Compress embeddings with PCA
 Create PCA-compressed embeddings for the paired Curie temperature dataset.
-It focuses specifically on PCA components of sizes 8, 16, and 32 to ensure they are available
+It computes PCA components of sizes 8, 16, 32, and 64 to ensure they are available
 for the training scripts.
 
 Run:
@@ -121,9 +133,9 @@ python3 -m src.training_original
 ```
 
 NEEDS:
+- ./outputs/Pairs_all.csv
 - ./outputs/Pairs_RE.csv
 - ./outputs/Pairs_RE_Free.csv
-- ./outputs/Pairs_all_emb.csv
 
 OUTPUT:
 ```
@@ -176,21 +188,28 @@ python3 -m src.training_augmented
 ```
 
 NEEDS:
-- ./outputs/Augm_RE_Free.csv
-- ./outputs/Augm_RE.csv
-- ./outputs/Augm_all.csv
+- ./outputs/Augm_exp_all.csv
+- ./outputs/Augm_exp_RE.csv
+- ./outputs/Augm_exp_RE_Free.csv
+- ./outputs/Augm_sim_all.csv
+- ./outputs/Augm_sim_RE.csv
+- ./outputs/Augm_sim_RE_Free.csv
+- ./outputs/Augm_combined_all.csv
+- ./outputs/Augm_combined_RE.csv
+- ./outputs/Augm_combined_RE_Free.csv
 
 OUTPUT:
 ```
 - stdout
-- ./results/augmented_[model]
-- ./results/figures/All-Augm_*_no_emb.png
-- ./results/figures/All-Augm_SR.png
-- ./results/figures/RE-Augm_*_no_emb.png
-- ./results/figures/RE-Augm_SR.png
-- ./results/figures/RE-Free-Augm_*_no_emb.png
-- ./results/figures/RE-Free-Augm_SR.png
-- ./results/augmented_comparison/*.csv
+- ./results/augmented_[model]/{variant}/      (variant: exp_augmented, sim_augmented, combined_augmented)
+- ./results/figures/{variant}/[All|RE|RE-Free]-Augm_*_no_emb.png
+- ./results/figures/{variant}/[All|RE|RE-Free]-Augm_SR.png
+- ./results/augmented_comparison/{variant}/augmented_models_comparison.csv
+- ./results/augmented_comparison/{variant}/augmented_best_by_dataset.csv
+- ./results/augmented_comparison/{variant}/augmented_comparison_pivot.csv
+- ./results/augmented_comparison/augmented_all_variants_comparison.csv
+- ./results/augmented_comparison/augmented_all_variants_best.csv
+- ./results/augmented_comparison/augmented_cross_variant_pivot.csv
 ```
 
 
@@ -205,26 +224,29 @@ python3 -m src.training_augmented_emb
 ```
 
 NEEDS:
-- ./outputs/Augm_RE_Free_emb.csv
-- ./outputs/Augm_RE_emb.csv
-- ./outputs/Augm_all_emb.csv
-- ./outputs/Augm_RE_Free_emb_w_embeddings.pkl
-- ./outputs/Augm_RE_Free_emb_w_embeddings_PCA.pkl
-- ./outputs/Augm_RE_emb_w_embeddings.pkl
-- ./outputs/Augm_RE_emb_w_embeddings_PCA.pkl
-- ./outputs/Augm_all_emb_w_embeddings.pkl
-- ./outputs/Augm_all_emb_w_embeddings_PCA.pkl
+- ./outputs/Augm_exp_all_emb_w_embeddings[_PCA].pkl
+- ./outputs/Augm_exp_RE_emb_w_embeddings[_PCA].pkl
+- ./outputs/Augm_exp_RE_Free_emb_w_embeddings[_PCA].pkl
+- ./outputs/Augm_sim_all_emb_w_embeddings[_PCA].pkl
+- ./outputs/Augm_sim_RE_emb_w_embeddings[_PCA].pkl
+- ./outputs/Augm_sim_RE_Free_emb_w_embeddings[_PCA].pkl
+- ./outputs/Augm_combined_all_emb_w_embeddings[_PCA].pkl
+- ./outputs/Augm_combined_RE_emb_w_embeddings[_PCA].pkl
+- ./outputs/Augm_combined_RE_Free_emb_w_embeddings[_PCA].pkl
 
-
+(For each file the _PCA.pkl variant is preferred; plain .pkl is used as fallback.)
 
 OUTPUT:
 ```
 - stdout
-- ./results/augmented_emb_[model]
-- ./results/figures/All-Augm_[model]_[None|pca_*].png
-- ./results/figures/RE-Augm_[model]_[None|pca_*].png
-- ./results/figures/RE-Free-Augm_[model]_[None|pca_*].png
-- ./results/augmented_emb_comparison/*.csv
+- ./results/augmented_emb_[model]/{variant}/      (variant: exp_augmented, sim_augmented, combined_augmented)
+- ./results/figures/{variant}/[All|RE|RE-Free]-Augm_[model]_[None|pca_*].png
+- ./results/augmented_emb_comparison/{variant}/augmented_emb_models_comparison.csv
+- ./results/augmented_emb_comparison/{variant}/augmented_emb_best_by_dataset.csv
+- ./results/augmented_emb_comparison/{variant}/augmented_emb_comparison_pivot.csv
+- ./results/augmented_emb_comparison/augmented_emb_all_variants_comparison.csv
+- ./results/augmented_emb_comparison/augmented_emb_all_variants_best.csv
+- ./results/augmented_emb_comparison/augmented_emb_cross_variant_pivot.csv
 ```
 ## 📈 Model Performance Comparison
 

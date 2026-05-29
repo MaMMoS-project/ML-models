@@ -8,10 +8,10 @@ It focuses specifically on PCA components of sizes 8, 16, and 32 to ensure they 
 for the training scripts.
 
 The script:
-1. Loads datasets with embeddings from create_embeddings.py output files in src/out
-   (Pairs_*_emb_w_embeddings.pkl and Augm_*_emb_w_embeddings.pkl)
-2. Filters for compositions with both Tc_sim and Tc_exp
-3. Creates PCA-compressed versions with 8, 16, and 32 components
+1. Loads datasets with embeddings from create_embeddings.py output files
+   (Pairs_*_emb_w_embeddings.pkl, Augm_combined/exp/sim_*_emb_w_embeddings.pkl)
+2. Skips input files that do not exist (optional augmented variants)
+3. Creates PCA-compressed versions with 8, 16, 32, and 64 components
 4. Saves the datasets with compressed embeddings as *_PCA.pkl files
 
 Usage:
@@ -43,7 +43,7 @@ log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 os.makedirs(log_dir, exist_ok=True)
 
 class PCAEmbeddingCompressor:
-    """Compress compound embeddings using PCA - focused on 8, 16, and 32 components."""
+    """Compress compound embeddings using PCA - focused on 8, 16, 32, and 64 components."""
     
     def __init__(self, input_dir: Path, output_dir: Path):
         """
@@ -254,16 +254,26 @@ def compress_embeddings_PCA():
 
     # List of embedding-rich input files produced by create_embeddings.py
     input_files = {
-        'All_orig': 'Pairs_all_emb_w_embeddings.pkl',
-        'RE_orig': 'Pairs_RE_emb_w_embeddings.pkl',
-        'RE-free_orig': 'Pairs_RE_Free_emb_w_embeddings.pkl',
-        'All_aug': 'Augm_all_emb_w_embeddings.pkl',
-        'RE_aug': 'Augm_RE_emb_w_embeddings.pkl',
-        'RE-free_aug': 'Augm_RE_Free_emb_w_embeddings.pkl',
+        # Original pairs
+        'All_orig':          'Pairs_all_emb_w_embeddings.pkl',
+        'RE_orig':           'Pairs_RE_emb_w_embeddings.pkl',
+        'RE-free_orig':      'Pairs_RE_Free_emb_w_embeddings.pkl',
+        # Combined augmented
+        'All_aug_combined':      'Augm_combined_all_emb_w_embeddings.pkl',
+        'RE_aug_combined':       'Augm_combined_RE_emb_w_embeddings.pkl',
+        'RE-free_aug_combined':  'Augm_combined_RE_Free_emb_w_embeddings.pkl',
+        # Tc_exp augmented
+        'All_aug_exp':       'Augm_exp_all_emb_w_embeddings.pkl',
+        'RE_aug_exp':        'Augm_exp_RE_emb_w_embeddings.pkl',
+        'RE-free_aug_exp':   'Augm_exp_RE_Free_emb_w_embeddings.pkl',
+        # Tc_sim augmented
+        'All_aug_sim':       'Augm_sim_all_emb_w_embeddings.pkl',
+        'RE_aug_sim':        'Augm_sim_RE_emb_w_embeddings.pkl',
+        'RE-free_aug_sim':   'Augm_sim_RE_Free_emb_w_embeddings.pkl',
     }
 
     # Process each dataset
-    component_sizes = [8, 16, 32]  # Focus on these three PCA component sizes
+    component_sizes = [8, 16, 32, 64]  # PCA component sizes
     
     for name, fname in input_files.items():
         in_path = input_dir / fname

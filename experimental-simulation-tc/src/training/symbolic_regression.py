@@ -36,7 +36,8 @@ class SymbolicRegressionTrainer:
         dataset_name: str,
         dataset_type: str,
         is_augmented: bool = False,
-        niterations: int = 100
+        niterations: int = 100,
+        max_train_samples: int = 2000
     ) -> Dict[str, float]:
         """
         Train symbolic regression model.
@@ -46,6 +47,7 @@ class SymbolicRegressionTrainer:
             dataset_type: 'all', 're', or 're-free'
             is_augmented: Whether to use augmented data
             niterations: Number of PySR iterations
+            max_train_samples: Cap on training set size; random subsample taken when exceeded
             
         Returns:
             Dictionary with test metrics and equation
@@ -68,7 +70,15 @@ class SymbolicRegressionTrainer:
         
         print(f"Training samples: {len(X_train)}")
         print(f"Test samples: {len(X_test)}")
-        
+
+        # Subsample training set if too large — PySR does not scale to tens of thousands of rows
+        if len(X_train) > max_train_samples:
+            rng = np.random.default_rng(42)
+            idx = rng.choice(len(X_train), size=max_train_samples, replace=False)
+            X_train = X_train[idx]
+            y_train = y_train[idx]
+            print(f"Subsampled training set to {max_train_samples} samples for PySR")
+
         # Train PySR model
         if PySRRegressor is None:
             raise ImportError("PySR is required for symbolic regression")

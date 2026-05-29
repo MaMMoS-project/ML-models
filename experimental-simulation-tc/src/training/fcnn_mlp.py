@@ -16,7 +16,7 @@ from base_trainer import DataLoader, ModelEvaluator, split_data
 class MLP(nn.Module):
     """Multi-layer perceptron for regression."""
     
-    def __init__(self, input_dim: int, hidden_dims: list = [128, 64, 32]):
+    def __init__(self, input_dim: int, hidden_dims: list = [256, 128, 64]):
         super(MLP, self).__init__()
         
         layers = []
@@ -54,8 +54,8 @@ class FCNNTrainer:
         is_augmented: bool = False,
         use_embedding: bool = True,
         embedding_type: Optional[str] = 'mat200',
-        hidden_dims: list = [128, 64, 32],
-        batch_size: int = 32,
+        hidden_dims: list = [256, 128, 64],
+        batch_size: int = 256,
         num_epochs: int = 200,
         learning_rate: float = 0.001
     ) -> Dict:
@@ -126,14 +126,14 @@ class FCNNTrainer:
         criterion = nn.MSELoss()
         optimizer = optim.Adam(model.parameters(), lr=learning_rate)
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-            optimizer, mode='min', factor=0.5, patience=10
+            optimizer, mode='min', factor=0.5, patience=15
         )
-        
+
         # Training loop
         print("\nTraining...")
         best_loss = float('inf')
         patience_counter = 0
-        max_patience = 20
+        max_patience = 30
         
         for epoch in range(num_epochs):
             model.train()
