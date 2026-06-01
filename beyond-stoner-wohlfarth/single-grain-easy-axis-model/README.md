@@ -79,8 +79,6 @@ OUTPUT:
 ## Results
 For all three targets, both the FCNN and RF models do not show strong over fitting and the performance is quite comparable. Results below shown from Random Forest model.
 
-# TODO: UPDATE TABLES BELOW!
-
 ### 🏆 Best Model Metrics for target Hc (A/m)
 | Model | Soft               |  Hard                 |
 | ----- | ----------------------- | ----------------------- |
