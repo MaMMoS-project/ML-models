@@ -1,5 +1,5 @@
 # ML surrogate model for micromagnetic simulations, H and K1 aligned in z-direction
-
+Inverse model.
 
 ## Current version of model
 v1.0
@@ -35,7 +35,6 @@ OUTPUT:
 - ./plots/supervised_clustering_pipeline.joblib
 - ./plots/supervised_metrics.txt
 
-In this specific case where the anisotropy axis is aligned with the external magnetic field, the dataset can be split into two distinct groups when considering the dimensionless ratio Mr/Ms. Namely, hard and soft magnetic materials. The points for hard magnets corresponds to Mr/Ms≈1 (red points ) while other points lie around Mr/Ms≈0 (blue points). A k-means clustering algorithm is applied to find the cluster centers of Mr/Ms ration. Then a random forest classifier is trained to predict the material class label (hard, soft) from intrinsic properties. 
 
 ## 2. Model Training
 
