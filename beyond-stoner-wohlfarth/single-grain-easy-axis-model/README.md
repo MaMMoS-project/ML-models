@@ -81,16 +81,14 @@ For all three targets, both the FCNN and RF models do not show strong over fitti
 
 # TODO: UPDATE TABLES BELOW!
 
-### Metrics for target Hc
-| Model | Soft Train              | Soft Test                | Hard Train              | Hard Test               |
-| ----- | ----------------------- | ------------------------ | ----------------------- | ----------------------- |
-| LR    | MSE: 0.105<br>R²: 0.530 | MSE: 0.098<br>R²: 0.592  | MSE: 0.124<br>R²: 0.930 | MSE: 0.106<br>R²: 0.939 | x
-| LASSO | MSE: 0.105<br>R²: 0.530 | MSE: 0.099<br>R²: 0.589  | MSE: 0.125<br>R²: 0.930 | MSE: 0.106<br>R²: 0.939 | x
-| RF    | MSE: 0.006<br>R²: 0.972 | MSE: 0.038<br>R²: 0.842  | MSE: 0.002<br>R²: 0.999 | MSE: 0.012<br>R²: 0.993 | x
-| GP    | MSE: 0.000<br>R²: 0.999 | MSE: 0.032<br>R²: 0.867  | MSE: 0.003<br>R²: 0.998 | MSE: 0.045<br>R²: 0.971 | x
-| FCNN  | MSE: 0.048<br>R²: 0.784 | MSE: 0.055<br>R²: 0.770  | MSE: 0.005<br>R²: 0.997 | MSE: 0.04<br>R²: 0.998  | x
+### 🏆 Best Model Metrics for target Hc 
+| Model | Soft               |  Hard                 |
+| ----- | ----------------------- | ----------------------- |
+| RF (train) | MSE: 0.0112<br>R²: 0.9498 |  MSE: 0.0016<br>R²: 0.9991 | 
+| RF (test)    | MSE: 0.0347<br>R²: 0.8512 |  MSE: 0.0108<br>R²: 0.9938 | 
 
-### Metrics for target Mr
+ 
+### Metrics for target Mr 
 | Model | Soft Train              | Soft Test               | Hard Train               | Hard Test               |
 | ----- | ----------------------- | ----------------------- | ------------------------ | ----------------------- |
 | LR    | MSE: 0.160<br>R²: 0.427 | MSE: 0.128<br>R²: 0.474 | MSE: 0.013<br>R²: 0.996  | MSE: 0.014<br>R²: 0.987 |x
@@ -99,7 +97,7 @@ For all three targets, both the FCNN and RF models do not show strong over fitti
 | GP    | MSE: 0.000<br>R²: 0.999 | MSE: 0.030<br>R²: 0.770 | MSE: 0.000<br>R²: 0.999  | MSE: 0.011<br>R²: 0.990 |x
 | FCNN  | MSE: 0.064<br>R²: 0.769 | MSE: 0.058<br>R²: 0.763 | MSE: 0.004<br>R²: 0.997  | MSE: 0.013<br>R²: 0.989 |x
 
-### Metrics for target (BH)max
+### Metrics for target (BH)max 
 | Model | Soft Train              | Soft Test                | Hard Train                | Hard Test                 |
 | ----- | ----------------------- | ------------------------ | ------------------------- | ------------------------- |
 | LR    | MSE: 0.013<br>R²: 0.985 | MSE: 0.012<br>R²: 0.985  | MSE: 0.003<br>R²: 0.999   | MSE: 0.002<br>R²: 0.999   |x
