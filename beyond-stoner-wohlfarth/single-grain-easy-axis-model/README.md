@@ -17,6 +17,7 @@ Use requirements.txt. In addition pytorch, compatible with your system, must be 
 
 The generation of the V2 training data and details on the simulation software and method are [described in data-generation](https://github.com/MaMMoS-project/BSW_data_generation).
 
+
 ## 1. Data preprocessing
 
 Run:
@@ -37,7 +38,8 @@ OUTPUT:
 
 In this specific case where the anisotropy axis is aligned with the external magnetic field, the dataset can be split into two distinct groups when considering the dimensionless ratio Mr/Ms. Namely, hard and soft magnetic materials. The points for hard magnets corresponds to Mr/Ms≈1 (red points ) while other points lie around Mr/Ms≈0 (blue points). A k-means clustering algorithm is applied to find the cluster centers of Mr/Ms ration. Then a random forest classifier is trained to predict the material class label (hard, soft) from intrinsic properties. 
 
-![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/beyond-stoner-wohlfarth/single-grain-easy-axis-model/results/best_model_hard_magnets/random_forest/kmeans_clustering.png)
+- Cluster 0 = soft magnetic materials
+- Cluster 1 = hard magnetic materials
 
 
 ## 2. Model Training
@@ -75,47 +77,25 @@ OUTPUT:
 - ./results/metrics_tables
 
 ## Results
-For all three targets, both the FCNN and RF models do not show strong over fitting and the performance is quite comparable. Results below shown from Random Forest model.
 
-### Metrics for target Hc
-| Model | Soft Train              | Soft Test                | Hard Train              | Hard Test               |
-| ----- | ----------------------- | ------------------------ | ----------------------- | ----------------------- |
-| LR    | MSE: 0.105<br>R²: 0.530 | MSE: 0.098<br>R²: 0.592  | MSE: 0.124<br>R²: 0.930 | MSE: 0.106<br>R²: 0.939 | x
-| LASSO | MSE: 0.105<br>R²: 0.530 | MSE: 0.099<br>R²: 0.589  | MSE: 0.125<br>R²: 0.930 | MSE: 0.106<br>R²: 0.939 | x
-| RF    | MSE: 0.006<br>R²: 0.972 | MSE: 0.038<br>R²: 0.842  | MSE: 0.002<br>R²: 0.999 | MSE: 0.012<br>R²: 0.993 | x
-| GP    | MSE: 0.000<br>R²: 0.999 | MSE: 0.032<br>R²: 0.867  | MSE: 0.003<br>R²: 0.998 | MSE: 0.045<br>R²: 0.971 | x
-| FCNN  | MSE: 0.048<br>R²: 0.784 | MSE: 0.055<br>R²: 0.770  | MSE: 0.005<br>R²: 0.997 | MSE: 0.04<br>R²: 0.998  | x
+### 🏆 Best Model Metrics for target Hc (A/m)
+| Model | Soft               |  Hard                 |
+| ----- | ----------------------- | ----------------------- |
+| RF (train) | MSE: 0.0112<br>R²: 0.9498 |  MSE: 0.0016<br>R²: 0.9991 | 
+| RF (test)    | MSE: 0.0347<br>R²: 0.8512 |  MSE: 0.0108<br>R²: 0.9938 | 
 
-### Metrics for target Mr
-| Model | Soft Train              | Soft Test               | Hard Train               | Hard Test               |
-| ----- | ----------------------- | ----------------------- | ------------------------ | ----------------------- |
-| LR    | MSE: 0.160<br>R²: 0.427 | MSE: 0.128<br>R²: 0.474 | MSE: 0.013<br>R²: 0.996  | MSE: 0.014<br>R²: 0.987 |x
-| LASSO | MSE: 0.161<br>R²: 0.422 | MSE: 0.127<br>R²: 0.478 | MSE: 0.004<br>R²: 0.996  | MSE: 0.014<br>R²: 0.987 |x
-| RF    | MSE: 0.011<br>R²: 0.962 | MSE: 0.038<br>R²: 0.846 | MSE: 0.001<br>R²: 0.999  | MSE: 0.012<br>R²: 0.989 |x
-| GP    | MSE: 0.000<br>R²: 0.999 | MSE: 0.030<br>R²: 0.770 | MSE: 0.000<br>R²: 0.999  | MSE: 0.011<br>R²: 0.990 |x
-| FCNN  | MSE: 0.064<br>R²: 0.769 | MSE: 0.058<br>R²: 0.763 | MSE: 0.004<br>R²: 0.997  | MSE: 0.013<br>R²: 0.989 |x
+ 
+### 🏆 Best Model Metrics for target Mr (A/m)
+| Model | Soft      | Hard |
+| ----- | ----------------------- | ----------------------- | 
+| RF (train) | MSE: 0.0183 <br>R²: 0.9324| MSE: 0.0016 <br>R²: 0.9991| 
+| RF (test) | MSE: 0.0370 <br>R²: 0.8624| MSE: 0.0108 <br>R²: 0.9938| 
 
-### Metrics for target (BH)max
-| Model | Soft Train              | Soft Test                | Hard Train                | Hard Test                 |
-| ----- | ----------------------- | ------------------------ | ------------------------- | ------------------------- |
-| LR    | MSE: 0.013<br>R²: 0.985 | MSE: 0.012<br>R²: 0.985  | MSE: 0.003<br>R²: 0.999   | MSE: 0.002<br>R²: 0.999   |x
-| LASSO | MSE: 0.013<br>R²: 0.985 | MSE: 0.013<br>R²: 0.988  | MSE: 0.003<br>R²: 0.999   | MSE: 0.002<br>R²: 0.998   |x
-| RF    | MSE: 0.001<br>R²: 0.999 | MSE: 0.006<br>R²: 0.995  | MSE: 0.0001<br>R²: 1.000 | MSE: 0.0003<br>R²: 0.99999 | x
-| GP    | MSE: 0.000<br>R²: 0.999 | MSE: 0.007<br>R²: 0.993  | MSE: 0.000<br>R²: 0.992   | MSE: 0.000<br>R²: 0.999   |
-| FCNN  | MSE: 0.265<br>R²: 0.970 | MSE: 0.041<br>R²: 0.961  | MSE: 0.000<br>R²: 0.999   | MSE: 0.000<br>R²: 0.999   |x
-
-### Plots Hard-Magnet Random Forest Model
-
-![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/beyond-stoner-wohlfarth/single-grain-easy-axis-model/results/best_model_hard_magnets/random_forest/predictions.png)
-
-
-![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/beyond-stoner-wohlfarth/single-grain-easy-axis-model/results/best_model_hard_magnets/random_forest/predictions_jackknife.png)
-
-#### Feature Importance via Mean Decrease in Impurity
-
-Feature's contribution in a Random Forest model is measured by the average variance reduction across all trees and splits, ranking features by their predictive power during training. Higher values indicate greater importance.
-
-![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/beyond-stoner-wohlfarth/single-grain-easy-axis-model/results/best_model_hard_magnets/random_forest/feature_importance_LogTransformation_cluster1_standard.png)
+### 🏆 Best Model Metrics for target (BH)max (J/m^3)
+| Model | Soft      | Hard |
+| ----- | ----------------------- | ----------------------- | 
+| RF (train) | MSE: 0.0012 <br>R²: 0.9987| MSE: 0.0000 <br>R²: 1.0 | 
+| RF (test) | MSE:  0.0047 <br>R²: 0.9952 | MSE: 0.0999 <br>R²: 0.9999| 
 
 
 ## 4. Inference
