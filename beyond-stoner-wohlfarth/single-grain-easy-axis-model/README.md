@@ -91,7 +91,7 @@ OUTPUT:
 | RF (train) | MSE: 0.0183 <br>R²: 0.9324| MSE: 0.0016 <br>R²: 0.9991| 
 | RF (test) | MSE: 0.0370 <br>R²: 0.8624| MSE: 0.0108 <br>R²: 0.9938| 
 
-### 🏆 Best Model Metrics for target (BH)max 
+### 🏆 Best Model Metrics for target (BH)max (J/m^3)
 | Model | Soft      | Hard |
 | ----- | ----------------------- | ----------------------- | 
 | RF (train) | MSE: 0.0012 <br>R²: 0.9987| MSE: 0.0000 <br>R²: 1.0 | 
