@@ -81,30 +81,24 @@ For all three targets, both the FCNN and RF models do not show strong over fitti
 
 # TODO: UPDATE TABLES BELOW!
 
-### 🏆 Best Model Metrics for target Hc 
+### 🏆 Best Model Metrics for target Hc (A/m)
 | Model | Soft               |  Hard                 |
 | ----- | ----------------------- | ----------------------- |
 | RF (train) | MSE: 0.0112<br>R²: 0.9498 |  MSE: 0.0016<br>R²: 0.9991 | 
 | RF (test)    | MSE: 0.0347<br>R²: 0.8512 |  MSE: 0.0108<br>R²: 0.9938 | 
 
  
-### Metrics for target Mr 
-| Model | Soft Train              | Soft Test               | Hard Train               | Hard Test               |
-| ----- | ----------------------- | ----------------------- | ------------------------ | ----------------------- |
-| LR    | MSE: 0.160<br>R²: 0.427 | MSE: 0.128<br>R²: 0.474 | MSE: 0.013<br>R²: 0.996  | MSE: 0.014<br>R²: 0.987 |x
-| LASSO | MSE: 0.161<br>R²: 0.422 | MSE: 0.127<br>R²: 0.478 | MSE: 0.004<br>R²: 0.996  | MSE: 0.014<br>R²: 0.987 |x
-| RF    | MSE: 0.011<br>R²: 0.962 | MSE: 0.038<br>R²: 0.846 | MSE: 0.001<br>R²: 0.999  | MSE: 0.012<br>R²: 0.989 |x
-| GP    | MSE: 0.000<br>R²: 0.999 | MSE: 0.030<br>R²: 0.770 | MSE: 0.000<br>R²: 0.999  | MSE: 0.011<br>R²: 0.990 |x
-| FCNN  | MSE: 0.064<br>R²: 0.769 | MSE: 0.058<br>R²: 0.763 | MSE: 0.004<br>R²: 0.997  | MSE: 0.013<br>R²: 0.989 |x
+### 🏆 Best Model Metrics for target Mr (A/m)
+| Model | Soft      | Hard |
+| ----- | ----------------------- | ----------------------- | 
+| RF (train) | MSE: 0.0183 <br>R²: 0.9324| MSE: 0.0016 <br>R²: 0.9991| 
+| RF (test) | MSE: 0.0370 <br>R²: 0.8624| MSE: 0.0108 <br>R²: 0.9938| 
 
-### Metrics for target (BH)max 
-| Model | Soft Train              | Soft Test                | Hard Train                | Hard Test                 |
-| ----- | ----------------------- | ------------------------ | ------------------------- | ------------------------- |
-| LR    | MSE: 0.013<br>R²: 0.985 | MSE: 0.012<br>R²: 0.985  | MSE: 0.003<br>R²: 0.999   | MSE: 0.002<br>R²: 0.999   |x
-| LASSO | MSE: 0.013<br>R²: 0.985 | MSE: 0.013<br>R²: 0.988  | MSE: 0.003<br>R²: 0.999   | MSE: 0.002<br>R²: 0.998   |x
-| RF    | MSE: 0.001<br>R²: 0.999 | MSE: 0.006<br>R²: 0.995  | MSE: 0.0001<br>R²: 1.000 | MSE: 0.0003<br>R²: 0.99999 | x
-| GP    | MSE: 0.000<br>R²: 0.999 | MSE: 0.007<br>R²: 0.993  | MSE: 0.000<br>R²: 0.992   | MSE: 0.000<br>R²: 0.999   |
-| FCNN  | MSE: 0.265<br>R²: 0.970 | MSE: 0.041<br>R²: 0.961  | MSE: 0.000<br>R²: 0.999   | MSE: 0.000<br>R²: 0.999   |x
+### 🏆 Best Model Metrics for target (BH)max 
+| Model | Soft      | Hard |
+| ----- | ----------------------- | ----------------------- | 
+| RF (train) | MSE: 0.0012 <br>R²: 0.9987| MSE: 0.0000 <br>R²: 1.0 | 
+| RF (test) | MSE:  0.0047 <br>R²: 0.9952 | MSE: 0.0999 <br>R²: 0.9999| 
 
 
 ## 4. Inference
