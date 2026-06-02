@@ -251,7 +251,6 @@ OUTPUT:
 ## 📈 Model Performance Comparison
 
 
-
 | Dataset        | Best Model (Embedding) | Embedding | R2    | RMSE    | Best Model | R2    | RMSE    | Baseline | Baseline R2 | Baseline RMSE |
 |----------------|------------------------|-----------|-------|---------|------------|-------|---------|----------|-------------|---------------|
 | All-Pairs      | Ridge                  | PCA32     | 0.791 | 110.762 | MLP        | **0.849** | **94.323**  | SR       | 0.841       | 96.757        |
@@ -270,10 +269,3 @@ Data augmentation consistently improves performance, with RE-Augm reaching the s
 Embeddings are not universally beneficial: PCA32 often underperforms compared to raw features, except for RE-free Augm, where a low-dimensional embedding (PCA8) yields the best results.
 
 Performance differs between RE and RE-free subsets, supporting the decision to evaluate them separately.
-
-### 🏆 Best Model per Material Group
-### RE-Augm - Symbolic Regression
-![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/experimental-simulation-tc/best_models/RE-Augm_SR.png)
-
-### RE-Free-Augm - Symbolic Regression 
-![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/experimental-simulation-tc/best_models/RE-Free-Augm_SR.png)
