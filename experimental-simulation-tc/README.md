@@ -248,7 +248,7 @@ OUTPUT:
 - ./results/augmented_emb_comparison/augmented_emb_all_variants_best.csv
 - ./results/augmented_emb_comparison/augmented_emb_cross_variant_pivot.csv
 ```
-## 📈 Model Performance Comparison
+## 📈 Model Performance Comparison (best models and symbolic regression baseline shown)
 
 
 | Dataset        | Best Model (Embedding) | Embedding | R2    | RMSE    | Best Model | R2    | RMSE    | Baseline | Baseline R2 | Baseline RMSE |
@@ -261,15 +261,27 @@ OUTPUT:
 | RE-free Augm   | MLP                    | PCA8      | **0.927** | **75.583**  | MLP        | 0.904 | 111.992 | SR       | 0.901       | 113.760       |
 
 
+| Dataset         | Model              | Embedding   | R²    | RMSE   |
+|----------------|---------------------|-------------|-------|---------|
+| All-Pairs      | MLP (FCNN)          | -           | 0.849 | 94.323  |
+| All-Pairs      | MLP (FCNN)          | raw_200D    | 0.801 | 107.945 |
+| All-Pairs      | Symbolic Regression | -           | 0.841 | 96.758  |
+| All-Augm       | MLP (FCNN)          | -           | 0.935 | 69.875  |
+| All-Augm       | MLP (FCNN)          | raw_200D    | 0.935 | 69.875  |
+| All-Augm       | Symbolic Regression | -           | 0.935 | 70.342  |
+| RE-Pairs       | MLP (FCNN)          | -           | 0.915 | 51.738  |
+| RE-Pairs       | RandomForest (RF)   | raw_200D    | 0.934 | 41.390  |
+| RE-Pairs       | Symbolic Regression | -           | 0.9129| 52.234  |
+| RE-Augm        | Linear (LINEAR)     | -           | 0.980 | 38.240  |
+| RE-Augm        | Linear (LINEAR)     | raw_200D    | 0.980 | 38.240  |
+| RE-Augm        | Symbolic Regression | -           | 0.980 | 38.282  |
+| RE-Free-Pairs  | Linear (LINEAR)     | -           | 0.789 | 130.646 |
+| RE-Free-Pairs  | Linear (LASSO)      | raw_200D    | 0.781 | 128.279 |
+| RE-Free-Pairs  | Symbolic Regression | -           | 0.789 | 130.646 |
+| RE-Free-Augm   | Linear (LASSO)      | -           | 0.829 | 119.500 |
+| RE-Free-Augm   | Linear (LASSO)      | raw_200D    | 0.829 | 119.500 |
+| RE-Free-Augm   | Symbolic Regression | -           | 0.827 | 120.166 |
 
-| Dataset         | Best Model (Updated) | Embedding   | R²    | RMSE    | Best Model (Original) | R²    | RMSE    | Baseline (SR) | Baseline R² | Baseline RMSE | Best Model (Embedding) | Embedding   | R²    | RMSE    |
-|----------------|----------------------|-------------|-------|---------|------------------------|-------|---------|----------------|-------------|---------------|------------------------|-------------|-------|---------|
-| All-Pairs      | MLP (FCNN)           | -           | 0.849 | 94.323  | MLP (FCNN)             | 0.849 | 94.359  | PySR           | 0.841       | 96.757        | MLP (FCNN)             | raw_200D    | 0.801 | 107.945 |
-| RE-Pairs       | MLP (FCNN)           | -           | 0.915 | 51.738  | MLP (FCNN)             | 0.909 | 53.345  | PySR           | 0.913       | 52.234        | RandomForest (RF)      | raw_200D    | 0.934 | 41.390  |
-| RE-Free-Pairs  | Linear (LINEAR)      | -           | 0.789 | 130.646 | Linear (LINEAR)        | 0.789 | 130.741 | PySR           | 0.789       | 130.646       | Linear (LASSO)         | raw_200D    | 0.781 | 128.279 |
-| All-Augm       | MLP (FCNN)           | -           | 0.935 | 69.875  | MLP (FCNN)             | 0.935 | 69.875  | PySR           | 0.935       | 70.342        | MLP (FCNN)             | raw_200D    | 0.935 | 69.875  |
-| RE-Augm        | Linear (LINEAR)      | -           | 0.980 | 38.240  | Linear (LINEAR)        | 0.980 | 38.240  | PySR           | 0.980       | 38.282        | Linear (LINEAR)        | raw_200D    | 0.980 | 38.240  |
-| RE-Free-Augm   | Linear (LASSO)       | -           | 0.829 | 119.500 | Linear (LASSO)         | 0.829 | 119.500 | PySR           | 0.827       | 120.166       | Linear (LASSO)         | raw_200D    | 0.829 | 119.500 |
 
 > 🔍 **Note**: The augmented datasets (`All-Augm`, `RE-Augm`, `RE-Free-Augm`) were created by combining **simulated (Tc_sim)** and **experimental (Tc_exp)** data to improve model generalization and performance.
 
