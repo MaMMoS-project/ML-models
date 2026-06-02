@@ -260,6 +260,19 @@ OUTPUT:
 | RE-free Pairs  | Ridge                  | PCA32     | **0.791** | **110.762** | MLP        | **0.791** | 129.950 | SR       | 0.789       | 130.640       |
 | RE-free Augm   | MLP                    | PCA8      | **0.927** | **75.583**  | MLP        | 0.904 | 111.992 | SR       | 0.901       | 113.760       |
 
+
+
+| Dataset         | Best Model (Updated) | Embedding   | R²    | RMSE    | Best Model (Original) | R²    | RMSE    | Baseline (SR) | Baseline R² | Baseline RMSE | Best Model (Embedding) | Embedding   | R²    | RMSE    |
+|----------------|----------------------|-------------|-------|---------|------------------------|-------|---------|----------------|-------------|---------------|------------------------|-------------|-------|---------|
+| All-Pairs      | MLP (FCNN)           | -           | 0.849 | 94.323  | MLP (FCNN)             | 0.849 | 94.359  | PySR           | 0.841       | 96.757        | MLP (FCNN)             | raw_200D    | 0.801 | 107.945 |
+| RE-Pairs       | MLP (FCNN)           | -           | 0.915 | 51.738  | MLP (FCNN)             | 0.909 | 53.345  | PySR           | 0.913       | 52.234        | RandomForest (RF)      | raw_200D    | 0.934 | 41.390  |
+| RE-Free-Pairs  | Linear (LINEAR)      | -           | 0.789 | 130.646 | Linear (LINEAR)        | 0.789 | 130.741 | PySR           | 0.789       | 130.646       | Linear (LASSO)         | raw_200D    | 0.781 | 128.279 |
+| All-Augm       | MLP (FCNN)           | -           | 0.935 | 69.875  | MLP (FCNN)             | 0.935 | 69.875  | PySR           | 0.935       | 70.342        | MLP (FCNN)             | raw_200D    | 0.935 | 69.875  |
+| RE-Augm        | Linear (LINEAR)      | -           | 0.980 | 38.240  | Linear (LINEAR)        | 0.980 | 38.240  | PySR           | 0.980       | 38.282        | Linear (LINEAR)        | raw_200D    | 0.980 | 38.240  |
+| RE-Free-Augm   | Linear (LASSO)       | -           | 0.829 | 119.500 | Linear (LASSO)         | 0.829 | 119.500 | PySR           | 0.827       | 120.166       | Linear (LASSO)         | raw_200D    | 0.829 | 119.500 |
+
+> 🔍 **Note**: The augmented datasets (`All-Augm`, `RE-Augm`, `RE-Free-Augm`) were created by combining **simulated (Tc_sim)** and **experimental (Tc_exp)** data to improve model generalization and performance.
+
 ### 📊 Summary of Results
 
 MLP without embeddings performs best overall, achieving the highest R² and lowest RMSE on most datasets, especially RE-Pairs and RE-Augm.
