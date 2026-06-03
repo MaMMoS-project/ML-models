@@ -22,6 +22,45 @@ preprocessed_data/*.csv
 3c. src/train_exp_tc_all.py        → results/exp_tc/All_results.csv
 ```
 
+```mermaid
+graph TD
+    %% === Cluster 1: Create Embeddings ===
+    subgraph cluster_1["1. Create Embeddings"]
+        direction TB
+        A[preprocessed_data/*.csv] --> B[src/create_embeddings.py]
+        B --> C[outputs/*_w_embeddings.pkl]
+    end
+
+    %% === Cluster 2: Compress Embeddings ===
+    subgraph cluster_2["2. Compress Embeddings (PCA)"]
+        direction TB
+        C --> D[src/compress_embeddings_pca.py]
+        D --> E[outputs/*_w_embeddings_PCA.pkl]
+    end
+
+    %% === Cluster 3: Train Models ===
+    subgraph cluster_3["3. Train Models"]
+        direction TB
+        E --> F1[src/train_exp_tc_re_free.py]
+        E --> F2[src/train_exp_tc_re.py]
+        E --> F3[src/train_exp_tc_all.py]
+        F1 --> G1[results/exp_tc/RE-Free_results.csv]
+        F2 --> G2[results/exp_tc/RE_results.csv]
+        F3 --> G3[results/exp_tc/All_results.csv]
+    end
+
+    %% === Styling ===
+    classDef input fill:#f0f0f0,stroke:#333,stroke-width:1px,color:#000;
+    classDef process fill:#e0e8ff,stroke:#333,stroke-width:1px,color:#000;
+    classDef output fill:#d0e8d0,stroke:#333,stroke-width:1px,color:#000;
+
+    class A input
+    class B,C,D,F1,F2,F3 process
+    class G1,G2,G3 output
+
+    class cluster_1,cluster_2,cluster_3 fill:#ffffff,stroke:#ccc,stroke-width:1px;
+```
+
 Three datasets are trained independently (steps 3a–3c can run in any order or in parallel):
 - **RE-Free** — rare-earth-free compounds (~6 200 rows)
 - **RE** — rare-earth-containing compounds (~9 800 rows)
