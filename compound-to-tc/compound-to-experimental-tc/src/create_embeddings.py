@@ -96,7 +96,7 @@ def create_embeddings() -> None:
 
     if not EMB_FILE.exists():
         print(f"ERROR: element embedding file not found: {EMB_FILE}")
-        sys.exit(1)
+        # sys.exit(1)
 
     elem_features = _load_elem_features(EMB_FILE)
     dim = len(next(iter(elem_features.values())))
