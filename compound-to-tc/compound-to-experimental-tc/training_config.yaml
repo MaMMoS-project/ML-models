@@ -1,0 +1,21 @@
+# Which model families to train and how many ensemble members to produce.
+#
+# Simple form  (ensemble defaults to 1):
+#   linear: true
+#
+# Extended form:
+#   rf:
+#     enabled: true
+#     ensemble: 5   # train 5 models with different train/test splits
+#
+# Setting a model to false disables it entirely.
+  models:
+    linear:
+      enabled: true
+      ensemble: 10
+    rf:
+      enabled: true
+      ensemble: 10
+    mlp:
+      enabled: true
+      ensemble: 10
