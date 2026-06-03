@@ -53,6 +53,11 @@ DATASETS = [
 
 PCA_SIZES = [8, 16, 32, 64]
 
+# Create log directory 
+from src.log_to_file import log_output
+import os
+log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'logs')
+os.makedirs(log_dir, exist_ok=True)
 
 @log_output("logs/compress_embeddings_pca.txt")
 def compress_embeddings_pca() -> None:
