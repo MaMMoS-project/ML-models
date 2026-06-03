@@ -248,7 +248,8 @@ OUTPUT:
 - ./results/augmented_emb_comparison/augmented_emb_all_variants_best.csv
 - ./results/augmented_emb_comparison/augmented_emb_cross_variant_pivot.csv
 ```
-## 📈 Model Performance Comparison (best models and symbolic regression baseline shown)
+## 📈 Model Performance Comparison 
+(best models and symbolic regression baseline shown)
 
 | Dataset         | Model               | Embedding   | R²    | RMSE    |
 |----------------|---------------------|-------------|-------|---------|
