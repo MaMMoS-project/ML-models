@@ -5,10 +5,10 @@ import onnxruntime as ort
 
 BASE_DIR = Path(__file__).resolve().parent
 
-HARDSOFT_CLASSIFIER_MODEL = BASE_DIR / "../plots/supervised_hardsoft_clustering_pipeline_inverted.onnx"
+HARDSOFT_CLASSIFIER_MODEL = BASE_DIR / "../plots/inverse_supervised_hardsoft_clustering_pipeline.onnx"
 MODELS = {
-    "soft": BASE_DIR / "../results/models/LogTransformation_cluster0/random_forest.onnx",
-    "hard": BASE_DIR / "../results/models/LogTransformation_cluster1/random_forest.onnx",
+    "soft": next((BASE_DIR / "../results/best_model_cluster0").glob("*.onnx")),
+    "hard": next((BASE_DIR / "../results/best_model_cluster1").glob("*.onnx")),
 }
 
 _SESSION_OPTIONS = ort.SessionOptions()
