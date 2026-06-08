@@ -183,7 +183,8 @@ def training_original():
                 dataset_name=dataset_name,
                 dataset_type=dataset_type,
                 is_augmented=is_augmented,
-                use_embedding=use_embedding
+                use_embedding=use_embedding,
+                hidden_dims=[128, 64, 32]
             )
             dataset_results.append({
                 "Model_Family": "MLP",

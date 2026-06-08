@@ -55,13 +55,13 @@ class FCNNTrainer:
         use_embedding: bool = True,
         embedding_type: Optional[str] = 'mat200',
         hidden_dims: list = [256, 128, 64],
-        batch_size: int = 256,
+        batch_size: Optional[int] = None,
         num_epochs: int = 200,
         learning_rate: float = 0.001
     ) -> Dict:
         """
         Train FCNN/MLP model.
-        
+
         Args:
             dataset_name: Name for output files
             dataset_type: 'all', 're', or 're-free'
@@ -69,7 +69,8 @@ class FCNNTrainer:
             use_embedding: Whether to use embeddings (FCNN works best with embeddings)
             embedding_type: Type of embedding
             hidden_dims: List of hidden layer dimensions
-            batch_size: Training batch size
+            batch_size: Training batch size. If None, auto-selected: 32 for
+                training sets < 5000 samples, 256 otherwise.
             num_epochs: Number of training epochs
             learning_rate: Learning rate
             
@@ -101,10 +102,14 @@ class FCNNTrainer:
         X_train_scaled = scaler.fit_transform(X_train)
         X_test_scaled = scaler.transform(X_test)
         
+        if batch_size is None:
+            batch_size = 32 if len(X_train) < 5000 else 256
+
         print(f"Training samples: {len(X_train)}")
         print(f"Test samples: {len(X_test)}")
         print(f"Feature dimensions: {X_train.shape[1]}")
         print(f"Hidden dimensions: {hidden_dims}")
+        print(f"Batch size: {batch_size}")
         
         # Create PyTorch datasets
         train_dataset = TensorDataset(

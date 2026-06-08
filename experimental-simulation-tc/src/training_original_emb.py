@@ -463,6 +463,7 @@ def train_original_embedding():
                     is_augmented=is_augmented,
                     use_embedding=True,
                     embedding_type=embedding_type,
+                    hidden_dims=[128, 64, 32]
                 )
                 
                 # Restore original method
