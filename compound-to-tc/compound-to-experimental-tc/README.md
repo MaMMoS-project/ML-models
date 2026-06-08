@@ -68,8 +68,34 @@ PyTorch must be installed separately to match your hardware:
 # CPU-only example — see https://pytorch.org/get-started/locally/ for GPU variants
 pip install torch --index-url https://download.pytorch.org/whl/cpu
 ```
+## 1. Pre-Process Data
 
-## 1. Create compound embeddings
+Run:
+
+```bash
+python src/process_tc_data.py
+```
+**Needs:**
+```
+data/m-tcsum_nur_new.csv
+data/literature_values_prepared.csv
+data/DS1+DS2.csv
+data/combinded_tables.xlsx"
+data/MagneticMaterials_All.csv
+```
+**Outputs:**
+```
+preprocessed_data/Experimental_Tc.csv          
+preprocessed_data/Experimental_Tc_RE.csv   
+preprocessed_data/Simulated_Tc.csv           
+preprocessed_data/Simulation_Tc_RE.csv
+preprocessed_data/Experimental_Tc_RE-Free.csv  
+preprocessed_data/Experimental_Tc_all.csv  
+preprocessed_data/Simulation_Tc_RE-Free.csv  
+preprocessed_data/Simulation_Tc_all.csv
+```
+
+## 2. Create compound embeddings
 
 Generates element-abundance-weighted compound embeddings from the Matscholar200
 element vectors (200-dimensional). For example:
@@ -105,7 +131,7 @@ Each pickle contains the original `composition` and `Tc_exp` columns plus a
 compositions cannot be parsed or contain elements absent from the Matscholar200
 vocabulary are dropped.
 
-## 2. Compress embeddings with PCA
+## 3. Compress embeddings with PCA
 
 Fits PCA on each dataset independently and adds compressed embedding columns for
 component sizes 8, 16, 32, and 64.
@@ -134,7 +160,7 @@ logs/compress_embeddings_pca.txt
 Each output pickle extends the input with columns `comp_emb_pca_8`, `comp_emb_pca_16`,
 `comp_emb_pca_32`, and `comp_emb_pca_64`.
 
-## 3. Train models
+## 4. Train models
 
 Trains three model families on five embedding variants for each of the three datasets
 (15 training runs per dataset, 45 total):
