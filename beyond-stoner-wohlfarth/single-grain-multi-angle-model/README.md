@@ -60,7 +60,6 @@ flowchart LR
         A1 --> B1["python3 -m scripts.train_model --config config/ml_config_test.yaml"]
         A2 --> B1
 
-        B1 --> O0["stdout"]
         B1 --> O1["./results/models"]
         B1 --> O2["./results/plots"]
         B1 --> O3["./results/overall_results.json"]
