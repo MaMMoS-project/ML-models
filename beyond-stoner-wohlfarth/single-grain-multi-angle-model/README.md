@@ -48,6 +48,25 @@ Run:
 python3 -m scripts.train_model --config config/ml_config_test.yaml
 ```
 
+```mermaid
+flowchart LR
+
+    subgraph cluster_1["2. Train Model"]
+        direction TB
+
+        A1["./data/magnetic_materials.csv"]
+        A2["./plots/ (outputs from Step 1)"]
+
+        A1 --> B1["python3 -m scripts.train_model --config config/ml_config_test.yaml"]
+        A2 --> B1
+
+        B1 --> O0["stdout"]
+        B1 --> O1["./results/models"]
+        B1 --> O2["./results/plots"]
+        B1 --> O3["./results/overall_results.json"]
+    end
+```
+
 NEEDS:
 - ./data/magnetic_materials.csv
 - output files ./plots/ of 1
