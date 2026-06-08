@@ -18,6 +18,7 @@ Outputs:
     logs/train_exp_tc_re_free.txt
 """
 
+import os
 import sys
 from pathlib import Path
 
@@ -45,10 +46,10 @@ def main() -> None:
     print("=" * 70)
     print("Training (RE-Free): compound embedding → experimental Tc")
     print("=" * 70)
+    os.makedirs("results/exp_tc/", exist_ok=True)
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     train_one_dataset(_DS, RESULTS_DIR / "figures")
     update_global_summary()
-
 
 if __name__ == "__main__":
     log_path = PROJECT_ROOT / "logs" / "train_exp_tc_re_free.txt"

@@ -660,7 +660,7 @@ def train_exp_tc() -> None:
     print("=" * 70)
     print("Training: compound embedding → experimental Tc")
     print("=" * 70)
-
+    os.makedirs("results/exp_tc/", exist_ok=True)
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     figures_dir = RESULTS_DIR / "figures"
     pd.set_option("display.max_rows", None)

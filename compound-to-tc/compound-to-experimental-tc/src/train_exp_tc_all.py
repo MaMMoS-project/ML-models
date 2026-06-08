@@ -45,6 +45,7 @@ def main() -> None:
     print("=" * 70)
     print("Training (All): compound embedding → experimental Tc")
     print("=" * 70)
+    os.makedirs("results/exp_tc/", exist_ok=True)
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     train_one_dataset(_DS, RESULTS_DIR / "figures")
     update_global_summary()
