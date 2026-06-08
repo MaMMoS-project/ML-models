@@ -13,7 +13,7 @@ Use requirements.txt. In addition pytorch, compatible with your system, must be 
 
 
 ```mermaid
-flowchart LR
+flowchart TB
 
 %% =========================
 %% 1. Data Augmentation
@@ -24,7 +24,8 @@ subgraph cluster_0["1. Data Augmentation (Bootstrap Sampling)"]
     A0["./data/EC_curie_temp.csv"]
     B0["python3 -m src.augment_data"]
 
-    B0 --> O0["stdout"]
+    A0 --> B0
+
     B0 --> O1["./outputs/Pairs_*.csv"]
     B0 --> O2["./outputs/Augm_sim_*.csv"]
     B0 --> O3["./outputs/Augm_exp_*.csv"]
@@ -34,13 +35,12 @@ end
 
 
 %% =========================
-%% 2. Embedding Creation
+%% 2. Create Embeddings
 %% =========================
 subgraph cluster_1["2. Create Embeddings"]
     direction TB
 
     A1["./data/embeddings/element/matscholar200.json"]
-
     A2["./outputs/Pairs_all_emb.csv"]
     A3["./outputs/Augm_combined_all_emb.csv"]
 
@@ -50,7 +50,6 @@ subgraph cluster_1["2. Create Embeddings"]
     A2 --> B1
     A3 --> B1
 
-    B1 --> O6["stdout"]
     B1 --> O7["./outputs/embeddings_tsne_plots/*.png"]
     B1 --> O8["./outputs/*embeddings.pkl"]
 end
@@ -67,7 +66,6 @@ subgraph cluster_2["3. PCA Compression of Embeddings"]
 
     A4 --> B2
 
-    B2 --> O9["stdout"]
     B2 --> O10["./outputs/*embeddings_PCA.pkl"]
 end
 
