@@ -16,7 +16,8 @@ Models are organized in different folders of this repository:
    -- ./inverse-beyond-stoner-wolfarth/single-grain-easy-axis-model:
       where the H and K1 vector are aligned along the z-axis of the simulation cube
       This inverse model predicts a, k1, and Ms from Mr, Hc, and BHmax
-      Current model version: not yet published, (ONNX files need to be added).
+      Current model version: v0.1
+
 
    -- ./beyond-stoner-wolfarth/single-grain-multi-angle-model:
       where the H and K1 vector can independently point in any direction

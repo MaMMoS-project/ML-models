@@ -1,14 +1,18 @@
 """
 Linear Models Training: LASSO, RIDGE, and Linear Regression
 """
+import warnings
 import numpy as np
 import pandas as pd
 from pathlib import Path
 from typing import Dict, List, Optional
+from sklearn.exceptions import ConvergenceWarning
 from sklearn.linear_model import Lasso, Ridge, LinearRegression
 from sklearn.model_selection import GridSearchCV
 from sklearn.preprocessing import StandardScaler
 from base_trainer import DataLoader, ModelEvaluator, split_data
+
+warnings.filterwarnings("ignore", category=ConvergenceWarning)
 
 
 class LinearModelsTrainer:
@@ -127,7 +131,7 @@ class LinearModelsTrainer:
             'alpha': [0.0001, 0.001, 0.01, 0.1, 1, 10, 100],
         }
 
-        lasso = Lasso(max_iter=100000, tol=1e-3, selection='random')
+        lasso = Lasso(max_iter=100000, tol=1e-4, selection='random')
         grid_search = GridSearchCV(
             lasso, param_grid, 
             cv=5, 
