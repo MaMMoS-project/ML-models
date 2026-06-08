@@ -99,6 +99,18 @@ Run:
 python3 scripts/plot_metrics.py results
 ```
 
+```mermaid
+flowchart LR
+
+    subgraph cluster_2["3. Generate Metrics Tables"]
+        direction TB
+
+        A3["./results/ (outputs from Step 2)"] --> B2["python3 scripts/plot_metrics.py results"]
+
+        B2 --> O1["./results/metrics_tables"]
+    end
+```
+
 NEEDS:
 - ./results of 2.
 
