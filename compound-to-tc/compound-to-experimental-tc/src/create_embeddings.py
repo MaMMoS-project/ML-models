@@ -86,7 +86,7 @@ import os
 log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'logs')
 os.makedirs(log_dir, exist_ok=True)
 
-@log_output("logs/create_embeddings.txt")
+# @log_output("logs/create_embeddings.txt")
 def create_embeddings() -> None:
     print("=" * 70)
     print("Creating compound embeddings for experimental Tc datasets")

@@ -3,6 +3,7 @@
 
 import numpy as np
 import pandas as pd
+import os
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -142,6 +143,8 @@ def main() -> None:
     df_exp = process(load_all_experimental(), tc_col_out="Tc_exp")
     print(f"Experimental  — total: {len(df_exp)}, "
           f"duplicates: {df_exp['composition'].duplicated().sum()}")
+    
+    os.makedirs("preprocessed_data/", exist_ok=True)
 
     df_exp.drop(columns="contains_re").to_csv("./preprocessed_data/Experimental_Tc_all.csv", index=False)
     df_exp.to_csv("./preprocessed_data/Experimental_Tc.csv", index=False)
