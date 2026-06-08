@@ -51,7 +51,7 @@ python3 -m scripts.train_model --config config/ml_config_test.yaml
 ```mermaid
 flowchart LR
 
-    subgraph cluster_1["2. Train Model"]
+    subgraph cluster_1["2. Train Models"]
         direction TB
 
         A1["./data/magnetic_materials.csv"]
@@ -81,6 +81,19 @@ Run:
 
 ```
 python3 scripts/plot_metrics.py results
+```
+
+```mermaid
+flowchart LR
+
+    subgraph cluster_2["3. Generate Metrics Tables"]
+        direction TB
+
+        A1["./results/ (outputs from Step 2)"]
+        A1 --> B1["python3 scripts/plot_metrics.py results"]
+
+        B1 --> O1["./results/metrics_tables"]
+    end
 ```
 
 NEEDS:
