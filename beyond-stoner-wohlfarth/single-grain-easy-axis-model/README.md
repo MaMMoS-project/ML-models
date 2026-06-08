@@ -29,7 +29,7 @@ python3 -m scripts.analyze_magnetic_data
 ```mermaid
 flowchart LR
 
-    subgraph cluster_0["1. Process TC Data"]
+    subgraph cluster_0["1. Analyze Magnetic Data"]
         direction TB
 
         A0["./data/magnetic_materials.csv"] --> B0["python3 -m scripts.analyze_magnetic_data"]
