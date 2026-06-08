@@ -655,17 +655,18 @@ log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 os.makedirs(log_dir, exist_ok=True)
 
 
-@log_output("logs/train_exp_tc.txt")
+# @log_output("logs/train_exp_tc.txt")
 def train_exp_tc() -> None:
     print("=" * 70)
     print("Training: compound embedding → experimental Tc")
     print("=" * 70)
-    os.makedirs("results/exp_tc/", exist_ok=True)
+    # os.makedirs("results/exp_tc/", exist_ok=True)
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     figures_dir = RESULTS_DIR / "figures"
     pd.set_option("display.max_rows", None)
 
     for ds in DATASETS:
+        print(ds)
         train_one_dataset(ds, figures_dir)
 
     update_global_summary()
