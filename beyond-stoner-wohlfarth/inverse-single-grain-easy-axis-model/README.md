@@ -17,7 +17,25 @@ Use requirements.txt. In addition pytorch, compatible with your system, must be 
 
 The generation of the V2 training data and details on the simulation software and method are [described in data-generation](https://github.com/MaMMoS-project/BSW_data_generation).
 
-## 1. Data preprocessing
+## Pipeline overview
+
+```mermaid
+flowchart LR
+
+    subgraph cluster_0["1. Process TC Data"]
+        direction TB
+
+        A0["./data/magnetic_materials.csv"] --> B0["scripts/analyze_magnetic_data.py"]
+
+        B0 --> O0["stdout"]
+        B0 --> O1["./plots/*.png<br/>analysis plots"]
+        B0 --> O2["./plots/supervised_clustering_model.pkl"]
+        B0 --> O3["./plots/supervised_clustering_pipeline.joblib"]
+        B0 --> O4["./plots/supervised_metrics.txt"]
+    end
+```
+
+## 1. Analyze Magnetic Data
 
 Run:
 
