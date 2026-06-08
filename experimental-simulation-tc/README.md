@@ -11,6 +11,8 @@ v0.1
 Use requirements.txt. In addition pytorch, compatible with your system, must be installed
 - PyTorch (version matching your hardware, see: https://pytorch.org/get-started/locally/)
 
+# Data Processing
+
 
 ```mermaid
 flowchart TB
@@ -177,6 +179,7 @@ OUTPUT:
 - stdout
 - ./outputs/*embeddings_PCA.pkl
 ```
+# Modeling
 
 ## 4. Model Training
 
