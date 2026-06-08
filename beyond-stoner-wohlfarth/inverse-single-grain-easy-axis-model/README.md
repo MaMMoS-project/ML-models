@@ -17,7 +17,16 @@ Use requirements.txt. In addition pytorch, compatible with your system, must be 
 
 The generation of the V2 training data and details on the simulation software and method are [described in data-generation](https://github.com/MaMMoS-project/BSW_data_generation).
 
-## Pipeline overview
+
+
+
+## 1. Analyze Magnetic Data
+
+Run:
+
+```
+python3 -m scripts.analyze_magnetic_data
+```
 
 ```mermaid
 flowchart LR
@@ -32,14 +41,6 @@ flowchart LR
         B0 --> O3["./plots/supervised_clustering_pipeline.joblib"]
         B0 --> O4["./plots/supervised_metrics.txt"]
     end
-```
-
-## 1. Analyze Magnetic Data
-
-Run:
-
-```
-python3 -m scripts.analyze_magnetic_data
 ```
 
 NEEDS:
@@ -61,6 +62,22 @@ Run:
 
 ```
 python3 -m scripts.train_model --config config/ml_config_test.yaml
+```
+
+```mermaid
+flowchart LR
+
+    subgraph cluster_1["2. Train & Evaluate Models"]
+        direction TB
+
+        A1["./data/magnetic_materials.csv"] --> B1["scripts/train_and_evaluate_models.py"]
+        A2["./plots/ (outputs from Step 1)"] --> B1
+
+        B1 --> O0["stdout"]
+        B1 --> O1["./results/models"]
+        B1 --> O2["./results/plots"]
+        B1 --> O3["./results/overall_results.json"]
+    end
 ```
 
 NEEDS:
