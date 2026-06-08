@@ -22,12 +22,11 @@ The generation of the V2 training data and details on the simulation software an
 ```mermaid
 flowchart LR
 
-    subgraph cluster_0["1. Process TC Data"]
+    subgraph cluster_0["1. Analyze Magnetic Data"]
         direction TB
 
-        A0["./data/magnetic_materials.csv"] --> B0["scripts/analyze_magnetic_data.py"]
+        A0["./data/magnetic_materials.csv"] --> B0["python3 scripts/analyze_magnetic_data.py"]
 
-        B0 --> O0["stdout"]
         B0 --> O1["./plots/*.png<br/>analysis plots"]
         B0 --> O2["./plots/supervised_clustering_model.pkl"]
         B0 --> O3["./plots/supervised_clustering_pipeline.joblib"]
