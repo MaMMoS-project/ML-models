@@ -24,8 +24,7 @@ subgraph cluster_0["1. Data Augmentation (Bootstrap Sampling)"]
     A0["./data/EC_curie_temp.csv"]
     B0["python3 -m src.augment_data"]
 
-    A0 --> B0
-
+    B0 --> O0["stdout"]
     B0 --> O1["./outputs/Pairs_*.csv"]
     B0 --> O2["./outputs/Augm_sim_*.csv"]
     B0 --> O3["./outputs/Augm_exp_*.csv"]
@@ -42,18 +41,18 @@ subgraph cluster_1["2. Create Embeddings"]
 
     A1["./data/embeddings/element/matscholar200.json"]
 
-    A1 --> B1["python3 -m src.create_embeddings"]
+    A2["./outputs/Pairs_all_emb.csv"]
+    A3["./outputs/Augm_combined_all_emb.csv"]
+
+    B1["python3 -m src.create_embeddings"]
+
+    A1 --> B1
+    A2 --> B1
+    A3 --> B1
 
     B1 --> O6["stdout"]
     B1 --> O7["./outputs/embeddings_tsne_plots/*.png"]
     B1 --> O8["./outputs/*embeddings.pkl"]
-
-    %% required inputs from augmentation
-    A2["./outputs/Pairs_*_emb.csv"]
-    A3["./outputs/Augm_combined_*_emb.csv"]
-
-    A2 --> B1
-    A3 --> B1
 end
 
 
@@ -64,10 +63,22 @@ subgraph cluster_2["3. PCA Compression of Embeddings"]
     direction TB
 
     A4["./outputs/*embeddings.pkl"]
-    A4 --> B2["python3 -m src.compress_embedding_PCA"]
+    B2["python3 -m src.compress_embedding_PCA"]
 
+    A4 --> B2
+
+    B2 --> O9["stdout"]
     B2 --> O10["./outputs/*embeddings_PCA.pkl"]
 end
+
+
+%% =========================
+%% PIPELINE FLOW (FORCED ORDER)
+%% =========================
+
+O5 --> A2
+O4 --> A3
+O8 --> A4
 ```
 
 ## 1. Data augmentation
