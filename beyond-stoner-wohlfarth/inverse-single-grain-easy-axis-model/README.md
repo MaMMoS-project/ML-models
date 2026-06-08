@@ -70,9 +70,9 @@ flowchart LR
     subgraph cluster_1["2. Train & Evaluate Models"]
         direction TB
 
-        A1["./data/magnetic_materials.csv"] --> B1["scripts/train_and_evaluate_models.py"]
+        A1["./data/magnetic_materials.csv"] --> B1["python3 scripts/train_and_evaluate_models.py"]
         A2["./plots/ (outputs from Step 1)"] --> B1
-        
+
         B1 --> O1["./results/models"]
         B1 --> O2["./results/plots"]
         B1 --> O3["./results/overall_results.json"]
