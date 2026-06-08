@@ -15,6 +15,23 @@ Run:
 python3 -m scripts.analyze_magnetic_data
 ```
 
+```mermaid
+flowchart LR
+
+    subgraph cluster_0["1. Process Micromagnetics Data"]
+        direction TB
+
+        A1["./data/mumax3_mindrive_cube_all_params.csv"]
+        A2["./data/mumax3_relaxdriver_cube_all_params.csv"]
+
+        A1 --> B0["python3 -m scripts.analyze_magnetic_data"]
+        A2 --> B0
+
+        B0 --> O1["./plots/*.png<br/>analysis plots"]
+        B0 --> O2["./data/processed/micromagnetics_angle_dependent_symmetries.csv"]
+    end
+```
+
 NEEDS:
 - ./data/mumax3_mindrive_cube_all_params.csv
 - ./data/mumax3_relaxdriver_cube_all_params.csv
