@@ -76,9 +76,16 @@ PyTorch must be installed separately to match your hardware:
 # CPU-only example — see https://pytorch.org/get-started/locally/ for GPU variants
 pip install torch --index-url https://download.pytorch.org/whl/cpu
 ```
+
 ## 1. Pre-Process Data
 
-
+1. **Aggregate** data from multiple sources.  
+2. **Clean** Tc values: remove units, symbols, and uncertainties; convert to float.  
+3. **Drop** invalid (non-numeric) Tc entries.  
+4. **Deduplicate** by taking the median Tc per composition.  
+5. **Flag** compositions containing rare-earth elements.  
+6. **Split** data into RE-containing and RE-free subsets.  
+7. **Save** clean, structured datasets for analysis.
 
 
 Run:
