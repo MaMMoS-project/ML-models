@@ -1,4 +1,3 @@
-
 # Predicting experimental Curie temperatures from compound embeddings
 
 This pipeline trains machine learning models that predict experimental Curie temperatures
@@ -78,6 +77,9 @@ PyTorch must be installed separately to match your hardware:
 pip install torch --index-url https://download.pytorch.org/whl/cpu
 ```
 ## 1. Pre-Process Data
+
+
+
 
 Run:
 
