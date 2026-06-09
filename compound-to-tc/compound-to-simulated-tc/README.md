@@ -7,20 +7,6 @@ experimental Tc values or data augmentation.
 
 ## Pipeline overview
 
-```
-preprocessed_data/*.csv
-        │
-        ▼
-1. src/create_embeddings.py        → outputs/*_w_embeddings.pkl
-        │
-        ▼
-2. src/compress_embeddings_pca.py  → outputs/*_w_embeddings_PCA.pkl
-        │
-        ▼
-3a. src/train_exp_tc_re_free.py    → results/exp_tc/RE-Free_results.csv
-3b. src/train_exp_tc_re.py         → results/exp_tc/RE_results.csv
-3c. src/train_exp_tc_all.py        → results/exp_tc/All_results.csv
-```
 
 ```mermaid
 graph TD
