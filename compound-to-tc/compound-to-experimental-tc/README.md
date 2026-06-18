@@ -202,7 +202,7 @@ python src/train_exp_tc.py
 
 **Needs (per script):**
 ```
-outputs/Experimental_Tc_RE-Free_w_embeddings_PCA.pkl   ← train_exp_tc_re_free.py
+outputs/Experimental_Tc_RE-Free_w_embeddings_PCA.pkl    ← train_exp_tc_re_free.py
 outputs/Experimental_Tc_RE_w_embeddings_PCA.pkl         ← train_exp_tc_re.py
 outputs/Experimental_Tc_all_w_embeddings_PCA.pkl        ← train_exp_tc_all.py
 ```
@@ -256,7 +256,6 @@ RE compounds are considerably more predictable (R² = 0.93) than RE-free ones
 | pca_32 | Linear(Lasso) | 0.3965 | 158.7 | 206.1 |
 | pca_16 | Linear(Lasso) | 0.3742 | 162.5 | 209.9 |
 | pca_8 | Linear(Lasso) | 0.3453 | 167.9 | 214.7 |
-
 ---
 
 ### RE — full results table
