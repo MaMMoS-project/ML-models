@@ -17,12 +17,30 @@ Use requirements.txt. In addition pytorch, compatible with your system, must be 
 
 The generation of the V2 training data and details on the simulation software and method are [described in data-generation](https://github.com/MaMMoS-project/BSW_data_generation).
 
-## 1. Data preprocessing
+
+
+
+## 1. Analyze Magnetic Data
 
 Run:
 
 ```
 python3 -m scripts.analyze_magnetic_data
+```
+
+```mermaid
+flowchart LR
+
+    subgraph cluster_0["1. Analyze Magnetic Data"]
+        direction TB
+
+        A0["./data/magnetic_materials.csv"] --> B0["python3 scripts/analyze_magnetic_data.py"]
+
+        B0 --> O1["./plots/*.png<br/>analysis plots"]
+        B0 --> O2["./plots/supervised_clustering_model.pkl"]
+        B0 --> O3["./plots/supervised_clustering_pipeline.joblib"]
+        B0 --> O4["./plots/supervised_metrics.txt"]
+    end
 ```
 
 NEEDS:
@@ -46,6 +64,21 @@ Run:
 python3 -m scripts.train_model --config config/ml_config_test.yaml
 ```
 
+```mermaid
+flowchart LR
+
+    subgraph cluster_1["2. Train & Evaluate Models"]
+        direction TB
+
+        A1["./data/magnetic_materials.csv"] --> B1["python3 -m scripts.train_model --config config/ml_config_test.yaml"]
+        A2["./plots/ (outputs from Step 1)"] --> B1
+
+        B1 --> O1["./results/models"]
+        B1 --> O2["./results/plots"]
+        B1 --> O3["./results/overall_results.json"]
+    end
+```
+
 NEEDS:
 - ./data/magnetic_materials.csv
 - output files ./plots/ of 1
@@ -61,6 +94,18 @@ Run:
 
 ```
 python3 scripts/plot_metrics.py results
+```
+
+```mermaid
+flowchart LR
+
+    subgraph cluster_2["3. Generate Metrics Tables"]
+        direction TB
+
+        A3["./results/ (outputs from Step 2)"] --> B2["python3 scripts/plot_metrics.py results"]
+
+        B2 --> O1["./results/metrics_tables"]
+    end
 ```
 
 NEEDS:
