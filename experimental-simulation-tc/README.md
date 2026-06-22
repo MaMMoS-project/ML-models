@@ -11,6 +11,76 @@ v0.1
 Use requirements.txt. In addition pytorch, compatible with your system, must be installed
 - PyTorch (version matching your hardware, see: https://pytorch.org/get-started/locally/)
 
+# Data Processing
+
+
+```mermaid
+flowchart TB
+
+%% =========================
+%% 1. Data Augmentation
+%% =========================
+subgraph cluster_0["1. Data Augmentation (Bootstrap Sampling)"]
+    direction TB
+
+    A0["./data/EC_curie_temp.csv"]
+    B0["python3 -m src.augment_data"]
+
+    A0 --> B0
+
+    B0 --> O1["./outputs/Pairs_*.csv"]
+    B0 --> O2["./outputs/Augm_sim_*.csv"]
+    B0 --> O3["./outputs/Augm_exp_*.csv"]
+    B0 --> O4["./outputs/Augm_combined_*.csv"]
+    B0 --> O5["./outputs/distributions_plots/*.png"]
+end
+
+
+%% =========================
+%% 2. Create Embeddings
+%% =========================
+subgraph cluster_1["2. Create Embeddings"]
+    direction TB
+
+    A1["./data/embeddings/element/matscholar200.json"]
+    A2["./outputs/Pairs_all_emb.csv"]
+    A3["./outputs/Augm_combined_all_emb.csv"]
+
+    B1["python3 -m src.create_embeddings"]
+
+    A1 --> B1
+    A2 --> B1
+    A3 --> B1
+
+    B1 --> O7["./outputs/embeddings_tsne_plots/*.png"]
+    B1 --> O8["./outputs/*embeddings.pkl"]
+end
+
+
+%% =========================
+%% 3. PCA Compression
+%% =========================
+subgraph cluster_2["3. PCA Compression of Embeddings"]
+    direction TB
+
+    A4["./outputs/*embeddings.pkl"]
+    B2["python3 -m src.compress_embedding_PCA"]
+
+    A4 --> B2
+
+    B2 --> O10["./outputs/*embeddings_PCA.pkl"]
+end
+
+
+%% =========================
+%% PIPELINE FLOW (FORCED ORDER)
+%% =========================
+
+O5 --> A2
+O4 --> A3
+O8 --> A4
+```
+
 ## 1. Data augmentation
 
 Executing the code below performs data augmentation on missing experimental values using bootstrap sampling.
@@ -109,6 +179,7 @@ OUTPUT:
 - stdout
 - ./outputs/*embeddings_PCA.pkl
 ```
+# Modeling
 
 ## 4. Model Training
 
@@ -254,21 +325,21 @@ OUTPUT:
 | Dataset         | Model               | Embedding   | R²    | RMSE    |
 |----------------|---------------------|-------------|-------|---------|
 | All-Pairs      | **MLP (FCNN)**      | -           | 0.849 | 94.323  |
-| All-Pairs      | MLP (FCNN)          | raw_200D    | 0.801 | 107.945 |
+| All-Pairs      | MLP (FCNN)          | raw_200D    | 0.801 | 107.931 |
 | All-Pairs      | Symbolic Regression | -           | 0.841 | 96.758  |
-| All-Augm       | **MLP (FCNN)**      | -           | 0.935 | 69.875  |
+| All-Augm       | **MLP (FCNN)**      | -           | 0.935 | 69.907  |
 | All-Augm       | MLP (FCNN)          | raw_200D    | 0.935 | 69.875  |
 | All-Augm       | Symbolic Regression | -           | 0.935 | 70.342  |
 | RE-Pairs       | **MLP (FCNN)**      | -           | 0.915 | 51.738  |
-| RE-Pairs       | **RandomForest (RF)** | raw_200D  | 0.934 | 41.390  |
+| RE-Pairs       | **MLP (FCNN)**      | PCA8        | 0.946 | 37.26   |
 | RE-Pairs       | Symbolic Regression | -           | 0.913 | 52.234  |
 | RE-Augm        | **Linear (LINEAR)** | -           | 0.980 | 38.240  |
 | RE-Augm        | Linear (LINEAR)     | raw_200D    | 0.980 | 38.240  |
 | RE-Augm        | Symbolic Regression | -           | 0.980 | 38.282  |
-| RE-Free-Pairs  | **Linear (LINEAR)** | -           | 0.789 | 130.646 |
-| RE-Free-Pairs  | Linear (LASSO)      | raw_200D    | 0.781 | 128.279 |
+| RE-Free-Pairs  | **MLP (FCNN)**      | -           | 0.792 | 129.820 |
+| RE-Free-Pairs  | Linear (LASSO)      | raw_200D    | 0.800 | 122.397 |
 | RE-Free-Pairs  | Symbolic Regression | -           | 0.789 | 130.646 |
-| RE-Free-Augm   | **Linear (LASSO)**  | -           | 0.829 | 119.500 |
+| RE-Free-Augm   | **MLP (FCNN)**      | -           | 0.829 | 119.460 |
 | RE-Free-Augm   | Linear (LASSO)      | raw_200D    | 0.829 | 119.500 |
 | RE-Free-Augm   | Symbolic Regression | -           | 0.827 | 120.166 |
 
