@@ -14,8 +14,14 @@ Use requirements.txt. In addition pytorch, compatible with your system, must be 
 # Data Processing
 
 
-```mermaid
-flowchart TB
+```mermaidflowchart TB
+
+%% =========================
+%% Styles
+%% =========================
+classDef input fill:#D6EAF8,stroke:#2E86C1,stroke-width:2px,color:#000;
+classDef process fill:#D5F5E3,stroke:#27AE60,stroke-width:2px,color:#000;
+classDef output fill:#FDEBD0,stroke:#E67E22,stroke-width:2px,color:#000;
 
 %% =========================
 %% 1. Data Augmentation
@@ -34,7 +40,6 @@ subgraph cluster_0["1. Data Augmentation (Bootstrap Sampling)"]
     B0 --> O4["./outputs/Augm_combined_*.csv"]
     B0 --> O5["./outputs/distributions_plots/*.png"]
 end
-
 
 %% =========================
 %% 2. Create Embeddings
@@ -56,7 +61,6 @@ subgraph cluster_1["2. Create Embeddings"]
     B1 --> O8["./outputs/*embeddings.pkl"]
 end
 
-
 %% =========================
 %% 3. PCA Compression
 %% =========================
@@ -71,14 +75,26 @@ subgraph cluster_2["3. PCA Compression of Embeddings"]
     B2 --> O10["./outputs/*embeddings_PCA.pkl"]
 end
 
-
 %% =========================
-%% PIPELINE FLOW (FORCED ORDER)
+%% Pipeline Flow
 %% =========================
-
 O5 --> A2
 O4 --> A3
 O8 --> A4
+
+%% =========================
+%% Apply Classes
+%% =========================
+class A0,A1,A2,A3,A4 input;
+class B0,B1,B2 process;
+class O1,O2,O3,O4,O5,O7,O8,O10 output;
+
+%% =========================
+%% Subgraph Styling
+%% =========================
+style cluster_0 fill:#F8F9FA,stroke:#5D6D7E,stroke-width:2px
+style cluster_1 fill:#F4F6F7,stroke:#5D6D7E,stroke-width:2px
+style cluster_2 fill:#F8F9FA,stroke:#5D6D7E,stroke-width:2px
 ```
 
 ## 1. Data augmentation
