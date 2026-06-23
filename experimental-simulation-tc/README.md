@@ -4,7 +4,7 @@
 This codebase implements various machine learning models to predict experimental Curie temperatures from simulated values. Additionally, chemical property information is incorporated via an embedding representation. 
 
 ## Current version of model
-v0.1
+v0.2
 
 
 ## 0. Installation
