@@ -322,25 +322,25 @@ OUTPUT:
 ## 📈 Model Performance Comparison 
 (best models and symbolic regression baseline shown)
 
-| Dataset         | Model               | Embedding   | R²    | RMSE    |
+| Dataset         | Model              | Embedding   | R²    | RMSE    |
 |----------------|---------------------|-------------|-------|---------|
-| All-Pairs      | **MLP (FCNN)**      | -           | 0.849 | 94.323  |
+| All-Pairs      | **MLP (FCNN)**      | -           | 0.848 | 94.56   |
 | All-Pairs      | MLP (FCNN)          | raw_200D    | 0.801 | 107.931 |
 | All-Pairs      | Symbolic Regression | -           | 0.841 | 96.758  |
 | All-Augm       | **MLP (FCNN)**      | -           | 0.935 | 69.907  |
-| All-Augm       | MLP (FCNN)          | raw_200D    | 0.935 | 69.875  |
+| All-Augm       | Random Forest       | PCA8        | 0.942 | 64.689  |
 | All-Augm       | Symbolic Regression | -           | 0.935 | 70.342  |
-| RE-Pairs       | **MLP (FCNN)**      | -           | 0.915 | 51.738  |
+| RE-Pairs       | **MLP (FCNN)**      | -           | 0.913 | 52.197  |
 | RE-Pairs       | **MLP (FCNN)**      | PCA8        | 0.946 | 37.26   |
 | RE-Pairs       | Symbolic Regression | -           | 0.913 | 52.234  |
 | RE-Augm        | **Linear (LINEAR)** | -           | 0.980 | 38.240  |
-| RE-Augm        | Linear (LINEAR)     | raw_200D    | 0.980 | 38.240  |
+| RE-Augm        | Random Forest       | PCA16       | 0.984 | 33.854  |
 | RE-Augm        | Symbolic Regression | -           | 0.980 | 38.282  |
 | RE-Free-Pairs  | **MLP (FCNN)**      | -           | 0.792 | 129.820 |
 | RE-Free-Pairs  | Linear (LASSO)      | raw_200D    | 0.800 | 122.397 |
 | RE-Free-Pairs  | Symbolic Regression | -           | 0.789 | 130.646 |
 | RE-Free-Augm   | **MLP (FCNN)**      | -           | 0.829 | 119.460 |
-| RE-Free-Augm   | Linear (LASSO)      | raw_200D    | 0.829 | 119.500 |
+| RE-Free-Augm   | Random Forest       | raw_200D    | 0.909 | 83.60   |
 | RE-Free-Augm   | Symbolic Regression | -           | 0.827 | 120.166 |
 
 
