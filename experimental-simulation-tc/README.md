@@ -4,12 +4,99 @@
 This codebase implements various machine learning models to predict experimental Curie temperatures from simulated values. Additionally, chemical property information is incorporated via an embedding representation. 
 
 ## Current version of model
-v0.1
+v0.2
 
 
 ## 0. Installation
 Use requirements.txt. In addition pytorch, compatible with your system, must be installed
 - PyTorch (version matching your hardware, see: https://pytorch.org/get-started/locally/)
+
+# Data Processing
+
+
+```mermaid
+flowchart TB
+
+%% =========================
+%% Styles
+%% =========================
+classDef input fill:#D6EAF8,stroke:#2E86C1,stroke-width:2px,color:#000;
+classDef process fill:#D5F5E3,stroke:#27AE60,stroke-width:2px,color:#000;
+classDef output fill:#FDEBD0,stroke:#E67E22,stroke-width:2px,color:#000;
+
+%% =========================
+%% 1. Data Augmentation
+%% =========================
+subgraph cluster_0["1. Data Augmentation (Bootstrap Sampling)"]
+    direction TB
+
+    A0["./data/EC_curie_temp.csv"]
+    B0["python3 -m src.augment_data"]
+
+    A0 --> B0
+
+    B0 --> O1["./outputs/Pairs_*.csv"]
+    B0 --> O2["./outputs/Augm_sim_*.csv"]
+    B0 --> O3["./outputs/Augm_exp_*.csv"]
+    B0 --> O4["./outputs/Augm_combined_*.csv"]
+    B0 --> O5["./outputs/distributions_plots/*.png"]
+end
+
+%% =========================
+%% 2. Create Embeddings
+%% =========================
+subgraph cluster_1["2. Create Embeddings"]
+    direction TB
+
+    A1["./data/embeddings/element/matscholar200.json"]
+    A2["./outputs/Pairs_all_emb.csv"]
+    A3["./outputs/Augm_combined_all_emb.csv"]
+
+    B1["python3 -m src.create_embeddings"]
+
+    A1 --> B1
+    A2 --> B1
+    A3 --> B1
+
+    B1 --> O7["./outputs/embeddings_tsne_plots/*.png"]
+    B1 --> O8["./outputs/*embeddings.pkl"]
+end
+
+%% =========================
+%% 3. PCA Compression
+%% =========================
+subgraph cluster_2["3. PCA Compression of Embeddings"]
+    direction TB
+
+    A4["./outputs/*embeddings.pkl"]
+    B2["python3 -m src.compress_embedding_PCA"]
+
+    A4 --> B2
+
+    B2 --> O10["./outputs/*embeddings_PCA.pkl"]
+end
+
+%% =========================
+%% Pipeline Flow
+%% =========================
+O5 --> A2
+O4 --> A3
+O8 --> A4
+
+%% =========================
+%% Apply Classes
+%% =========================
+class A0,A1,A2,A3,A4 input;
+class B0,B1,B2 process;
+class O1,O2,O3,O4,O5,O7,O8,O10 output;
+
+%% =========================
+%% Subgraph Styling
+%% =========================
+style cluster_0 fill:#F8F9FA,stroke:#5D6D7E,stroke-width:2px
+style cluster_1 fill:#F4F6F7,stroke:#5D6D7E,stroke-width:2px
+style cluster_2 fill:#F8F9FA,stroke:#5D6D7E,stroke-width:2px
+```
 
 ## 1. Data augmentation
 
@@ -109,6 +196,7 @@ OUTPUT:
 - stdout
 - ./outputs/*embeddings_PCA.pkl
 ```
+# Modeling
 
 ## 4. Model Training
 
@@ -248,32 +336,33 @@ OUTPUT:
 - ./results/augmented_emb_comparison/augmented_emb_all_variants_best.csv
 - ./results/augmented_emb_comparison/augmented_emb_cross_variant_pivot.csv
 ```
-## 📈 Model Performance Comparison
+## 📈 Model Performance Comparison 
+(best models and symbolic regression baseline shown)
+
+| Dataset         | Model              | Embedding   | R²    | RMSE    |
+|----------------|---------------------|-------------|-------|---------|
+| All-Pairs      | **MLP (FCNN)**      | -           | 0.848 | 94.56   |
+| All-Pairs      | MLP (FCNN)          | raw_200D    | 0.801 | 107.931 |
+| All-Pairs      | Symbolic Regression | -           | 0.841 | 96.758  |
+| All-Augm       | MLP (FCNN)          | -           | 0.935 | 69.907  |
+| All-Augm       | **Random Forest**   | PCA8        | 0.942 | 64.689  |
+| All-Augm       | Symbolic Regression | -           | 0.935 | 70.342  |
+| RE-Pairs       | MLP (FCNN)          | -           | 0.913 | 52.197  |
+| RE-Pairs       | **MLP (FCNN)**      | PCA8        | 0.946 | 37.26   |
+| RE-Pairs       | Symbolic Regression | -           | 0.913 | 52.234  |
+| RE-Augm        | Linear (LINEAR)     | -           | 0.980 | 38.240  |
+| RE-Augm        | **Random Forest**   | PCA16       | 0.984 | 33.854  |
+| RE-Augm        | Symbolic Regression | -           | 0.980 | 38.282  |
+| RE-Free-Pairs  | MLP (FCNN)          | -           | 0.792 | 129.820 |
+| RE-Free-Pairs  | **Linear (LASSO)**  | raw_200D    | 0.800 | 122.397 |
+| RE-Free-Pairs  | Symbolic Regression | -           | 0.789 | 130.646 |
+| RE-Free-Augm   | MLP (FCNN)          | -           | 0.829 | 119.460 |
+| RE-Free-Augm   | **Random Forest**   | raw_200D    | 0.909 | 83.60   |
+| RE-Free-Augm   | Symbolic Regression | -           | 0.827 | 120.166 |
 
 
-
-| Dataset        | Best Model (Embedding) | Embedding | R2    | RMSE    | Best Model | R2    | RMSE    | Baseline | Baseline R2 | Baseline RMSE |
-|----------------|------------------------|-----------|-------|---------|------------|-------|---------|----------|-------------|---------------|
-| All-Pairs      | Ridge                  | PCA32     | 0.791 | 110.762 | MLP        | **0.849** | **94.323**  | SR       | 0.841       | 96.757        |
-| All-Augm       | MLP                    | PCA32     | 0.927 | **74.566**  | MLP        | **0.928** | 81.235  | SR       | 0.927       | 81.526        |
-| RE-Pairs       | Ridge                  | PCA32     | 0.791 | 110.762 | MLP        | **0.915** | **51.738**  | SR       | 0.913       | 52.234        |
-| RE-Augm        | MLP                    | PCA32     | 0.929 | 73.819  | MLP        | **0.967** | **33.534**  | SR       | **0.967**   | 33.538        |
-| RE-free Pairs  | Ridge                  | PCA32     | **0.791** | **110.762** | MLP        | **0.791** | 129.950 | SR       | 0.789       | 130.640       |
-| RE-free Augm   | MLP                    | PCA8      | **0.927** | **75.583**  | MLP        | 0.904 | 111.992 | SR       | 0.901       | 113.760       |
+> 🔍 **Note**: The augmented datasets (`All-Augm`, `RE-Augm`, `RE-Free-Augm`) were created by combining **simulated (Tc_sim)** and **experimental (Tc_exp)** data to improve model generalization and performance.
 
 ### 📊 Summary of Results
 
-MLP without embeddings performs best overall, achieving the highest R² and lowest RMSE on most datasets, especially RE-Pairs and RE-Augm.
-
-Data augmentation consistently improves performance, with RE-Augm reaching the strongest results (R² ≈ 0.967, RMSE ≈ 33.5).
-
-Embeddings are not universally beneficial: PCA32 often underperforms compared to raw features, except for RE-free Augm, where a low-dimensional embedding (PCA8) yields the best results.
-
-Performance differs between RE and RE-free subsets, supporting the decision to evaluate them separately.
-
-### 🏆 Best Model per Material Group
-### RE-Augm - Symbolic Regression
-![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/experimental-simulation-tc/best_models/RE-Augm_SR.png)
-
-### RE-Free-Augm - Symbolic Regression 
-![Alt text](https://github.com/MaMMoS-project/ML-models/blob/add-demo-NBs/experimental-simulation-tc/best_models/RE-Free-Augm_SR.png)
+Data augmentation significantly improved model performance across all datasets. The best-performing models were MLP (FCNN) for All-Pairs, RE-Pairs, and RE-Free-Augm, Random Forest for All-Augm and RE-Augm, and LASSO for RE-Free-Pairs. While embeddings were not universally beneficial, low-dimensional PCA embeddings substantially improved performance for RE-Pairs (PCA8) and RE-Augm (PCA16), where they enabled the highest predictive accuracies. In contrast, models trained on the original Mat200 descriptors generally performed better for the remaining datasets. Symbolic regression consistently achieved performance comparable to the best machine learning models while providing interpretable relationships. The lower performance observed for the RE-Free datasets indicates a more challenging prediction task and supports their separate evaluation from the RE datasets.
