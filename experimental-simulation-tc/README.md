@@ -14,7 +14,8 @@ Use requirements.txt. In addition pytorch, compatible with your system, must be 
 # Data Processing
 
 
-```mermaidflowchart TB
+```mermaid
+flowchart TB
 
 %% =========================
 %% Styles
