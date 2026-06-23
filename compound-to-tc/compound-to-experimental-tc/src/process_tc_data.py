@@ -117,6 +117,11 @@ def process(df: pd.DataFrame, tc_col_out: str) -> pd.DataFrame:
     # Drop rows that are still non-numeric after cleaning
     df = df[df["Tc"].notna()]
 
+    # Drop physically impossible negative Curie temperatures as early as
+    # possible — before deduplication — so they never contribute to the
+    # per-composition median below.
+    df = df[df["Tc"] >= 0]
+
     # Deduplicate: take median Tc per composition
     df = df.groupby("composition", as_index=False)["Tc"].median()
     df = df.rename(columns={"Tc": tc_col_out})

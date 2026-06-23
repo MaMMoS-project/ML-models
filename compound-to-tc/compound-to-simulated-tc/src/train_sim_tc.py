@@ -221,38 +221,71 @@ def train_linear(
     return {"R2": best["R2"], "MAE": best["MAE"], "RMSE": best["RMSE"]}, best["model"], scaler
 
 
-def train_rf(
-    X_train: np.ndarray, y_train: np.ndarray,
-    X_test: np.ndarray,  y_test: np.ndarray,
-    run_name: str, out_dir: Path,
-    seed: int = RANDOM_SEED,
-) -> Tuple[Dict, RandomForestRegressor, None]:
-    """Train Random Forest with randomised hyperparameter search.
+# Random Forest hyperparameter search space.
+# Trimmed for speed: the 500-tree option was dropped (RF accuracy is essentially
+# flat from 300→500 trees but training time grows ~linearly with tree count).
+RF_PARAM_DIST = {
+    "n_estimators":      [100, 200, 300],
+    "max_depth":         [None, 20, 30, 50],
+    "min_samples_split": [2, 5, 10],
+    "min_samples_leaf":  [1, 2, 4],
+    "max_features":      ["sqrt", "log2", None],
+    "bootstrap":         [True, False],
+}
+
+
+def tune_rf(X: np.ndarray, y: np.ndarray, seed: int = RANDOM_SEED) -> Dict:
+    """Run the randomised RF hyperparameter search ONCE; return the best params.
+
+    The optimal RF hyperparameters depend on the dataset, not on which random
+    20 % is held out, so when training an ensemble it is wasteful to re-run the
+    search for every member.  This is called a single time per (dataset,
+    embedding) and all ensemble members reuse the returned params; the ensemble
+    diversity still comes from the per-member train/test splits and RF's own
+    randomness.
 
     n_iter is scaled inversely with training-set size so that total wall-clock
     time stays roughly constant across the three datasets:
         ~40 iterations for RE-Free (~5 k samples)
         ~25 iterations for RE     (~8 k samples)
         ~15 iterations for All    (~13 k samples)
-    """
-    n_iter = max(10, round(200_000 / len(X_train)))
 
-    param_dist = {
-        "n_estimators":      [100, 200, 300, 500],
-        "max_depth":         [None, 20, 30, 50],
-        "min_samples_split": [2, 5, 10],
-        "min_samples_leaf":  [1, 2, 4],
-        "max_features":      ["sqrt", "log2", None],
-        "bootstrap":         [True, False],
-    }
-    print(f"    (RF: n_iter={n_iter} for {len(X_train)} train samples)", end="  ")
+    The search uses cv=3 (down from 5): 3-fold CV ranks hyperparameters well
+    enough while doing ~40 % fewer fits.
+    """
+    n_iter = max(10, round(200_000 / len(X)))
+    print(f"    (RF search: n_iter={n_iter}, cv=3 on {len(X)} samples)...", end="  ", flush=True)
     rs = RandomizedSearchCV(
         RandomForestRegressor(random_state=seed, n_jobs=1),
-        param_dist, n_iter=n_iter, cv=5, scoring="r2",
+        RF_PARAM_DIST, n_iter=n_iter, cv=3, scoring="r2",
         n_jobs=_N_JOBS, random_state=seed, verbose=0,
     )
-    rs.fit(X_train, y_train)
-    model = rs.best_estimator_
+    rs.fit(X, y)
+    print("done")
+    return rs.best_params_
+
+
+def train_rf(
+    X_train: np.ndarray, y_train: np.ndarray,
+    X_test: np.ndarray,  y_test: np.ndarray,
+    run_name: str, out_dir: Path,
+    seed: int = RANDOM_SEED,
+    best_params: Optional[Dict] = None,
+) -> Tuple[Dict, RandomForestRegressor, None]:
+    """Train one Random Forest model.
+
+    If ``best_params`` is provided (the normal ensemble path), the model is
+    trained directly with those hyperparameters and parallelised across all
+    cores (``n_jobs=_N_JOBS``) — there is no outer search to oversubscribe
+    against, so each forest gets the whole node.  If ``best_params`` is None,
+    the randomised search is run on this split first (legacy single-model
+    behaviour).
+    """
+    if best_params is None:
+        best_params = tune_rf(X_train, y_train, seed=seed)
+
+    model = RandomForestRegressor(**best_params, random_state=seed, n_jobs=_N_JOBS)
+    model.fit(X_train, y_train)
     ytr_p = model.predict(X_train)
     yte_p = model.predict(X_test)
     m = compute_metrics(y_test, yte_p)
@@ -541,6 +574,17 @@ def train_one_dataset(ds: Dict, figures_dir: Path) -> List[Dict]:
                 continue
             n_ensemble = cfg["ensemble"]
 
+            # For RF, run the hyperparameter search ONCE per embedding and share
+            # the result across all ensemble members (see tune_rf).  Tuning on
+            # the first member's training split keeps that member fully leak-free
+            # and preserves the documented n_iter scaling (based on n_train).
+            rf_best_params: Optional[Dict] = None
+            if model_label == "RF":
+                X_tune, _, y_tune, _ = train_test_split(
+                    X, y, test_size=0.2, random_state=RANDOM_SEED
+                )
+                rf_best_params = tune_rf(X_tune, y_tune, seed=RANDOM_SEED)
+
             for i in range(n_ensemble):
                 seed = RANDOM_SEED + i
                 X_train, X_test, y_train, y_test = train_test_split(
@@ -551,10 +595,17 @@ def train_one_dataset(ds: Dict, figures_dir: Path) -> List[Dict]:
                 progress    = f" (ensemble {i + 1}/{n_ensemble})" if n_ensemble > 1 else ""
                 print(f"    Training {model_label}{progress}...", end="  ")
                 try:
-                    m, trained_model, trained_scaler = train_fn(
-                        X_train, y_train, X_test, y_test,
-                        member_name, figures_dir, seed=seed,
-                    )
+                    if model_label == "RF":
+                        m, trained_model, trained_scaler = train_rf(
+                            X_train, y_train, X_test, y_test,
+                            member_name, figures_dir, seed=seed,
+                            best_params=rf_best_params,
+                        )
+                    else:
+                        m, trained_model, trained_scaler = train_fn(
+                            X_train, y_train, X_test, y_test,
+                            member_name, figures_dir, seed=seed,
+                        )
                     print(
                         f"R²={m['R2']:.4f}  "
                         f"RMSE={m['RMSE']:.1f} K  "
