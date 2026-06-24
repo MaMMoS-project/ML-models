@@ -37,21 +37,29 @@ graph TD
         E --> F2[src/train_exp_tc_re.py]
         E --> F3[src/train_exp_tc_all.py]
 
-        F1 --> G1[results/exp_tc/RE-Free_results.csv]
-        F2 --> G2[results/exp_tc/RE_results.csv]
-        F3 --> G3[results/exp_tc/All_results.csv]
+        F1 --> G1[results/RE-Free_results.csv]
+        F2 --> G2[results/RE_results.csv]
+        F3 --> G3[results/All_results.csv]
     end
 
-    %% === Styling ===
-    classDef input fill:#f0f0f0,stroke:#333,stroke-width:1px,color:#000;
-    classDef process fill:#e0e8ff,stroke:#333,stroke-width:1px,color:#000;
-    classDef output fill:#d0e8d0,stroke:#333,stroke-width:1px,color:#000;
+    %% === Subtle styling ===
 
-    class A0,A input
-    class B0,B,C,D,F1,F2,F3 process
-    class G1,G2,G3 output
+    %% Default nodes: clean white with soft border
+    classDef node fill:#ffffff,stroke:#666,stroke-width:1px,color:#111;
 
-    class cluster_0,cluster_1,cluster_2,cluster_3 fill:#ffffff,stroke:#ccc,stroke-width:1px;
+    %% Only highlight pipeline flow (very soft blue)
+    classDef flow fill:#f4f8ff,stroke:#4a78c2,stroke-width:1px,color:#111;
+
+    %% Apply styles
+    class A0,A,B0,C,D,E,F1,F2,F3,G1,G2,G3 node;
+
+    class A,B,C,D,E flow;
+
+    %% Light neutral cluster boxes
+    style cluster_0 fill:#fcfcfc,stroke:#d0d0d0,stroke-width:1px
+    style cluster_1 fill:#fcfcfc,stroke:#d0d0d0,stroke-width:1px
+    style cluster_2 fill:#fcfcfc,stroke:#d0d0d0,stroke-width:1px
+    style cluster_3 fill:#fcfcfc,stroke:#d0d0d0,stroke-width:1px
 ```
 
 Three datasets are trained independently (steps 3a–3c can run in any order or in parallel):
