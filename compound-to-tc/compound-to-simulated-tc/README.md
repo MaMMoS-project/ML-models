@@ -238,22 +238,125 @@ MAE and RMSE in Kelvin (lower is better).
 
 ### Best model per dataset
 
+Below we report the performance of the best-performing ensemble member on the test set.
+
+
+| Dataset | Model | Embedding | R²        | MAE (K)   | RMSE (K)  |
+| ------- | ----- | --------- | --------- | --------- | --------- |
+| All     | RF    | raw_200D  | 0.682     | 99.39     | 152.94    |
+| RE      | RF    | raw_200D  | **0.841** | **45.20** | **67.25** |
+| RE-Free | RF    | pca_32    | 0.623     | 125.10    | 178.42    |
+
+Random Forest provides the strongest performance on the RE materials subset, achieving an R² of 0.841 with substantially lower prediction errors (MAE = 45.20 K, RMSE = 67.25 K) than the other datasets. In contrast, performance is lower on the mixed All dataset (R² = 0.682) and drops further on the RE-Free dataset (R² = 0.623), suggesting that compounds containing rare-earth elements exhibit more predictable structure–property relationships than the broader or RE-free chemical spaces.
 
 ---
 
-### RE-Free — full results table
+### All — Best result per embedding and model 
 
-| Embedding | Model | R² | MAE (K) | RMSE (K) |
+Below we report the performance of the best-performing ensemble member on the All test set.
+
+| Embedding | Model          |         R² |  MAE (K) |  RMSE (K) |
+| --------- | -------------- | ---------: | -------: | --------: |
+| raw_200D  | RF             | **0.6819** | **99.4** | **152.9** |
+| pca_16    | RF             |     0.6596 |    101.7 |     158.2 |
+| pca_32    | RF             |     0.6565 |    103.7 |     158.9 |
+| pca_64    | RF             |     0.6469 |    106.8 |     161.1 |
+| pca_8     | RF             |     0.6126 |    112.9 |     168.8 |
+| pca_32    | MLP(128,64,32) |     0.6152 |    116.3 |     167.9 |
+| pca_64    | MLP(128,64,32) |     0.6029 |    108.9 |     176.8 |
+| pca_16    | MLP(128,64,32) |     0.5643 |    127.9 |     178.6 |
+| raw_200D  | MLP(128,64,32) |     0.5570 |    125.8 |     180.1 |
+| pca_8     | MLP(128,64,32) |     0.4576 |    146.3 |     199.7 |
+| raw_200D  | Linear(Lasso)  |     0.3981 |    147.5 |     205.1 |
+| pca_64    | Linear(Lasso)  |     0.3914 |    148.3 |     206.2 |
+| pca_32    | Linear(Lasso)  |     0.3830 |    147.6 |     207.7 |
+| pca_16    | Linear(Lasso)  |     0.3595 |    162.9 |     218.4 |
+| pca_8     | Linear(Lasso)  |     0.3221 |    165.7 |     223.2 |
+
+
+### All - Random Forest — Mean ± Std (per embedding)
+
+| Embedding |                R² |         MAE (K) |         RMSE (K) |
+| --------- | ----------------: | --------------: | ---------------: |
+| raw_200D  | **0.636 ± 0.045** | **102.7 ± 7.2** | **163.1 ± 17.7** |
+| pca_16    |     0.590 ± 0.046 |     108.4 ± 5.6 |     176.2 ± 13.8 |
+| pca_32    |     0.597 ± 0.041 |     108.5 ± 6.3 |     168.7 ± 14.8 |
+| pca_64    |     0.618 ± 0.039 |     111.4 ± 6.0 |     167.2 ± 13.7 |
+| pca_8     |     0.551 ± 0.042 |     119.1 ± 5.3 |     180.6 ± 13.6 |
 
 ---
 
-### RE — full results table
+### RE — Best result per embedding and model 
 
-| Embedding | Model | R² | MAE (K) | RMSE (K) |
+Below we report the performance of the best-performing ensemble member on the RE test set.
+
+| Embedding | Model          |         R² |  MAE (K) | RMSE (K) |
+| --------- | -------------- | ---------: | -------: | -------: |
+| raw_200D  | RF             | **0.8413** | **45.2** | **67.2** |
+| pca_16    | RF             |     0.8042 |     49.7 |     74.7 |
+| pca_32    | RF             |     0.7865 |     57.8 |     93.1 |
+| pca_64    | RF             |     0.7830 |     51.3 |     78.6 |
+| pca_8     | RF             |     0.7611 |     50.6 |     82.5 |
+| pca_32    | MLP(128,64,32) |     0.7031 |     68.5 |    114.3 |
+| raw_200D  | MLP(128,64,32) |     0.6762 |     74.4 |    119.4 |
+| pca_16    | MLP(128,64,32) |     0.6672 |     77.3 |    121.0 |
+| pca_64    | MLP(128,64,32) |     0.6234 |     77.0 |    131.8 |
+| pca_8     | MLP(128,64,32) |     0.5945 |     80.9 |    133.6 |
+| pca_64    | Linear(Lasso)  |     0.4704 |     96.5 |    138.0 |
+| raw_200D  | Linear(Lasso)  |     0.4583 |     98.6 |    139.5 |
+| pca_32    | Linear(Lasso)  |     0.4468 |     99.7 |    141.0 |
+| pca_16    | Linear(Lasso)  |     0.4335 |    112.2 |    171.3 |
+| pca_8     | Linear(Lasso)  |     0.4032 |    116.2 |    175.8 |
+
+
+### RE - Random Forest — Mean ± Std (per embedding)
+
+| Embedding |                R² |        MAE (K) |        RMSE (K) |
+| --------- | ----------------: | -------------: | --------------: |
+| raw_200D  | **0.753 ± 0.051** | **57.0 ± 5.3** | **99.3 ± 16.2** |
+| pca_16    |     0.743 ± 0.041 |     61.8 ± 5.2 |    101.5 ± 13.1 |
+| pca_32    |     0.743 ± 0.036 |     63.1 ± 4.8 |    101.7 ± 11.4 |
+| pca_64    |     0.729 ± 0.045 |     62.5 ± 5.7 |    103.8 ± 12.9 |
+| pca_8     |     0.707 ± 0.031 |     64.4 ± 7.0 |    108.0 ± 13.9 |
+
+
+The model performance exhibits substantial variability across ensemble realizations, 
+with R² ranging from 0.669 to 0.841 for the RE dataset using raw 200-dimensional embeddings. 
+This indicates that the reported performance is sensitive to the specific ensemble realization.
 
 ---
 
-### All — full results table
+### RE-Free — Best result per embedding and model 
 
-| Embedding | Model | R² | MAE (K) | RMSE (K) |
+Below we report the performance of the best-performing ensemble member on the RE-Free test set.
 
+| Embedding | Model          |         R² (↑) |   MAE (K) |  RMSE (K) |
+| --------- | -------------- | ---------: | --------: | --------: |
+| pca_32    | RF             | **0.6226** | **125.1** | **178.4** |
+| raw_200D  | RF             |     0.6170 |     122.9 |     179.7 |
+| pca_64    | RF             |     0.5883 |     132.8 |     186.3 |
+| pca_8     | RF             |     0.5615 |     135.5 |     192.3 |
+| pca_16    | RF             |     0.5527 |     152.6 |     218.0 |
+| pca_64    | MLP(128,64,32) |     0.3358 |     188.8 |     250.3 |
+| pca_32    | MLP(128,64,32) |     0.3260 |     178.5 |     238.4 |
+| raw_200D  | MLP(128,64,32) |     0.3157 |     183.4 |     240.3 |
+| pca_16    | MLP(128,64,32) |     0.3084 |     180.4 |     241.5 |
+| pca_8     | MLP(128,64,32) |     0.2770 |     196.5 |     247.0 |
+| pca_16    | Linear(Lasso)  |     0.2704 |     206.7 |     256.6 |
+| pca_64    | Linear(Lasso)  |     0.2635 |     193.9 |     249.2 |
+| raw_200D  | Linear(Lasso)  |     0.2598 |     193.1 |     249.9 |
+| pca_32    | Linear(Lasso)  |     0.2533 |     204.5 |     259.6 |
+| pca_8     | Linear(Lasso)  |     0.2449 |     203.4 |     252.4 |
+
+
+### RE-Free - Random Forest — Mean ± Std (per embedding)
+
+| Embedding | R²             | MAE (K)          | RMSE (K)         |
+| --------- | ----------------- | ---------------- | ---------------- |
+| raw_200D  | **0.512 ± 0.073** | **142.9 ± 10.5** | **210.4 ± 20.5** |
+| pca_8     | 0.442 ± 0.072     | 154.5 ± 10.2     | 225.8 ± 18.6     |
+| pca_16    | 0.472 ± 0.069     | 150.0 ± 10.0     | 222.8 ± 18.4     |
+| pca_32    | **0.511 ± 0.075** | **144.6 ± 11.0** | **210.5 ± 21.1** |
+| pca_64    | 0.498 ± 0.071     | 149.3 ± 8.5      | 213.8 ± 20.9     |
+
+---
