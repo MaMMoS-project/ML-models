@@ -330,7 +330,7 @@ This indicates that the reported performance is sensitive to the specific ensemb
 
 Below we report the performance of the best-performing ensemble member on the RE-Free test set.
 
-| Embedding | Model          |         R² (↑) |   MAE (K) |  RMSE (K) |
+| Embedding | Model          |         R²  |   MAE (K) |  RMSE (K) |
 | --------- | -------------- | ---------: | --------: | --------: |
 | pca_32    | RF             | **0.6226** | **125.1** | **178.4** |
 | raw_200D  | RF             |     0.6170 |     122.9 |     179.7 |
