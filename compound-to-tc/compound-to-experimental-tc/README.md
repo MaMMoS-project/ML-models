@@ -320,7 +320,7 @@ Results shown for the best-performing ensemble member per configuration.
 ---
 
 
-### RE-Free — full results table
+### RE-Free — Best result per embedding and model 
 
 Below we report the performance of the best-performing ensemble member on the test set.
 
