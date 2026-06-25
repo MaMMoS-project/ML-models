@@ -38,7 +38,7 @@ Models are organized in different folders of this repository:
       Identify and correct systematic errors between simulations of the spontaneous magnetization and experimental measurement
       (⚠️ Not yet validated and may introduce bias).
 
-      Current model version: v0.1
+      Current model version: v0.2
 
    -- ./experimental-simulation-tc:
 
