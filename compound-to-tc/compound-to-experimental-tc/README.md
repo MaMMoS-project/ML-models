@@ -238,9 +238,12 @@ logs/train_exp_tc_re_free.txt  |  train_exp_tc_re.txt  |  train_exp_tc_all.txt
 ## Results
 
 All metrics are on a held-out 20 % test split. Metrics are R² (higher is better),
-MAE and RMSE in Kelvin (lower is better). Below we report the performance of the best-performing ensemble member on the test set.
+MAE and RMSE in Kelvin (lower is better). 
 
 ### Best model per dataset
+
+Below we report the performance of the best-performing ensemble member on the test set.
+
 
 | Dataset | Model | Embedding | R²        | MAE (K) | RMSE (K) |
 | ------- | ----- | --------- | --------- | ------- | -------- |
@@ -350,6 +353,5 @@ Below we report the performance of the best-performing ensemble member on the te
 | pca_16       | RF    | 0.7535 ± 0.0105     | 77.2 ± 2.0           | 130.5 ± 4.1           |
 | pca_64       | RF    | 0.7446 ± 0.0132     | 79.3 ± 1.9           | 132.8 ± 4.7           |
 | pca_8        | RF    | 0.7231 ± 0.0099     | 82.1 ± 1.7           | 138.3 ± 3.7           |
-
 
 ---
