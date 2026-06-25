@@ -23,22 +23,27 @@ Models are organized in different folders of this repository:
       where the H and K1 vector can independently point in any direction
       This models predicts Mr, Hc, and BHmax from a, k1, and Ms
       Current model version: v0.1
-      
-- ./experimental-simulation-hc:
-    Identify and correct systematic errors between micromagnetics simulations and experimental measurements of Hc
+
+- ./experimental-simulation-relations
+
+   ML models which relate simulation results to experimental measurements for various magnetic properties
+
+    
+   -- ./experimental-simulation-hc:
+      Identify and correct systematic errors between micromagnetics simulations and experimental measurements of Hc
       Current model version: v0.1
 
-- ./experimental-simulation-ms:
+   -- ./experimental-simulation-ms:
 
-    Identify and correct systematic errors between simulations of the spontaneous magnetization and experimental measurement
-    (⚠️ Not yet validated and may introduce bias).
+      Identify and correct systematic errors between simulations of the spontaneous magnetization and experimental measurement
+      (⚠️ Not yet validated and may introduce bias).
 
       Current model version: v0.1
 
-- ./experimental-simulation-tc:
+   -- ./experimental-simulation-tc:
 
-    Identify and correct systematic errors between simulations of the Curie temperature and experimental measurement
-    (⚠️ Not yet validated and may introduce bias).
+      Identify and correct systematic errors between simulations of the Curie temperature and experimental measurement
+      (⚠️ Not yet validated and may introduce bias).
 
       Current model version: v0.2
 
