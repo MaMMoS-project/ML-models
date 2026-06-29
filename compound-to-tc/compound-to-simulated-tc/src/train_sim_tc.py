@@ -698,6 +698,11 @@ def update_global_summary() -> None:
 # ---------------------------------------------------------------------------
 # Main pipeline (trains all three datasets in one go)
 # ---------------------------------------------------------------------------
+# Create log directory 
+from src.log_to_file import log_output
+import os
+log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'logs')
+os.makedirs(log_dir, exist_ok=True)
 
 @log_output("logs/train_sim_tc.txt")
 def train_sim_tc() -> None:
