@@ -59,7 +59,7 @@ def training_pairs_emb():
     ]
 
     embedding_types = [
-        None,       # raw 200D
+        # None,       # raw 200D
         "pca_16",
         "pca_32",
         "pca_8",
@@ -135,6 +135,7 @@ def training_pairs_emb():
             print(f"Ms threshold {ms_threshold:.0f} A/m: {before} → {len(df_data)} rows kept")
 
         for embedding_type in embedding_types:
+            
             emb_name = "raw_200D" if embedding_type is None else embedding_type
 
             # Check the embedding column actually exists before training
@@ -143,7 +144,7 @@ def training_pairs_emb():
                     print(f"  Skipping raw_200D — no compound_embedding column.")
                     continue
             else:
-                col_name = f'comp_emb_pca_{embedding_type}_components'
+                col_name = f'comp_emb_{embedding_type}_components'
                 if col_name not in df_data.columns:
                     print(f"  Skipping {emb_name} — column {col_name} not found.")
                     continue
@@ -224,6 +225,9 @@ def training_pairs_emb():
                     use_embedding=True,
                     embedding_type=embedding_type,
                 )
+                
+                import pdb; pdb.set_trace()
+                
                 dataset_emb_results.append({
                     "Model_Family": "MLP", "Model": "FCNN",
                     "Dataset": dataset_name, "Embedding": emb_name,
