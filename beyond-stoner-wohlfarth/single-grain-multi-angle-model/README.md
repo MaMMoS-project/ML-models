@@ -16,6 +16,19 @@ python3 -m scripts.analyze_magnetic_data
 ```
 
 ```mermaid
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "primaryColor": "#2563EB",
+    "primaryTextColor": "#FFFFFF",
+    "primaryBorderColor": "#1D4ED8",
+    "lineColor": "#64748B",
+    "clusterBkg": "#F8FAFC",
+    "clusterBorder": "#CBD5E1",
+    "fontFamily": "Inter, Arial, sans-serif"
+  }
+}}%%
+
 flowchart LR
 
     subgraph cluster_0["1. Process Micromagnetics Data"]
@@ -30,6 +43,14 @@ flowchart LR
         B0 --> O1["./plots/*.png<br/>analysis plots"]
         B0 --> O2["./data/processed/micromagnetics_angle_dependent_symmetries.csv"]
     end
+
+    classDef input fill:#DBEAFE,stroke:#3B82F6,stroke-width:2px,color:#1E3A8A;
+    classDef process fill:#2563EB,stroke:#1D4ED8,stroke-width:2px,color:#FFFFFF;
+    classDef output fill:#DCFCE7,stroke:#16A34A,stroke-width:2px,color:#14532D;
+
+    class A1,A2 input;
+    class B0 process;
+    class O1,O2 output;
 ```
 
 NEEDS:
