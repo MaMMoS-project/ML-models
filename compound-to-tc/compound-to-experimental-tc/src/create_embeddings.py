@@ -79,7 +79,12 @@ def _compound_embedding(comp_str: str, elem_features: Dict) -> Optional[np.ndarr
         return vec
     except Exception:
         return None
-
+    
+# Create log directory 
+from src.log_to_file import log_output
+import os
+log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'logs')
+os.makedirs(log_dir, exist_ok=True)
 
 @log_output("logs/create_embeddings.txt")
 def create_embeddings() -> None:
@@ -91,7 +96,7 @@ def create_embeddings() -> None:
 
     if not EMB_FILE.exists():
         print(f"ERROR: element embedding file not found: {EMB_FILE}")
-        sys.exit(1)
+        # sys.exit(1)
 
     elem_features = _load_elem_features(EMB_FILE)
     dim = len(next(iter(elem_features.values())))

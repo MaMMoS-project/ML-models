@@ -27,7 +27,7 @@ logs/
 embeddings/
 plots/
 metric_tables/
-
+preprocessed_data/
 # ===============================
 # Data files
 # ===============================
