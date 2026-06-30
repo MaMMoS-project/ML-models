@@ -19,13 +19,10 @@ python3 -m scripts.analyze_magnetic_data
 %%{init: {
   "theme": "base",
   "themeVariables": {
-    "primaryColor": "#2563EB",
-    "primaryTextColor": "#FFFFFF",
-    "primaryBorderColor": "#1D4ED8",
-    "lineColor": "#64748B",
-    "clusterBkg": "#F8FAFC",
-    "clusterBorder": "#CBD5E1",
-    "fontFamily": "Inter, Arial, sans-serif"
+    "lineColor": "#94A3B8",
+    "clusterBkg": "#FAFAFA",
+    "clusterBorder": "#D1D5DB",
+    "fontFamily": "Arial, sans-serif"
   }
 }}%%
 
@@ -44,9 +41,9 @@ flowchart LR
         B0 --> O2["./data/processed/micromagnetics_angle_dependent_symmetries.csv"]
     end
 
-    classDef input fill:#DBEAFE,stroke:#3B82F6,stroke-width:2px,color:#1E3A8A;
-    classDef process fill:#2563EB,stroke:#1D4ED8,stroke-width:2px,color:#FFFFFF;
-    classDef output fill:#DCFCE7,stroke:#16A34A,stroke-width:2px,color:#14532D;
+    classDef input fill:#EEF4FA,stroke:#A7C4E0,color:#334155,stroke-width:1.2px;
+    classDef process fill:#F5F5F4,stroke:#BDBDBD,color:#374151,stroke-width:1.5px;
+    classDef output fill:#F0F7F1,stroke:#A8C8A5,color:#334155,stroke-width:1.2px;
 
     class A1,A2 input;
     class B0 process;
