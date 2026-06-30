@@ -143,7 +143,7 @@ def training_pairs_emb():
                     print(f"  Skipping raw_200D — no compound_embedding column.")
                     continue
             else:
-                col_name = f'comp_emb_pca_{embedding_type}_components'
+                col_name = f'comp_emb_{embedding_type}_components'
                 if col_name not in df_data.columns:
                     print(f"  Skipping {emb_name} — column {col_name} not found.")
                     continue
