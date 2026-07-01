@@ -59,7 +59,7 @@ def training_pairs_emb():
     ]
 
     embedding_types = [
-        # None,       # raw 200D
+        None,       # raw 200D
         "pca_16",
         "pca_32",
         "pca_8",
