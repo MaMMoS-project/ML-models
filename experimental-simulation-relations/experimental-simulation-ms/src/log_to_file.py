@@ -3,30 +3,53 @@ import sys
 
 
 class _Tee:
-    """Forward writes to several streams at once, flushing after each write.
-
-    Used so stdout is shown live in the terminal / SLURM .out file AND written
-    to the log file at the same time, line by line, rather than buffered until
-    the decorated function returns.
-    """
+    """Forward writes to several streams safely."""
 
     def __init__(self, *streams):
-        self.streams = streams
+        self.streams = list(streams)
 
     def write(self, data):
-        
         if isinstance(data, bytes):
             data = data.decode("utf-8", errors="replace")
-            
+
+        alive_streams = []
+
         for s in self.streams:
-            s.write(data)
-            s.flush()
+            try:
+                if s is None:
+                    continue
+                if hasattr(s, "closed") and s.closed:
+                    continue
+
+                s.write(data)
+                s.flush()
+                alive_streams.append(s)
+
+            except (ValueError, OSError, AttributeError):
+                # stream is dead → drop it
+                continue
+
+        self.streams = alive_streams
         return len(data)
 
     def flush(self):
-        for s in self.streams:
-            s.flush()
+        alive_streams = []
 
+        for s in self.streams:
+            try:
+                if s is None:
+                    continue
+                if hasattr(s, "closed") and s.closed:
+                    continue
+
+                s.flush()
+                alive_streams.append(s)
+
+            except (ValueError, OSError, AttributeError):
+                continue
+
+        self.streams = alive_streams
+        
 
 def log_output(file_path):
     def decorator(func):
