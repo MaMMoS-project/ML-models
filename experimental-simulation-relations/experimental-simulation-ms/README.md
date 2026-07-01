@@ -9,7 +9,12 @@ simulated Ms (A/m) and experimental Ms (A/m) and predict a corrected value.
 ## Current version of model
 v0.2
 
-## Overview
+## 0. Installation
+Use requirements.txt. In addition pytorch and rapids, compatible with your system, must be installed.
+- https://pytorch.org/
+- https://docs.rapids.ai/install/
+
+## Pipeline Overview
 
 The pipeline runs in five stages:
 
@@ -106,11 +111,17 @@ style cluster_3 fill:#F4F6F7,stroke:#5D6D7E,stroke-width:2px
 
 Models trained: Symbolic Regression (PySR), Linear (LASSO / Ridge / OLS), Random Forest, FCNN/MLP.
 
-Datasets: All pairs, RE-only (rare-earth compounds), RE-free.
+Datasets: All pairs, RE-only (rare-earth compounds), RE-free (not containing RE compounds).
 
 All models operate in log1p-space; metrics are reported in original A/m space.
 
-## Data
+## 1. Data Augmentation
+
+Run:
+
+```
+src/augment_data.py
+```
 
 Place the merged dataset at:
 
@@ -121,14 +132,16 @@ data/merged_df_python.csv
 Expected columns include `Ms (ampere/meter)_s` (simulated), `Ms (ampere/meter)_e`
 (experimental), and `has_rare_earth`.
 
-## Usage
-
-### Individual stages
+## 2. & 3. Embedding Creation and Compression
 
 ```bash
-python3 -m src.augment_data
 python3 -m src.create_embeddings
 python3 -m src.compress_embedding_PCA
+```
+
+## 4a-d Model Training
+
+```bash
 python3 -m src.training_pairs
 python3 -m src.training_pairs_emb
 python3 -m src.training_augmented
