@@ -226,8 +226,6 @@ def training_pairs_emb():
                     embedding_type=embedding_type,
                 )
                 
-                import pdb; pdb.set_trace()
-                
                 dataset_emb_results.append({
                     "Model_Family": "MLP", "Model": "FCNN",
                     "Dataset": dataset_name, "Embedding": emb_name,
