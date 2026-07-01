@@ -14,6 +14,10 @@ class _Tee:
         self.streams = streams
 
     def write(self, data):
+        
+        if isinstance(data, bytes):
+            data = data.decode("utf-8", errors="replace")
+            
         for s in self.streams:
             s.write(data)
             s.flush()
