@@ -244,3 +244,28 @@ src/
     ├── random_forest.py       Random Forest trainer
     └── symbolic_regression.py PySR trainer
 ```
+
+### 📈 Model Performance Comparison
+
+(best models and symbolic regression baseline shown)
+
+| Dataset         | Model              | Embedding   | R²    | RMSE    |
+|----------------|---------------------|-------------|-------|---------|
+| All-Pairs      | **MLP (FCNN)**      | -           | 0.78  | 0.393   |
+| All-Pairs      | Linear Regression   | raw_200D    | 0.835 | 0.342   |
+| All-Pairs      | Symbolic Regression | -           | 0.782 | 0.393   |
+| All-Augm       | MLP (FCNN)          | -           | 0.791 | 0.399   |
+| All-Augm       | **MLP (FCNN)**      | PCA32       | 0.794 | 0.395   |
+| All-Augm       | Symbolic Regression | -           | 0.791 | 0.399   |
+| RE-Pairs       | Random Forest       |             | 0.467 | 0.621   |
+| RE-Pairs       | Ridge Regression    | raw_200D    | 0.747 | 0.427   |
+| RE-Pairs       | Symbolic Regression | -           | 0.411 | 0.653   |
+| RE-Augm        | MLP (FCNN)          | -           | 0.612 | 0.624   |
+| RE-Augm        | **MLP (FCNN)**      | PCA32       | 0.621 | 0.616   |
+| RE-Augm        | Symbolic Regression | -           | 0.612 | 0.624   |
+| RE-Free-Pairs  | Lasso               | -           | 0.873 | 0.293   |
+| RE-Free-Pairs  | Random Forest       | raw_200D    | 0.897 | 0.264   |
+| RE-Free-Pairs  | Symbolic Regression | -           | 0.872 | 0.295   |
+| RE-Free-Augm   | MLP (FCNN)          | -           | 0.869 | 0.300   |
+| RE-Free-Augm   | **MLP (FCNN)**      | PCA16       | 0.862 | 0.308   |
+| RE-Free-Augm   | Symbolic Regression | -           | 0.869 | 0.301   |
