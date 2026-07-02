@@ -7,11 +7,60 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
-from sklearn.model_selection import train_test_split
+from sklearn.base import clone
+from sklearn.model_selection import train_test_split, KFold, RepeatedKFold
 from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
 from typing import Tuple, Dict, Optional
 
 sns.set_style("whitegrid")
+
+
+def parse_delta_learning() -> bool:
+    """Parse --delta-learning from command line arguments.
+
+    When set, models train on the correction Tc_exp - Tc_sim instead of Tc_exp
+    directly. Metrics are still reported in Tc space (the Tc_sim baseline is added
+    back via DataLoader.reconstruct_target), so they stay comparable.
+    """
+    import argparse
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument('--delta-learning', action='store_true',
+                        help='Train on the correction Tc_exp - Tc_sim instead of Tc_exp.')
+    args, _ = parser.parse_known_args()
+    return args.delta_learning
+
+
+def parse_re_features() -> bool:
+    """Parse --re-features from command line arguments.
+
+    When set, prepare_dataset appends 7 rare-earth physics features (free-ion
+    Hund's-rules quantities incl. the de Gennes factor) derived from the
+    'composition' column. The features are zero for RE-free rows, so they are
+    safe on any dataset. Tc_sim is kept LAST in X, so delta reconstruction
+    (reconstruct_target -> X[:, -1]) stays valid.
+    """
+    import argparse
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument('--re-features', action='store_true',
+                        help='Append rare-earth physics features (from composition).')
+    args, _ = parser.parse_known_args()
+    return args.re_features
+
+
+def parse_cv_folds(default: int = 0) -> int:
+    """Parse --cv N from command line arguments.
+
+    N >= 2 reports K-fold cross-validated metrics (mean +/- std over folds) as the
+    headline numbers instead of a single 80/20 split. N = 0 (default) keeps the
+    single-split behaviour. Useful for the small RE split, whose single-split R2
+    swings noticeably from fold to fold.
+    """
+    import argparse
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument('--cv', type=int, default=default, dest='cv',
+                        help='K-fold CV for reporting (N>=2). 0 = single split (default).')
+    args, _ = parser.parse_known_args()
+    return args.cv if args.cv and args.cv >= 2 else 0
 
 # Explicitly shut down loky's worker pool at exit so that Python 3.13's
 # resource tracker process is still alive when __del__ handlers run,
@@ -26,14 +75,16 @@ except Exception:
 class DataLoader:
     """Load and prepare datasets for training."""
     
-    def __init__(self, data_dir: str = "../../data", pairs_file: str = "Pairs_all.csv", 
+    def __init__(self, data_dir: str = "../../data", pairs_file: str = "Pairs_all.csv",
                  augmented_file: str = "Augm_combined_all.csv", re_pairs_file: str = "Pairs_RE.csv",
                  re_free_pairs_file: str = "Pairs_RE_Free.csv", re_augmented_file: str = "Augm_combined_RE.csv",
-                 re_free_augmented_file: str = "Augm_combined_RE_Free.csv"):
+                 re_free_augmented_file: str = "Augm_combined_RE_Free.csv",
+                 delta_learning: bool = False, use_re_features: bool = False,
+                 cv_folds: int = 0):
         # Interpret data_dir relative to this file's directory, not the CWD
         base_dir = Path(__file__).parent
         self.data_dir = (base_dir / data_dir).resolve()
-        
+
         # Store dataset file names
         self.pairs_file = pairs_file
         self.augmented_file = augmented_file
@@ -41,7 +92,14 @@ class DataLoader:
         self.re_free_pairs_file = re_free_pairs_file
         self.re_augmented_file = re_augmented_file
         self.re_free_augmented_file = re_free_augmented_file
-        
+
+        # Training-config flags (ported from my_ms).
+        # delta_learning: predict the correction (Tc_exp - Tc_sim) instead of Tc_exp.
+        # use_re_features / cv_folds are wired in later steps.
+        self.delta_learning = delta_learning
+        self.use_re_features = use_re_features
+        self.cv_folds = cv_folds
+
     def load_pairs_data(self, dataset_type: str = "all") -> pd.DataFrame:
         """Load the original pairs dataset.
 
@@ -191,9 +249,19 @@ class DataLoader:
             )
             print(f"Note: Rows with NaNs in other columns are preserved as requested.")
 
-        y = df[target_col].values
-        
-        # Prepare X
+        # Target: Tc_exp, or the correction Tc_exp - Tc_sim when delta_learning is on.
+        # Tc_sim is the baseline; reconstruct_target() adds it back before metrics so
+        # reported numbers stay in Tc space.
+        if self.delta_learning:
+            y = df[target_col].values - df['Tc_sim'].values
+            print(f"  - Target: delta = Tc_exp - Tc_sim")
+        else:
+            y = df[target_col].values
+            print(f"  - Target: Tc_exp")
+
+        # Prepare X. Feature column order is always [embedding?, RE features?, Tc_sim],
+        # i.e. Tc_sim is ALWAYS the last column so reconstruct_target (X[:, -1])
+        # stays valid even when RE features are appended.
         if use_embedding:
             if embedding_type is None:
                 # Use raw compound_embedding
@@ -202,33 +270,64 @@ class DataLoader:
                 else:
                     raise ValueError("No compound_embedding column found. Run create_embeddings.py first.")
             else:
-                # Use specific embedding type
-                col_name = f'comp_emb_{embedding_type}_components'
-                if col_name in df.columns:
-                    X = np.vstack(df[col_name].values)
-                else:
-                    # Try without prefix
-                    if embedding_type in df.columns:
-                        X = np.vstack(df[embedding_type].values)
-                    elif 'comp_emp' in df.columns:
-                        # Fall back to raw embedding with warning
-                        print(f"Warning: {col_name} not found, using raw compound_embedding")
-                        X = np.vstack(df['comp_emb'].values)
-                    else:
-                        raise ValueError(
-                            f"Embedding column {col_name} not found. "
-                            "Available columns with 'embedding': " +
-                            str([c for c in df.columns if 'emb' in c.lower()])
-                        )
-            
-            # Stack with Tc_sim
-            Tc_sim = df['Tc_sim'].values.reshape(-1, 1)
-            X = np.hstack([X, Tc_sim])
+                # Resolve the embedding column name (PCA-compressed or raw). Matching
+                # these candidates here lets the *_emb scripts delegate to this method
+                # instead of monkeypatching prepare_dataset.
+                candidates = [
+                    f'comp_emb_pca_{embedding_type}_components',
+                    f'comp_emb_{embedding_type}_components',
+                    embedding_type,
+                ]
+                col_name = next((c for c in candidates if c in df.columns), None)
+                if col_name is None:
+                    raise ValueError(
+                        f"Embedding column for type {embedding_type} not found. "
+                        f"Available embedding columns: "
+                        f"{[c for c in df.columns if 'emb' in c.lower()]}"
+                    )
+                X = np.vstack(df[col_name].values)
+            feature_blocks = [X]
         else:
-            # Just use Tc_sim
-            X = df['Tc_sim'].values.reshape(-1, 1)
-        
+            feature_blocks = []
+
+        # Rare-earth physics features are appended BEFORE Tc_sim (which must stay
+        # last). Features are zero for RE-free rows, so this is safe on any dataset.
+        if self.use_re_features:
+            import sys as _sys
+            _src_dir = str(Path(__file__).parent.parent)  # src/
+            if _src_dir not in _sys.path:
+                _sys.path.insert(0, _src_dir)
+            from re_features import compute_re_features, RE_FEATURE_NAMES
+            comp = (df['composition'] if 'composition' in df.columns
+                    else df.index.to_series())
+            re_mat = np.array([
+                [compute_re_features(c)[k] for k in RE_FEATURE_NAMES]
+                for c in comp.values
+            ])
+            feature_blocks.append(re_mat)
+            n_active = int((re_mat[:, 0] > 0).sum())  # rows with nonzero RE fraction
+            print(f"  - RE physics features: ON ({len(RE_FEATURE_NAMES)} cols, "
+                  f"{n_active}/{len(df)} rows with RE content)")
+
+        # Tc_sim goes last so X[:, -1] is always the simulation baseline.
+        Tc_sim = df['Tc_sim'].values.reshape(-1, 1)
+        feature_blocks.append(Tc_sim)
+        X = np.hstack(feature_blocks) if len(feature_blocks) > 1 else feature_blocks[0]
+
         return X, y
+
+    def reconstruct_target(self, y_values: np.ndarray, X: np.ndarray) -> np.ndarray:
+        """Map values from the training-target space back to Tc space.
+
+        When delta_learning is on, adds the Tc_sim baseline back. Tc_sim is always
+        the LAST column of X, so this is simply y + X[:, -1]. When off, returns
+        y_values unchanged. IMPORTANT: pass the UNSCALED X (the raw X_train/X_test),
+        not a StandardScaler-transformed array, or the baseline will be wrong.
+        Apply to both y_true and y_pred before computing metrics.
+        """
+        if not self.delta_learning:
+            return y_values
+        return y_values + X[:, -1]
 
 
 class ModelEvaluator:
@@ -411,3 +510,80 @@ class ModelEvaluator:
 def split_data(X: np.ndarray, y: np.ndarray, test_size: float = 0.2, random_state: int = 42):
     """Split data into train/test sets."""
     return train_test_split(X, y, test_size=test_size, random_state=random_state)
+
+
+def cross_val_report(model, X: np.ndarray, y: np.ndarray, loader,
+                     n_splits: int = 5, n_repeats: int = 1, random_state: int = 42) -> Dict:
+    """K-fold CV metrics in Tc space, delta-aware.
+
+    A fresh clone of `model` (same hyperparameters, unfitted) is trained on each
+    training fold and scored on the held-out fold. Predictions and targets are
+    mapped back through loader.reconstruct_target(), so metrics match the
+    single-split ones and stay comparable whether or not delta-learning is on.
+
+    Used by the sklearn-compatible estimators (Linear, RandomForest, LightGBM).
+    For models that StandardScaler their inputs (Linear, MLP), pass an estimator
+    that includes the scaler (e.g. a Pipeline) so each fold scales on its own
+    train data; reconstruct_target reads Tc_sim from the UNSCALED X[:, -1], which
+    is exactly the raw X handed to this function. MLP and Symbolic Regression are
+    not sklearn-cloneable and use cross_val_report_fn() instead.
+
+    Returns mean and std of R2/RMSE/MAE across folds.
+    """
+    if n_repeats > 1:
+        splitter = RepeatedKFold(n_splits=n_splits, n_repeats=n_repeats,
+                                 random_state=random_state)
+    else:
+        splitter = KFold(n_splits=n_splits, shuffle=True, random_state=random_state)
+
+    r2s, rmses, maes = [], [], []
+    for tr, te in splitter.split(X):
+        est = clone(model)
+        est.fit(X[tr], y[tr])
+        y_true = loader.reconstruct_target(y[te], X[te])
+        y_pred = loader.reconstruct_target(est.predict(X[te]), X[te])
+        m = ModelEvaluator.compute_metrics(y_true, y_pred)
+        r2s.append(m['R2']); rmses.append(m['RMSE']); maes.append(m['MAE'])
+
+    r2s, rmses, maes = np.array(r2s), np.array(rmses), np.array(maes)
+    return {
+        'R2': float(r2s.mean()),   'R2_std': float(r2s.std()),
+        'RMSE': float(rmses.mean()), 'RMSE_std': float(rmses.std()),
+        'MAE': float(maes.mean()),  'MAE_std': float(maes.std()),
+        'n_splits': n_splits, 'n_repeats': n_repeats,
+    }
+
+
+def cross_val_report_fn(fit_predict_fn, X: np.ndarray, y: np.ndarray, loader,
+                        n_splits: int = 5, n_repeats: int = 1, random_state: int = 42) -> Dict:
+    """K-fold CV for non-sklearn models (MLP, Symbolic Regression).
+
+    Like cross_val_report, but instead of cloning an estimator it calls
+    fit_predict_fn(X_train, y_train, X_test) -> y_pred_test, where y_pred_test is
+    in the TARGET space (delta if delta-learning is on). Predictions and targets
+    are mapped back through loader.reconstruct_target() so metrics match the
+    single-split / sklearn-CV ones. This lets torch and PySR models be CV'd
+    without an sklearn-compatible clone(). Any scaling must happen INSIDE
+    fit_predict_fn (fit on the fold's train data only).
+    """
+    if n_repeats > 1:
+        splitter = RepeatedKFold(n_splits=n_splits, n_repeats=n_repeats,
+                                 random_state=random_state)
+    else:
+        splitter = KFold(n_splits=n_splits, shuffle=True, random_state=random_state)
+
+    r2s, rmses, maes = [], [], []
+    for tr, te in splitter.split(X):
+        y_pred_target = fit_predict_fn(X[tr], y[tr], X[te])
+        y_true = loader.reconstruct_target(y[te], X[te])
+        y_pred = loader.reconstruct_target(np.asarray(y_pred_target), X[te])
+        m = ModelEvaluator.compute_metrics(y_true, y_pred)
+        r2s.append(m['R2']); rmses.append(m['RMSE']); maes.append(m['MAE'])
+
+    r2s, rmses, maes = np.array(r2s), np.array(rmses), np.array(maes)
+    return {
+        'R2': float(r2s.mean()),   'R2_std': float(r2s.std()),
+        'RMSE': float(rmses.mean()), 'RMSE_std': float(rmses.std()),
+        'MAE': float(maes.mean()),  'MAE_std': float(maes.std()),
+        'n_splits': n_splits, 'n_repeats': n_repeats,
+    }

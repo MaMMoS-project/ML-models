@@ -25,12 +25,25 @@ classDef process fill:#D5F5E3,stroke:#27AE60,stroke-width:2px,color:#000;
 classDef output fill:#FDEBD0,stroke:#E67E22,stroke-width:2px,color:#000;
 
 %% =========================
+%% 0. Build merged dataset (run first if the merged CSV is missing)
+%% =========================
+subgraph cluster_build["0. Build merged dataset"]
+    direction TB
+
+    R0["data/ raw sources:\nm-tcsum_nur_new.csv, sd_tc_data.csv, DS1+DS2.csv,\nliterature_values_prepared.csv, combinded_tables.xlsx, MagneticMaterials_All.csv"]
+    Bb["python3 -m src.build_merged_tc"]
+
+    R0 --> Bb
+    Bb --> A0
+end
+
+%% =========================
 %% 1. Data Augmentation
 %% =========================
 subgraph cluster_0["1. Data Augmentation (Bootstrap Sampling)"]
     direction TB
 
-    A0["./data/EC_curie_temp.csv"]
+    A0["./data/merged_curie_temp.csv"]
     B0["python3 -m src.augment_data"]
 
     A0 --> B0
@@ -86,17 +99,44 @@ O8 --> A4
 %% =========================
 %% Apply Classes
 %% =========================
-class A0,A1,A2,A3,A4 input;
-class B0,B1,B2 process;
+class A0,A1,A2,A3,A4,R0 input;
+class B0,B1,B2,Bb process;
 class O1,O2,O3,O4,O5,O7,O8,O10 output;
 
 %% =========================
 %% Subgraph Styling
 %% =========================
+style cluster_build fill:#F4F6F7,stroke:#5D6D7E,stroke-width:2px
 style cluster_0 fill:#F8F9FA,stroke:#5D6D7E,stroke-width:2px
 style cluster_1 fill:#F4F6F7,stroke:#5D6D7E,stroke-width:2px
 style cluster_2 fill:#F8F9FA,stroke:#5D6D7E,stroke-width:2px
 ```
+
+## 0. Build merged dataset
+
+Aggregates the experimental and simulated Curie temperatures from the raw sources into a
+single lean training table, `./data/merged_curie_temp.csv`. **Run this first if that file
+does not exist** (or when the raw sources change); every later stage depends on it.
+
+For each composition, all simulated (resp. experimental) Tc values from every source are
+pooled and reduced with a **single median** (one median, every source included — not a
+per-source pre-average and not a median-of-medians).
+
+Run:
+
+```
+python3 -m src.build_merged_tc
+```
+
+NEEDS (in `./data/`):
+- m-tcsum_nur_new.csv, sd_tc_data.csv, DS1+DS2.csv
+- literature_values_prepared.csv, combinded_tables.xlsx, MagneticMaterials_All.csv
+
+OUTPUT — `./data/merged_curie_temp.csv`, a plain CSV with columns:
+```
+composition, Tc_sim, Tc_exp, contains_rare_earth, use_for_emb
+```
+(`Tc_delta = Tc_exp − Tc_sim` and `pair_exists = both present` are derived downstream.)
 
 ## 1. Data augmentation
 
@@ -110,7 +150,7 @@ python3 -m src.augment_data
 
 NEEDS:
 
-- ./data/EC_curie_temp.csv
+- ./data/merged_curie_temp.csv
 
 
 OUTPUT:

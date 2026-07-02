@@ -1,6 +1,7 @@
 """
 Linear Models Training: LASSO, RIDGE, and Linear Regression
 """
+import os
 import warnings
 import numpy as np
 import pandas as pd
@@ -10,9 +11,13 @@ from sklearn.exceptions import ConvergenceWarning
 from sklearn.linear_model import Lasso, Ridge, LinearRegression
 from sklearn.model_selection import GridSearchCV
 from sklearn.preprocessing import StandardScaler
-from base_trainer import DataLoader, ModelEvaluator, split_data
+from sklearn.pipeline import make_pipeline
+from base_trainer import DataLoader, ModelEvaluator, split_data, cross_val_report
 
 warnings.filterwarnings("ignore", category=ConvergenceWarning)
+
+# Respect SLURM CPU allocation; fall back to all cores when running locally.
+_N_JOBS = int(os.environ.get('SLURM_CPUS_PER_TASK', -1))
 
 
 class LinearModelsTrainer:
@@ -91,38 +96,58 @@ class LinearModelsTrainer:
                 model.fit(X_train_scaled, y_train)
                 best_params = {}
             
-            # Predictions
-            y_train_pred = model.predict(X_train_scaled)
-            y_test_pred = model.predict(X_test_scaled)
-            
+            # Predictions, then map back to Tc space (no-op unless delta_learning is
+            # on) using the UNSCALED X so the Tc_sim baseline is correct.
+            y_train_true = self.loader.reconstruct_target(y_train, X_train)
+            y_test_true = self.loader.reconstruct_target(y_test, X_test)
+            y_train_pred = self.loader.reconstruct_target(model.predict(X_train_scaled), X_train)
+            y_test_pred = self.loader.reconstruct_target(model.predict(X_test_scaled), X_test)
+
             # Compute metrics
-            train_metrics = self.evaluator.compute_metrics(y_train, y_train_pred)
-            test_metrics = self.evaluator.compute_metrics(y_test, y_test_pred)
-            
+            train_metrics = self.evaluator.compute_metrics(y_train_true, y_train_pred)
+            test_metrics = self.evaluator.compute_metrics(y_test_true, y_test_pred)
+
             print(f"Best params: {best_params}")
-            print(f"Test R² = {test_metrics['R2']:.4f}")
-            print(f"Test RMSE = {test_metrics['RMSE']:.2f} K")
-            
+            print(f"Single-split Test R² = {test_metrics['R2']:.4f}")
+            print(f"Single-split Test RMSE = {test_metrics['RMSE']:.2f} K")
+
+            # Optional K-fold CV reporting (full dataset, same tuned config). The
+            # linear models StandardScaler their inputs, so CV must scale per fold:
+            # wrap the estimator in a Pipeline(StandardScaler, model) and feed it
+            # the UNSCALED X (cross_val_report reads the Tc_sim baseline from
+            # X[:, -1], which must be unscaled).
+            cv_folds = getattr(self.loader, 'cv_folds', 0)
+            cv = None
+            if cv_folds and cv_folds >= 2:
+                cv_model = make_pipeline(StandardScaler(), model)
+                cv = cross_val_report(cv_model, X, y, self.loader, n_splits=cv_folds)
+                print(f"{cv_folds}-fold CV R² = {cv['R2']:.4f} ± {cv['R2_std']:.4f} (headline)")
+
             # Plot results
             emb_suffix = f"_{embedding_type}" if use_embedding else "_no_emb"
             output_path = self.output_dir / f"{dataset_name}_{model_type}{emb_suffix}.png"
             self.evaluator.plot_predictions(
-                y_train, y_train_pred,
-                y_test, y_test_pred,
+                y_train_true, y_train_pred,
+                y_test_true, y_test_pred,
                 title=f"{model_type.upper()} - {dataset_name}" + 
                       (f" ({embedding_type})" if use_embedding else ""),
                 output_path=str(output_path)
             )
             
+            # CV means become the reported (headline) metrics when CV is on.
+            reported = {'R2': cv['R2'], 'RMSE': cv['RMSE'], 'MAE': cv['MAE']} if cv else test_metrics
             results[model_type] = {
-                'R2': test_metrics['R2'],
-                'RMSE': test_metrics['RMSE'],
-                'MAE': test_metrics['MAE'],
+                'R2': reported['R2'],
+                'RMSE': reported['RMSE'],
+                'MAE': reported['MAE'],
                 'best_params': best_params,
                 'model': model,
                 'scaler': scaler
             }
-        
+            if cv:
+                results[model_type].update({'R2_std': cv['R2_std'], 'RMSE_std': cv['RMSE_std'],
+                                            'MAE_std': cv['MAE_std'], 'cv_folds': cv_folds})
+
         return results
     
     def _train_lasso(self, X_train, y_train):
@@ -133,10 +158,10 @@ class LinearModelsTrainer:
 
         lasso = Lasso(max_iter=100000, tol=1e-4, selection='random')
         grid_search = GridSearchCV(
-            lasso, param_grid, 
-            cv=5, 
+            lasso, param_grid,
+            cv=5,
             scoring='r2',
-            n_jobs=-1
+            n_jobs=_N_JOBS
         )
         grid_search.fit(X_train, y_train)
         
@@ -153,7 +178,7 @@ class LinearModelsTrainer:
             ridge, param_grid,
             cv=5,
             scoring='r2',
-            n_jobs=-1
+            n_jobs=_N_JOBS
         )
         grid_search.fit(X_train, y_train)
         

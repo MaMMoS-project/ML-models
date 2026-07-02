@@ -2,7 +2,7 @@
 """Data Augmentation for Curie Temperature Dataset
 
 This script implements the data augmentation procedure for creating augmented
-datasets from the original data EC_curie_temp.csv. It uses bootstrap sampling from the delta
+datasets from the original data merged_curie_temp.csv. It uses bootstrap sampling from the delta
 temperature distribution (Tc_exp - Tc_sim) to generate mock experimental values
 for materials that only have simulated Curie temperatures.
 
@@ -70,7 +70,7 @@ class CurieTempAugmenter:
         Parameters
         ----------
         data_path : str
-            Path to the EC_curie_temp.csv file
+            Path to the merged_curie_temp.csv file
         output_dir : str, optional
             Directory for output files. Defaults to ../data relative to data_path
         """
@@ -94,21 +94,22 @@ class CurieTempAugmenter:
             Loaded dataframe
         """
         print(f"Loading data from {self.data_path}")
-        
-        try:
-            # Try loading with mammos_entity if available
-            import mammos_entity as me
-            self.df_curie_temp = me.from_csv(
-                str(self.data_path)
-            ).to_dataframe(include_units=False)
-            print(f"Loaded {self.df_curie_temp.shape[0]} entries using mammos_entity")
-        except ImportError:
-            # Fallback to pandas
-            print("mammos_entity not available, using pandas directly")
-            # Skip the first 4 lines (MammoS format header)
-            self.df_curie_temp = pd.read_csv(self.data_path, skiprows=4)
-            print(f"Loaded {self.df_curie_temp.shape[0]} entries using pandas")
-        
+
+        # merged_curie_temp.csv is a plain CSV with columns:
+        #   composition, Tc_sim, Tc_exp, contains_rare_earth, use_for_emb
+        self.df_curie_temp = pd.read_csv(self.data_path)
+
+        # Derive the two columns the rest of the pipeline expects but that are trivially
+        # computed (kept out of the merged file to keep it lean):
+        #   Tc_delta   = Tc_exp - Tc_sim
+        #   pair_exists = both Tc_sim and Tc_exp present  (a composition with both a
+        #                 simulated and an experimental value is a usable pair)
+        df = self.df_curie_temp
+        df["Tc_delta"] = df["Tc_exp"] - df["Tc_sim"]
+        df["pair_exists"] = df["Tc_sim"].notna() & df["Tc_exp"].notna()
+
+        print(f"Loaded {df.shape[0]} entries "
+              f"({int(df['pair_exists'].sum())} pairs) using pandas")
         return self.df_curie_temp
     
     def filter_paired_data(self) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -1686,7 +1687,7 @@ def augment_data():
     project_root = script_dir.parent
     
     # Set up paths - output to project-level 'outputs' directory
-    data_path = project_root / 'data' / 'EC_curie_temp.csv'
+    data_path = project_root / 'data' / 'merged_curie_temp.csv'
     output_dir = project_root / 'outputs'  # Standardized output directory
     
     # Create output directory if it doesn't exist
@@ -1695,7 +1696,8 @@ def augment_data():
     # Check if input file exists
     if not data_path.exists():
         print(f"Error: Input file not found at {data_path}")
-        print("Please ensure EC_curie_temp.csv exists in the data directory.")
+        print("Please ensure merged_curie_temp.csv exists in the data directory "
+              "(run: python -m src.build_merged_tc).")
         sys.exit(1)
     
     print(f"Input: {data_path}")

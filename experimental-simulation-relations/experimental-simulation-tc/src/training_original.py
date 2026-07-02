@@ -45,14 +45,23 @@ def training_original():
     from symbolic_regression import SymbolicRegressionTrainer
     from linear_models import LinearModelsTrainer
     from random_forest import RandomForestTrainer
+    from lightgbm_trainer import LightGBMTrainer, LIGHTGBM_AVAILABLE
     from fcnn_mlp import FCNNTrainer
-    from base_trainer import DataLoader
-    
+    from base_trainer import (DataLoader, parse_delta_learning, parse_re_features,
+                              parse_cv_folds)
+
+    delta_learning = parse_delta_learning()
+    use_re_features = parse_re_features()
+    cv_folds = parse_cv_folds()
+
     # Create a custom DataLoader with the specific file names for original dataset
     custom_loader = DataLoader(
         pairs_file="Pairs_all.csv",
         re_pairs_file="Pairs_RE.csv",
-        re_free_pairs_file="Pairs_RE_Free.csv"
+        re_free_pairs_file="Pairs_RE_Free.csv",
+        delta_learning=delta_learning,
+        use_re_features=use_re_features,
+        cv_folds=cv_folds,
     )
 
     print("=" * 80)
@@ -171,6 +180,34 @@ def training_original():
             print(f"  Random Forest - R²: {rf_metrics['R2']:.4f}")
         except Exception as e:
             print(f"Error running Random Forest: {e}")
+
+        # 3b. LightGBM (gradient-boosted trees)
+        if LIGHTGBM_AVAILABLE:
+            try:
+                gbm_trainer = LightGBMTrainer(
+                    output_dir=str(results_dir / "original_lightgbm")
+                )
+                # Use custom loader
+                gbm_trainer.loader = custom_loader
+                gbm_metrics = gbm_trainer.train_and_evaluate(
+                    dataset_name=dataset_name,
+                    dataset_type=dataset_type,
+                    is_augmented=is_augmented,
+                    use_embedding=use_embedding,
+                )
+                dataset_results.append({
+                    "Model_Family": "LightGBM",
+                    "Model": "LGBM",
+                    "Dataset": dataset_name,
+                    "R2": gbm_metrics["R2"],
+                    "RMSE": gbm_metrics["RMSE"],
+                    "MAE": gbm_metrics["MAE"],
+                })
+                print(f"  LightGBM - R²: {gbm_metrics['R2']:.4f}")
+            except Exception as e:
+                print(f"Error running LightGBM: {e}")
+        else:
+            print("  LightGBM not installed — skipping (pip install lightgbm)")
 
         # 4. FCNN/MLP
         try:

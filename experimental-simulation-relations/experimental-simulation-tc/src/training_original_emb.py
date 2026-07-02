@@ -55,7 +55,13 @@ def train_original_embedding():
     # Import trainers after adjusting sys.path
     from linear_models import LinearModelsTrainer
     from random_forest import RandomForestTrainer
+    from lightgbm_trainer import LightGBMTrainer, LIGHTGBM_AVAILABLE
     from fcnn_mlp import FCNNTrainer
+    from base_trainer import parse_delta_learning, parse_re_features, parse_cv_folds
+
+    delta_learning = parse_delta_learning()
+    use_re_features = parse_re_features()
+    cv_folds = parse_cv_folds()
 
     print("=" * 80)
     print("ORIGINAL DATA TRAINING WITH EMBEDDINGS")
@@ -246,6 +252,9 @@ def train_original_embedding():
                 lin_trainer.loader.load_pairs_data = lambda dataset_type=None: df_data.copy()
                 
                 # Modify prepare_dataset.use_embedding to check for our compressed column names
+                lin_trainer.loader.delta_learning = delta_learning
+                lin_trainer.loader.use_re_features = use_re_features
+                lin_trainer.loader.cv_folds = cv_folds
                 original_prepare = lin_trainer.loader.prepare_dataset
                 def patched_prepare_dataset(df, dataset_type, use_embedding=False, embedding_type=None):
                     if use_embedding and embedding_type is not None:
@@ -280,8 +289,11 @@ def train_original_embedding():
                         # Add Tc_sim
                         Tc_sim = df['Tc_sim'].values.reshape(-1, 1)
                         X = np.hstack([X, Tc_sim])
-                        
-                        return X, y
+
+                        # Delegate to the loader's prepare_dataset (now resolves PCA
+                        # columns and applies delta-learning) so reconstruction is
+                        # correct. The construction above is superseded by it.
+                        return original_prepare(df, dataset_type, use_embedding, embedding_type)
                     else:
                         # Fall back to original prepare_dataset for non-embedding cases
                         return original_prepare(df, dataset_type, use_embedding, embedding_type)
@@ -335,6 +347,9 @@ def train_original_embedding():
                 rf_trainer.loader.load_pairs_data = lambda dataset_type=None: df_data.copy()
                 
                 # Apply the same patched prepare_dataset
+                rf_trainer.loader.delta_learning = delta_learning
+                rf_trainer.loader.use_re_features = use_re_features
+                rf_trainer.loader.cv_folds = cv_folds
                 original_prepare = rf_trainer.loader.prepare_dataset
                 def patched_prepare_dataset(df, dataset_type, use_embedding=False, embedding_type=None):
                     if use_embedding and embedding_type is not None:
@@ -370,8 +385,11 @@ def train_original_embedding():
                         # Add Tc_sim
                         Tc_sim = df['Tc_sim'].values.reshape(-1, 1)
                         X = np.hstack([X, Tc_sim])
-                        
-                        return X, y
+
+                        # Delegate to the loader's prepare_dataset (now resolves PCA
+                        # columns and applies delta-learning) so reconstruction is
+                        # correct. The construction above is superseded by it.
+                        return original_prepare(df, dataset_type, use_embedding, embedding_type)
                     else:
                         # Fall back to original prepare_dataset for non-embedding cases
                         return original_prepare(df, dataset_type, use_embedding, embedding_type)
@@ -403,6 +421,43 @@ def train_original_embedding():
             except Exception as e:
                 print(f"Error running Random Forest: {e}")
 
+            # 2b. LightGBM (gradient-boosted trees)
+            if LIGHTGBM_AVAILABLE:
+                try:
+                    gbm_trainer = LightGBMTrainer(
+                        output_dir=str(results_dir / "original_emb_lightgbm")
+                    )
+                    # Monkey patch loader: feed our embedding DataFrame; the default
+                    # prepare_dataset already resolves the PCA column, delta target
+                    # and RE features, so no prepare_dataset patch is needed.
+                    original_load_pairs = gbm_trainer.loader.load_pairs_data
+                    gbm_trainer.loader.load_pairs_data = lambda dataset_type=None: df_data.copy()
+                    gbm_trainer.loader.delta_learning = delta_learning
+                    gbm_trainer.loader.use_re_features = use_re_features
+                    gbm_trainer.loader.cv_folds = cv_folds
+                    gbm_metrics = gbm_trainer.train_and_evaluate(
+                        dataset_name=dataset_name,
+                        dataset_type=dataset_type,
+                        is_augmented=is_augmented,
+                        use_embedding=True,
+                        embedding_type=embedding_type,
+                    )
+                    gbm_trainer.loader.load_pairs_data = original_load_pairs
+                    dataset_emb_results.append({
+                        "Model_Family": "LightGBM",
+                        "Model": "LGBM",
+                        "Dataset": dataset_name,
+                        "Embedding": emb_name,
+                        "R2": gbm_metrics["R2"],
+                        "RMSE": gbm_metrics["RMSE"],
+                        "MAE": gbm_metrics["MAE"],
+                    })
+                    print(f"  LightGBM - R²: {gbm_metrics['R2']:.4f}")
+                except Exception as e:
+                    print(f"Error running LightGBM: {e}")
+            else:
+                print("  LightGBM not installed — skipping (pip install lightgbm)")
+
             # 3. FCNN/MLP
             try:
                 mlp_trainer = FCNNTrainer(
@@ -413,6 +468,9 @@ def train_original_embedding():
                 mlp_trainer.loader.load_pairs_data = lambda dataset_type=None: df_data.copy()
                 
                 # Apply the same patched prepare_dataset
+                mlp_trainer.loader.delta_learning = delta_learning
+                mlp_trainer.loader.use_re_features = use_re_features
+                mlp_trainer.loader.cv_folds = cv_folds
                 original_prepare = mlp_trainer.loader.prepare_dataset
                 def patched_prepare_dataset(df, dataset_type, use_embedding=False, embedding_type=None):
                     if use_embedding and embedding_type is not None:
@@ -448,8 +506,11 @@ def train_original_embedding():
                         # Add Tc_sim
                         Tc_sim = df['Tc_sim'].values.reshape(-1, 1)
                         X = np.hstack([X, Tc_sim])
-                        
-                        return X, y
+
+                        # Delegate to the loader's prepare_dataset (now resolves PCA
+                        # columns and applies delta-learning) so reconstruction is
+                        # correct. The construction above is superseded by it.
+                        return original_prepare(df, dataset_type, use_embedding, embedding_type)
                     else:
                         # Fall back to original prepare_dataset for non-embedding cases
                         return original_prepare(df, dataset_type, use_embedding, embedding_type)

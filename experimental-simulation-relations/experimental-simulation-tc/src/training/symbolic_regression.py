@@ -7,7 +7,7 @@ import pandas as pd
 from pathlib import Path
 from typing import Dict, Tuple
 from sklearn.metrics import r2_score, mean_squared_error
-from base_trainer import DataLoader, ModelEvaluator, split_data
+from base_trainer import DataLoader, ModelEvaluator, split_data, cross_val_report_fn
 
 try:
     from pysr import PySRRegressor
@@ -122,44 +122,88 @@ class SymbolicRegressionTrainer:
         equation_str = best_eq['equation']
         print(f"\nBest equation: {equation_str}")
         
-        # Predictions
-        y_train_pred = model.predict(X_train)
-        y_test_pred = model.predict(X_test)
-        
+        # Predictions, then map back to Tc space (no-op unless delta_learning is on).
+        y_train_true = self.loader.reconstruct_target(y_train, X_train)
+        y_test_true = self.loader.reconstruct_target(y_test, X_test)
+        y_train_pred = self.loader.reconstruct_target(model.predict(X_train), X_train)
+        y_test_pred = self.loader.reconstruct_target(model.predict(X_test), X_test)
+
         # Compute metrics
-        train_metrics = self.evaluator.compute_metrics(y_train, y_train_pred)
-        test_metrics = self.evaluator.compute_metrics(y_test, y_test_pred)
-        
-        print(f"\nTest Metrics:")
+        train_metrics = self.evaluator.compute_metrics(y_train_true, y_train_pred)
+        test_metrics = self.evaluator.compute_metrics(y_test_true, y_test_pred)
+
+        print(f"\nSingle-split Test Metrics:")
         print(f"  R² = {test_metrics['R2']:.4f}")
         print(f"  RMSE = {test_metrics['RMSE']:.2f} K")
         print(f"  MAE = {test_metrics['MAE']:.2f} K")
-        
+
+        # Optional K-fold CV reporting. Each fold fits a fresh PySR model on the
+        # (subsampled) fold-train and predicts the held-out fold. NOTE: this is
+        # expensive — it runs the full symbolic search once per fold. SR does not
+        # scale its inputs, so the closure works directly on the raw fold arrays.
+        cv_folds = getattr(self.loader, 'cv_folds', 0)
+        cv = None
+        if cv_folds and cv_folds >= 2:
+            def _fit_predict(X_tr, y_tr, X_te):
+                if len(X_tr) > max_train_samples:
+                    rng = np.random.default_rng(42)
+                    idx = rng.choice(len(X_tr), size=max_train_samples, replace=False)
+                    X_tr, y_tr = X_tr[idx], y_tr[idx]
+                m = PySRRegressor(
+                    niterations=niterations,
+                    binary_operators=["+", "*"],
+                    unary_operators=[],
+                    maxsize=10,
+                    populations=15,
+                    population_size=33,
+                    ncycles_per_iteration=550,
+                    fraction_replaced_hof=0.035,
+                    constraints={"no_constants": False},
+                )
+                m.fit(X_tr, y_tr)
+                return m.predict(X_te)
+
+            print(f"\nRunning {cv_folds}-fold CV for SR (slow — {cv_folds} symbolic searches)...")
+            cv = cross_val_report_fn(_fit_predict, X, y, self.loader, n_splits=cv_folds)
+            print(f"{cv_folds}-fold CV Metrics (headline):")
+            print(f"  R²   = {cv['R2']:.4f} ± {cv['R2_std']:.4f}")
+            print(f"  RMSE = {cv['RMSE']:.2f} ± {cv['RMSE_std']:.2f} K")
+            print(f"  MAE  = {cv['MAE']:.2f} ± {cv['MAE_std']:.2f} K")
+
         # Plot results
         output_path = self.output_dir / f"{dataset_name}_SR.png"
         self.evaluator.plot_predictions(
-            y_train, y_train_pred,
-            y_test, y_test_pred,
+            y_train_true, y_train_pred,
+            y_test_true, y_test_pred,
             title=f"Symbolic Regression - {dataset_name}",
             output_path=str(output_path),
             equation=equation_str
         )
         
+        # CV means become the reported (headline) metrics when CV is on.
+        reported = {'R2': cv['R2'], 'RMSE': cv['RMSE'], 'MAE': cv['MAE']} if cv else test_metrics
+
         # Save equation to file
         eq_path = self.output_dir / f"{dataset_name}_SR_equation.txt"
         with open(eq_path, 'w') as f:
             f.write(f"Dataset: {dataset_name}\n")
             f.write(f"Equation: {equation_str}\n")
-            f.write(f"R2: {test_metrics['R2']:.4f}\n")
-            f.write(f"RMSE: {test_metrics['RMSE']:.2f}\n")
-            f.write(f"MAE: {test_metrics['MAE']:.2f}\n")
-        
-        return {
-            'R2': test_metrics['R2'],
-            'RMSE': test_metrics['RMSE'],
-            'MAE': test_metrics['MAE'],
+            f.write(f"Single-split R2: {test_metrics['R2']:.4f}\n")
+            if cv:
+                f.write(f"CV folds: {cv_folds}\n")
+                f.write(f"CV R2: {cv['R2']:.4f} +/- {cv['R2_std']:.4f}\n")
+                f.write(f"CV RMSE: {cv['RMSE']:.2f} +/- {cv['RMSE_std']:.2f}\n")
+                f.write(f"CV MAE: {cv['MAE']:.2f} +/- {cv['MAE_std']:.2f}\n")
+
+        result = {
+            'R2': reported['R2'],
+            'RMSE': reported['RMSE'],
+            'MAE': reported['MAE'],
             'equation': equation_str
         }
+        if cv:
+            result.update({'R2_std': cv['R2_std'], 'cv_folds': cv_folds})
+        return result
 
 
 def main():

@@ -87,8 +87,14 @@ def training_augmented():
     from symbolic_regression import SymbolicRegressionTrainer
     from linear_models import LinearModelsTrainer
     from random_forest import RandomForestTrainer
+    from lightgbm_trainer import LightGBMTrainer, LIGHTGBM_AVAILABLE
     from fcnn_mlp import FCNNTrainer
-    from base_trainer import DataLoader
+    from base_trainer import (DataLoader, parse_delta_learning, parse_re_features,
+                              parse_cv_folds)
+
+    delta_learning = parse_delta_learning()
+    use_re_features = parse_re_features()
+    cv_folds = parse_cv_folds()
 
     print("=" * 80)
     print("AUGMENTED DATA TRAINING (NO EMBEDDINGS) — ALL AUGMENTATION VARIANTS")
@@ -126,6 +132,9 @@ def training_augmented():
             augmented_file=variant["aug_file"],
             re_augmented_file=variant["re_aug_file"],
             re_free_augmented_file=variant["re_free_aug_file"],
+            delta_learning=delta_learning,
+            use_re_features=use_re_features,
+            cv_folds=cv_folds,
         )
 
         variant_results = []
@@ -228,6 +237,35 @@ def training_augmented():
                 print(f"  Random Forest - R²: {rf_metrics['R2']:.4f}")
             except Exception as e:
                 print(f"  Error running Random Forest: {e}")
+
+            # ---- 3b. LightGBM (gradient-boosted trees) -----------------
+            if LIGHTGBM_AVAILABLE:
+                try:
+                    gbm_trainer = LightGBMTrainer(
+                        output_dir=str(results_dir / f"augmented_lightgbm" / label)
+                    )
+                    gbm_trainer.loader = custom_loader
+                    gbm_trainer.evaluator.figures_subdir = label
+                    gbm_metrics = gbm_trainer.train_and_evaluate(
+                        dataset_name=dataset_name,
+                        dataset_type=dataset_type,
+                        is_augmented=is_augmented,
+                        use_embedding=use_embedding,
+                    )
+                    row = _make_base_row()
+                    row.update({
+                        "Model_Family": "LightGBM",
+                        "Model": "LGBM",
+                        "R2": gbm_metrics["R2"],
+                        "RMSE": gbm_metrics["RMSE"],
+                        "MAE": gbm_metrics["MAE"],
+                    })
+                    dataset_results.append(row)
+                    print(f"  LightGBM - R²: {gbm_metrics['R2']:.4f}")
+                except Exception as e:
+                    print(f"  Error running LightGBM: {e}")
+            else:
+                print("  LightGBM not installed — skipping (pip install lightgbm)")
 
             # ---- 4. FCNN/MLP -------------------------------------------
             try:
