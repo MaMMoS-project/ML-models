@@ -7,7 +7,7 @@ import pandas as pd
 from pathlib import Path
 from typing import Dict
 from sklearn.metrics import r2_score, mean_squared_error
-from base_trainer import DataLoader, ModelEvaluator, split_data
+from base_trainer import DataLoader, ModelEvaluator, split_data, cross_val_report_fn
 
 try:
     from pysr import PySRRegressor
@@ -30,6 +30,27 @@ class SymbolicRegressionTrainer:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.loader = DataLoader()
         self.evaluator = ModelEvaluator()
+
+    def _build_model(self, niterations):
+        """Construct a fresh PySR regressor (shared by single-split and CV)."""
+        return PySRRegressor(
+            niterations=niterations,
+            binary_operators=["+", "*"],
+            unary_operators=[],
+            maxsize=10,
+            populations=15,
+            population_size=33,
+            ncycles_per_iteration=550,
+            fraction_replaced_hof=0.035,
+        )
+
+    @staticmethod
+    def _subsample(X, y, max_n):
+        """Subsample to at most max_n rows (PySR is expensive on large sets)."""
+        if len(X) <= max_n:
+            return X, y
+        idx = np.random.default_rng(42).choice(len(X), size=max_n, replace=False)
+        return X[idx], y[idx]
 
     def train_and_evaluate(
         self,
@@ -70,16 +91,7 @@ class SymbolicRegressionTrainer:
         if PySRRegressor is None:
             raise ImportError("PySR is required for symbolic regression")
 
-        model = PySRRegressor(
-            niterations=niterations,
-            binary_operators=["+", "*"],
-            unary_operators=[],
-            maxsize=10,
-            populations=15,
-            population_size=33,
-            ncycles_per_iteration=550,
-            fraction_replaced_hof=0.035,
-        )
+        model = self._build_model(niterations)
 
         print("\nFitting PySR model (in log1p space)...")
         model.fit(X_train, y_train)
@@ -98,10 +110,31 @@ class SymbolicRegressionTrainer:
         train_metrics = self.evaluator.compute_metrics(y_train_true, y_train_pred_log)
         test_metrics = self.evaluator.compute_metrics(y_test_true, y_test_pred_log)
 
-        print(f"\nTest Metrics (log1p space):")
+        print(f"\nSingle-split Test Metrics (log1p space):")
         print(f"  R² = {test_metrics['R2']:.4f}")
         print(f"  RMSE = {test_metrics['RMSE']:.4f}")
         print(f"  MAE = {test_metrics['MAE']:.4f}")
+
+        # Optional K-fold CV reporting. Each fold fits a fresh PySR model on the
+        # (subsampled) fold-train and predicts the held-out fold. NOTE: this is
+        # expensive — it runs the full symbolic search once per fold.
+        cv_folds = getattr(self.loader, 'cv_folds', 0)
+        cv = None
+        if cv_folds and cv_folds >= 2:
+            def _fit_predict(X_tr, y_tr, X_te):
+                Xs, ys = self._subsample(X_tr, y_tr, max_train_samples)
+                m = self._build_model(niterations)
+                m.fit(Xs, ys)
+                return m.predict(X_te)
+
+            print(f"\nRunning {cv_folds}-fold CV for SR (slow — {cv_folds} symbolic searches)...")
+            cv = cross_val_report_fn(_fit_predict, X, y, self.loader, n_splits=cv_folds)
+            print(f"{cv_folds}-fold CV Metrics (headline):")
+            print(f"  R²   = {cv['R2']:.4f} ± {cv['R2_std']:.4f}")
+            print(f"  RMSE = {cv['RMSE']:.4f} ± {cv['RMSE_std']:.4f}")
+            print(f"  MAE  = {cv['MAE']:.4f} ± {cv['MAE_std']:.4f}")
+
+        reported = {'R2': cv['R2'], 'RMSE': cv['RMSE'], 'MAE': cv['MAE']} if cv else test_metrics
 
         output_path = self.output_dir / f"{dataset_name}_SR.png"
         self.evaluator.plot_predictions(
@@ -116,16 +149,22 @@ class SymbolicRegressionTrainer:
         with open(eq_path, 'w') as f:
             f.write(f"Dataset: {dataset_name}\n")
             f.write(f"Equation (log1p space): {equation_str}\n")
-            f.write(f"R2: {test_metrics['R2']:.4f}\n")
-            f.write(f"RMSE: {test_metrics['RMSE']:.4f}\n")
-            f.write(f"MAE: {test_metrics['MAE']:.4f}\n")
+            f.write(f"Single-split R2: {test_metrics['R2']:.4f}\n")
+            if cv:
+                f.write(f"CV folds: {cv_folds}\n")
+                f.write(f"CV R2: {cv['R2']:.4f} +/- {cv['R2_std']:.4f}\n")
+                f.write(f"CV RMSE: {cv['RMSE']:.4f} +/- {cv['RMSE_std']:.4f}\n")
+                f.write(f"CV MAE: {cv['MAE']:.4f} +/- {cv['MAE_std']:.4f}\n")
 
-        return {
-            'R2': test_metrics['R2'],
-            'RMSE': test_metrics['RMSE'],
-            'MAE': test_metrics['MAE'],
+        result = {
+            'R2': reported['R2'],
+            'RMSE': reported['RMSE'],
+            'MAE': reported['MAE'],
             'equation': equation_str,
         }
+        if cv:
+            result.update({'R2_std': cv['R2_std'], 'cv_folds': cv_folds})
+        return result
 
 
 def main():
