@@ -159,5 +159,26 @@ OUTPUT:
 - ./results/metrics_tables
 
 
-# 4. Best Model
+# 4. Results Best Model
 For all three targets, the RF models does not show strong overfitting and the performance is the best.
+
+### 🏆 Best Model Metrics for target \(H_c\) (A/m)
+
+| Model | All |
+| ----- | ----------------------- |
+| RF (train) | MSE: **0.0332**<br>R²: **0.9833** |
+| RF (test) | MSE: **0.2261**<br>R²: **0.8864** |
+
+### 🏆 Best Model Metrics for target \(M_r\) (A/m)
+
+| Model | All |
+| ----- | ----------------------- |
+| RF (train) | MSE: **0.0373**<br>R²: **0.9728** |
+| RF (test) | MSE: **0.2468**<br>R²: **0.8238** |
+
+### 🏆 Best Model Metrics for target \(BH_{\max}\) (J/m³)
+
+| Model | All |
+| ----- | ----------------------- |
+| RF (train) | MSE: **0.1185**<br>R²: **0.9781** |
+| RF (test) | MSE: **0.8262**<br>R²: **0.8520** |
