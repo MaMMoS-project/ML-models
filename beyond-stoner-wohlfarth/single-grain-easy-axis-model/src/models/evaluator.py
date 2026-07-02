@@ -8,8 +8,27 @@ import pickle
 import json
 import torch
 import skl2onnx
-from skl2onnx import convert_sklearn
+from skl2onnx import convert_sklearn, update_registered_converter
 from skl2onnx.common.data_types import FloatTensorType
+from skl2onnx.operator_converters.gaussian_process import convert_gaussian_process_regressor
+from skl2onnx.shape_calculators.gaussian_process import (
+    calculate_sklearn_gaussian_process_regressor_shape,
+)
+
+from src.models.train_gp import GPRWrapper
+
+# skl2onnx looks up converters by exact class type, so our GPRWrapper subclass of
+# GaussianProcessRegressor has no converter and export fails with MissingShapeCalculator.
+# Register it to reuse the built-in GaussianProcessRegressor converter/shape calculator.
+# This exports the GP *mean* prediction (return_std export is broken in skl2onnx 1.20.0
+# and is not used at deployment time anyway).
+update_registered_converter(
+    GPRWrapper,
+    "SklearnGPRWrapper",
+    calculate_sklearn_gaussian_process_regressor_shape,
+    convert_gaussian_process_regressor,
+    options={'return_std': [True, False], 'return_cov': [True, False], 'optim': [None, 'cdist']},
+)
 
 from src.models.regression_metrics import multioutput_mape, adjusted_r_squared, gini_coefficient
 from src.models.plot_models import plot_predictions_with_metrics_row_confidence, plot_predictions_jackknife
@@ -274,10 +293,6 @@ class Evaluator:
         # Handle special cases
         if model_type == 'MultiOutputLinearRegression':
             self._save_multioutput_lr_onnx(model, model_dir, model_name, scaler)
-            return
-        
-        if 'GaussianProcess' in model_type or model_type == 'GPRWrapper':
-            print(f"Note: Gaussian Process models not supported by ONNX, skipping {model_name}")
             return
         
         # Build pipeline with scaler + model
