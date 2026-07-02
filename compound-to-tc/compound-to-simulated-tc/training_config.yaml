@@ -9,6 +9,12 @@
 #     ensemble: 5   # train 5 models with different train/test splits
 #
 # Setting a model to false disables it entirely.
+#
+# re_features: append 7 rare-earth physics features (de Gennes factor, S-state
+# fraction, free-ion moment, ...) to the embedding. Zero for RE-free compounds, so
+# safe on every dataset. NOTE: while on, ONNX export is skipped (the input dim
+# changes), so predict_tc cannot serve these models yet — accuracy study only.
+  re_features: true
   models:
     linear:
       enabled: true
@@ -17,5 +23,8 @@
       enabled: true
       ensemble: 10
     mlp:
+      enabled: true
+      ensemble: 10
+    lgbm:
       enabled: true
       ensemble: 10
