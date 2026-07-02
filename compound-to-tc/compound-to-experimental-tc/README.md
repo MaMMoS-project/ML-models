@@ -188,20 +188,66 @@ Each output pickle extends the input with columns `comp_emb_pca_8`, `comp_emb_pc
 
 ## 4. Train models
 
-Trains three model families on five embedding variants for each of the three datasets
-(15 training runs per dataset, 45 total):
+Trains **four model families** on five embedding variants for each of the three datasets.
+Each (family × embedding) is trained as an **ensemble** of N members on different random
+train/test splits (N is set per family in `training_config.yaml`, default 10), so the
+default run is 4 × 5 × 10 = **200 fits per dataset**.
 
-| Model family | Variants |
+| Model family | Notes |
 |---|---|
-| Linear (Lasso / Ridge best of two) | all 5 embedding variants |
-| Random Forest (randomised CV) | all 5 embedding variants |
+| Linear (Lasso / Ridge, best of two) | all 5 embedding variants |
+| Random Forest (randomised CV, tuned once per embedding) | all 5 embedding variants |
 | MLP with early stopping (PyTorch) | all 5 embedding variants |
+| LightGBM (gradient-boosted trees, randomised CV, tuned once per embedding) | all 5 embedding variants |
 
 Embedding variants: `raw_200D`, `pca_8`, `pca_16`, `pca_32`, `pca_64`.
 
 Hyperparameters are scaled to the training-set size:
-- **RF `n_iter`** scales inversely with n_train (≈40 / 25 / 15 for RE-Free / RE / All).
+- **RF / LightGBM `n_iter`** scales inversely with n_train (the search is run **once**
+  per (dataset, embedding) and the best params are reused across all ensemble members).
 - **MLP architecture**: `(128, 64, 32)` for n_train < 6 000; `(256, 128, 64)` otherwise.
+
+> **ONNX note:** every model — Linear, RF, MLP **and LightGBM** — is exported to ONNX
+> (`results/onnx_models/`) for use by `predict_tc.py`. LightGBM export requires the
+> `onnxmltools` package (in `requirements.txt`); if it is missing, only LightGBM is
+> skipped and training still completes. With `re_features` enabled the ONNX input
+> changes from a 200-D embedding to `[embedding | 7 RE feats]` (207-D), and `predict_tc`
+> supplies the extra features automatically (see the `re_features` row below).
+
+### Configuration (`training_config.yaml`)
+
+Which families to train, the ensemble size, and the rare-earth feature toggle are all
+controlled by `training_config.yaml`:
+
+```yaml
+  re_features: false        # see below; default false
+  models:
+    linear:
+      enabled: true
+      ensemble: 10          # train 10 members on different splits; headline = mean ± std
+    rf:
+      enabled: true
+      ensemble: 10
+    mlp:
+      enabled: true
+      ensemble: 10
+    lgbm:                   # LightGBM (gradient-boosted trees)
+      enabled: true
+      ensemble: 10
+```
+
+**Options:**
+
+| Key | Values | Meaning |
+|---|---|---|
+| `models.<family>.enabled` | `true` / `false` | Train this family or skip it entirely. Families: `linear`, `rf`, `mlp`, `lgbm`. |
+| `models.<family>.ensemble` | integer ≥ 1 | Number of ensemble members (different random splits). Reported metrics are the **mean ± std** across members. `ensemble: 1` reproduces a single split (std = 0). |
+| `re_features` | `true` / `false` | When `true`, append 7 rare-earth physics features (de Gennes factor, S-state fraction, free-ion moment, …) to the embedding. Zero for RE-free compounds, so safe on every dataset. The exported ONNX then takes a **207-D** input `[embedding \| 7 feats]` (**raw_200D only** — PCA variants are skipped, as they'd need an in-graph ColumnTransformer), written with a **`_refeats`** suffix so it doesn't collide with the embedding-only models; `predict_tc` detects the 207-D input and computes & appends the features from the formula automatically. Default `false`. |
+
+Shorthands: a family may be given as a bare bool (`rf: true` ⇒ enabled, ensemble 1); an
+omitted family defaults to enabled with ensemble 1; if the file is missing, all four
+families train with ensemble 1 and `re_features` off. `lgbm` requires the optional
+`lightgbm` package (otherwise it is skipped with a note).
 
 Each dataset is trained by a dedicated script. Run them individually:
 
@@ -226,132 +272,173 @@ outputs/Experimental_Tc_all_w_embeddings_PCA.pkl        ← train_exp_tc_all.py
 
 **Outputs (per script):**
 ```
-results/exp_tc/<Dataset>_results.csv
-results/exp_tc/exp_tc_comparison.csv      (updated from all datasets run so far)
-results/exp_tc/exp_tc_best_by_dataset.csv (updated from all datasets run so far)
-results/exp_tc/figures/<dataset>_<embedding>_<model>.png
+results/<Dataset>_results.csv             (one row per ensemble member)
+results/<Dataset>_results_agg.csv         (ensemble mean ± std per model/embedding)
+results/exp_tc_comparison.csv             (aggregated, updated from all datasets run so far)
+results/exp_tc_best_by_dataset.csv        (best by mean R², updated from all datasets run so far)
+results/figures/<dataset>_<embedding>_<model>.png
+results/onnx_models/<dataset>_<embedding>_<model>.onnx   (except LightGBM / re_features runs)
 logs/train_exp_tc_re_free.txt  |  train_exp_tc_re.txt  |  train_exp_tc_all.txt
 ```
+
+## 5. Predict Tc for new compounds
+
+`src/predict_tc.py` predicts Tc for any chemical formula using the exported ONNX models
+— you give it a formula and it does all preprocessing (embedding, PCA, scaling, and the
+RE features if needed) internally.
+
+```bash
+# best model for the compound's type (RE vs RE-free is auto-detected)
+python src/predict_tc.py --compound Nd2Fe14B --best
+
+# every applicable model, as a comparison table (ensemble mean ± std)
+python src/predict_tc.py --compound Fe --all
+
+# a specific model file
+python src/predict_tc.py --compound SmCo5 --model results/onnx_models/RE_raw_200D_lgbm_e0.onnx
+
+# many compounds from a file (one formula per line)
+python src/predict_tc.py --compounds-file new_materials.txt --best
+
+# list available models
+python src/predict_tc.py --list
+```
+
+**Choosing a model:** `--best`/`--all` auto-detect rare-earth content and pick the right
+dataset's model(s) — `--best` uses the best **RE** model for a rare-earth compound and the
+best **RE-Free** model for a rare-earth-free one. If you pass `--model` yourself, match it
+to the chemistry — **RE-Free** or **All** for rare-earth-free compounds (Fe, Co, Ni…),
+**RE** or **All** for rare-earth compounds (Nd₂Fe₁₄B, SmCo₅…). The RE and RE-Free models
+extrapolate poorly across the RE boundary, so `predict_tc` **refuses** a mismatched
+`--model` (a RE model on a RE-free compound, or vice-versa) with an error telling you to
+use an `All_*` model; the `All` model is always valid.
+
+**RE-features models:** models trained with `re_features: true` are saved with a
+`_refeats` suffix and take a 207-D input. `predict_tc` detects this from the ONNX graph
+and computes & appends the 7 features automatically — no extra arguments. `--best`/`--all`
+resolve to these `_refeats` files when they are the ones on disk (exact embedding-only
+name first, `_refeats` as fallback).
+
+A SLURM helper is provided: `run_1node-predict.sh` (runs `--compounds-file … --best`).
 
 ---
 
 ## Results
 
-All metrics are on a held-out 20 % test split. Metrics are R² (higher is better),
-MAE and RMSE in Kelvin (lower is better). 
+Metrics are on held-out 20 % test splits, reported as the **ensemble mean ± std** over
+the N members (default N = 10) — not the single luckiest split. R² higher is better;
+MAE and RMSE in Kelvin lower is better.
 
-### Best model per dataset
+> **Current run:** all three datasets are from the latest run with **LightGBM** and
+> `re_features: true` (rare-earth physics features on), N = 10 members each.
 
-Below we report the performance of the best-performing ensemble member on the test set.
+### Best model per dataset (ensemble mean ± std)
 
+| Dataset | Model | Embedding | R² | MAE (K) | RMSE (K) |
+| ------- | ----- | --------- | -- | ------- | -------- |
+| RE      | **LightGBM** | raw_200D | **0.940 ± 0.006** | 36.5 | 67.3 |
+| All     | **LightGBM** | raw_200D | 0.871 ± 0.009 | 53.6 | 96.7 |
+| RE-Free | **LightGBM** | raw_200D | 0.760 ± 0.014 | 78.1 | 128.7 |
 
-| Dataset | Model | Embedding | R²        | MAE (K) | RMSE (K) |
-| ------- | ----- | --------- | --------- | ------- | -------- |
-| All     | RF    | raw_200D  | 0.871     | 53.10    | 94.19     |
-| RE      | RF    | raw_200D  | **0.946** | 36.13    | 65.63     |
-| RE-Free | RF    | raw_200D  | 0.778     | 72.76    | 123.15    |
+LightGBM (the 4th family) is now the best model on **all three** datasets — on RE-Free it
+is tied with Random Forest (RF raw_200D 0.760 ± 0.012). RE compounds remain considerably
+more predictable (R² ≈ 0.94) than the combined set (≈ 0.87) and RE-free ones (≈ 0.76). The
+full 200-D embedding is the best variant on every dataset.
 
-Random Forest on the full 200-D embeddings is the best model on every dataset.
-RE compounds are considerably more predictable (R² = 0.946) than RE-free ones
-(R² = 0.778), which may reflect greater chemical regularity within the RE sub-family.
+### All — All models × embeddings (ensemble mean ± std, with RE features)
 
-### All — Best result per embedding and model 
-Results shown for the best-performing ensemble member per configuration.
+Latest run: 4 families, `re_features: true`, N = 10 members. Sorted by R².
 
-| Embedding | Model  | R²         | MAE (K) | RMSE (K) |
-| --------- | ------ | ---------- | ------- | -------- |
-| raw_200D  | RF     | **0.8713** | 53.10   | 94.19    |
-| pca_16    | RF     | 0.8650     | 54.71   | 99.36    |
-| pca_32    | RF     | **0.8667** | 57.19   | 100.22   |
-| pca_64    | RF     | 0.8630     | 60.59   | 101.58   |
-| pca_8     | RF     | 0.8524     | 58.88   | 103.87   |
-| raw_200D  | MLP(256,128,64)    | 0.8360     | 69.13   | 111.15   |
-| pca_64    | MLP(256,128,64)    | **0.8453** | 66.95   | 107.97   |
-| pca_32    | MLP(256,128,64)    | 0.8435     | 66.98   | 103.87   |
-| pca_16    | MLP(256,128,64)    | 0.8234     | 72.50   | 110.35   |
-| pca_8     | MLP(256,128,64)    | 0.7768     | 89.12   | 129.69   |
-| raw_200D  | Linear(Ridge) | **0.4969** | 144.25  | 186.26   |
-| pca_64    | Linear(Lasso) | 0.4952     | 144.71  | 186.58   |
-| pca_32    | Linear(Lasso) | 0.4901     | 145.46  | 187.52   |
-| pca_16    | Linear(Lasso) | 0.4734     | 147.73  | 190.57   |
-| pca_8     | Linear(Lasso) | 0.4460     | 152.33  | 195.45   |
-
-### All - Random Forest — Mean ± Std (per embedding)
-| Embedding    | Model | R² (mean ± std)     | MAE (K) (mean ± std) | RMSE (K) (mean ± std) |
-| ------------ | ----- | ------------------- | ---------------- | ----------------- |
-| **raw_200D** | RF    | **0.8657 ± 0.0044** | **54.55 ± 0.94** | **98.80 ± 2.68**  |
-| pca_32       | RF    | 0.8623 ± 0.0035     | 56.35 ± 0.94     | 100.30 ± 1.78     |
-| pca_16       | RF    | 0.8619 ± 0.0029     | 55.59 ± 1.15     | 100.28 ± 1.94     |
-| pca_64       | RF    | 0.8570 ± 0.0047     | 59.58 ± 1.01     | 101.98 ± 2.19     |
-| pca_8        | RF    | 0.8494 ± 0.0027     | 59.50 ± 0.98     | 104.15 ± 1.80     |
-
----
-
-### RE — Best result per embedding and model 
-Results shown for the best-performing ensemble member per configuration.
-
-
-| Embedding | Model  | EnsembleIdx |         R² |   MAE (K) |  RMSE (K) |
-| --------- | ------ | ----------: | ---------: | --------: | --------: |
-| raw_200D  | RF     |           3 | **0.9457** | **36.13** | **65.63** |
-| pca_32    | RF     |           3 |     0.9401 |     38.75 |     68.91 |
-| pca_16    | RF     |           6 |     0.9372 |     39.29 |     68.46 |
-| pca_64    | RF     |           3 |     0.9369 |     41.26 |     70.74 |
-| pca_8     | RF     |           6 |     0.9277 |     42.24 |     73.48 |
-| pca_64    | MLP (256,128,64)    |           3 |     0.9347 |     44.81 |     71.94 |
-| pca_32    | MLP (256,128,64)   |           3 |     0.9338 |     45.11 |     72.42 |
-| raw_200D  | MLP (256,128,64)    |           3 |     0.9299 |     46.98 |     74.54 |
-| pca_16    | MLP (256,128,64)   |           3 |     0.9144 |     54.89 |     82.34 |
-| pca_8     | MLP (256,128,64)   |           3 |     0.8848 |     64.63 |     95.53 |
-| raw_200D  | Linear (Lasso) |           3 |     0.6060 |    135.36 |    176.70 |
-| pca_64    | Linear (Ridge)  |           3 |     0.6024 |    135.57 |    177.50 |
-| pca_32    | Linear (Ridge) |           9 |     0.5923 |    135.40 |    176.64 |
-| pca_16    | Linear (Lasso)|           9 |     0.5825 |    137.64 |    178.74 |
-| pca_8     | Linear (Lasso)|           7 |     0.5429 |    142.55 |    183.53 |
-
-### RE - Random Forest — Mean ± Std (per embedding)
-
-| Embedding    | Model | R² (mean ± std)     | MAE (K) (mean ± std) | RMSE (K) (mean ± std) |
-| ------------ | ----- | ------------------- | -------------------- | --------------------- |
-| **raw_200D** | RF    | **0.9340 ± 0.0038** | **38.72 ± 0.92**     | **70.46 ± 1.85**      |
-| pca_32       | RF    | 0.9312 ± 0.0037     | 41.11 ± 0.95         | 72.58 ± 1.62          |
-| pca_16       | RF    | 0.9296 ± 0.0039     | 41.33 ± 1.02         | 73.21 ± 1.71          |
-| pca_64       | RF    | 0.9270 ± 0.0038     | 43.74 ± 1.08         | 74.92 ± 1.88          |
-| pca_8        | RF    | 0.9206 ± 0.0036     | 43.91 ± 1.05         | 77.58 ± 1.93          |
-
+| Embedding | Model    | R² (mean ± std)   | MAE (K) | RMSE (K) |
+| --------- | -------- | ----------------- | ------- | -------- |
+| raw_200D  | LightGBM | **0.871 ± 0.009** | 53.6    | 96.7     |
+| raw_200D  | RF       | 0.868 ± 0.009     | 53.8    | 97.5     |
+| pca_64    | LightGBM | 0.868 ± 0.007     | 56.0    | 97.6     |
+| pca_32    | LightGBM | 0.868 ± 0.009     | 56.6    | 97.8     |
+| pca_32    | RF       | 0.866 ± 0.008     | 55.2    | 98.5     |
+| pca_16    | RF       | 0.864 ± 0.008     | 55.2    | 99.0     |
+| pca_16    | LightGBM | 0.862 ± 0.010     | 58.4    | 99.8     |
+| pca_64    | RF       | 0.860 ± 0.009     | 58.6    | 100.6    |
+| pca_8     | RF       | 0.854 ± 0.008     | 58.4    | 102.6    |
+| pca_8     | LightGBM | 0.847 ± 0.009     | 62.9    | 105.2    |
+| pca_64    | MLP      | 0.837 ± 0.007     | 67.4    | 108.7    |
+| pca_32    | MLP      | 0.833 ± 0.008     | 69.6    | 109.8    |
+| raw_200D  | MLP      | 0.832 ± 0.008     | 69.0    | 110.2    |
+| pca_16    | MLP      | 0.816 ± 0.008     | 74.6    | 115.3    |
+| pca_8     | MLP      | 0.785 ± 0.013     | 82.7    | 124.7    |
+| raw_200D  | Linear   | 0.491 ± 0.009     | 149.2   | 191.9    |
+| pca_64    | Linear   | 0.489 ± 0.009     | 149.5   | 192.1    |
+| pca_32    | Linear   | 0.486 ± 0.009     | 150.0   | 192.7    |
+| pca_16    | Linear   | 0.478 ± 0.009     | 151.5   | 194.3    |
+| pca_8     | Linear   | 0.451 ± 0.011     | 156.0   | 199.2    |
 
 ---
 
+### RE — All models × embeddings (ensemble mean ± std, with RE features)
 
-### RE-Free — Best result per embedding and model 
+Latest run: 4 families, `re_features: true`, N = 10 members. Sorted by R².
 
-Below we report the performance of the best-performing ensemble member on the test set.
+| Embedding | Model    | R² (mean ± std)     | MAE (K) | RMSE (K) |
+| --------- | -------- | ------------------- | ------- | -------- |
+| raw_200D  | LightGBM | **0.940 ± 0.006**   | 36.5    | 67.3     |
+| pca_32    | LightGBM | 0.938 ± 0.005       | 38.7    | 68.6     |
+| pca_64    | LightGBM | 0.937 ± 0.005       | 38.2    | 68.8     |
+| raw_200D  | RF       | 0.936 ± 0.006       | 38.8    | 69.4     |
+| pca_16    | LightGBM | 0.935 ± 0.005       | 40.6    | 69.9     |
+| pca_32    | RF       | 0.932 ± 0.006       | 40.8    | 71.7     |
+| pca_16    | RF       | 0.931 ± 0.006       | 40.5    | 72.0     |
+| pca_8     | LightGBM | 0.929 ± 0.006       | 43.3    | 73.0     |
+| pca_64    | RF       | 0.927 ± 0.006       | 42.9    | 73.9     |
+| pca_8     | RF       | 0.927 ± 0.006       | 42.1    | 74.1     |
+| pca_32    | MLP      | 0.919 ± 0.006       | 49.2    | 78.0     |
+| raw_200D  | MLP      | 0.918 ± 0.005       | 50.0    | 78.7     |
+| pca_16    | MLP      | 0.906 ± 0.006       | 55.0    | 84.2     |
+| pca_8     | MLP      | 0.881 ± 0.006       | 63.9    | 94.5     |
+| pca_64    | MLP      | 0.880 ± 0.091       | 52.4    | 90.5     |
+| raw_200D  | Linear   | 0.592 ± 0.008       | 134.6   | 175.3    |
+| pca_32    | Linear   | 0.586 ± 0.008       | 135.8   | 176.6    |
+| pca_64    | Linear   | 0.581 ± 0.029       | 135.0   | 177.5    |
+| pca_16    | Linear   | 0.576 ± 0.008       | 138.3   | 178.7    |
+| pca_8     | Linear   | 0.542 ± 0.008       | 143.6   | 185.7    |
 
-| Embedding | Model          | R²         | MAE (K)  | RMSE (K)  |
-| --------- | -------------- | ---------- | -------- | --------- |
-| raw_200D  | RF             | **0.7781** | **72.8** | **123.2** |
-| pca_16    | RF             | 0.7686     | 74.7     | 124.5     |
-| pca_32    | RF             | 0.7717     | 74.2     | 124.6     |
-| pca_64    | RF             | 0.7686     | 75.4     | 125.4     |
-| pca_8     | RF             | 0.7430     | 79.8     | 132.5     |
-| raw_200D  | MLP(128,64,32) | 0.6753     | 102.1    | 150.3     |
-| pca_32    | MLP(128,64,32) | 0.6790     | 99.2     | 146.6     |
-| pca_64    | MLP(128,64,32) | 0.6419     | 102.6    | 156.0     |
-| pca_16    | MLP(128,64,32) | 0.6376     | 107.9    | 155.8     |
-| pca_8     | MLP(128,64,32) | 0.5758     | 120.0    | 168.6     |
-| raw_200D  | Linear(Lasso)  | 0.4253     | 149.9    | 196.2     |
-| pca_64    | Linear(Lasso)  | 0.4233     | 149.8    | 196.5     |
-| pca_32    | Linear(Lasso)  | 0.4224     | 150.4    | 196.7     |
-| pca_16    | Linear(Lasso)  | 0.4040     | 153.1    | 199.8     |
-| pca_8     | Linear(Lasso)  | 0.3637     | 160.1    | 206.4     |
+LightGBM tops the RE leaderboard; tree models (LightGBM, RF) dominate, MLP follows, and
+Linear is well behind. The `pca_64` MLP has a large std (± 0.091) — an unstable config the
+mean ± std reporting exposes (a single split would have hidden it).
 
-### RE-Free - Random Forest — Mean ± Std (per embedding)
-| Embedding    | Model | R² (mean ± std)     | MAE (K) (mean ± std) | RMSE (K) (mean ± std) |
-| ------------ | ----- | ------------------- | -------------------- | --------------------- |
-| **raw_200D** | RF    | **0.7606 ± 0.0114** | **75.3 ± 2.1**       | **128.6 ± 4.3**       |
-| pca_32       | RF    | 0.7561 ± 0.0117     | 76.8 ± 1.9           | 129.8 ± 4.3           |
-| pca_16       | RF    | 0.7535 ± 0.0105     | 77.2 ± 2.0           | 130.5 ± 4.1           |
-| pca_64       | RF    | 0.7446 ± 0.0132     | 79.3 ± 1.9           | 132.8 ± 4.7           |
-| pca_8        | RF    | 0.7231 ± 0.0099     | 82.1 ± 1.7           | 138.3 ± 3.7           |
+
+---
+
+
+### RE-Free — All models × embeddings (ensemble mean ± std, with RE features)
+
+Latest run: 4 families, `re_features: true`, N = 10 members. Sorted by R². (RE features
+are all-zero for RE-free compounds, so they leave LightGBM/Linear unchanged and only
+perturb RF/MLP within noise.)
+
+| Embedding | Model    | R² (mean ± std)     | MAE (K) | RMSE (K) |
+| --------- | -------- | ------------------- | ------- | -------- |
+| raw_200D  | LightGBM | **0.760 ± 0.014**   | 78.1    | 128.7    |
+| raw_200D  | RF       | 0.760 ± 0.012       | 75.5    | 128.8    |
+| pca_64    | LightGBM | 0.758 ± 0.013       | 75.8    | 129.3    |
+| pca_32    | LightGBM | 0.758 ± 0.013       | 76.3    | 129.3    |
+| pca_32    | RF       | 0.753 ± 0.012       | 77.6    | 130.5    |
+| pca_16    | RF       | 0.752 ± 0.010       | 78.3    | 130.8    |
+| pca_64    | RF       | 0.744 ± 0.014       | 79.6    | 133.0    |
+| pca_16    | LightGBM | 0.743 ± 0.008       | 79.8    | 133.2    |
+| pca_8     | RF       | 0.725 ± 0.010       | 83.5    | 137.9    |
+| pca_8     | LightGBM | 0.715 ± 0.007       | 85.9    | 140.4    |
+| pca_32    | MLP      | 0.647 ± 0.016       | 104.9   | 156.1    |
+| raw_200D  | MLP      | 0.630 ± 0.020       | 108.2   | 159.9    |
+| pca_64    | MLP      | 0.617 ± 0.042       | 104.7   | 162.4    |
+| pca_16    | MLP      | 0.608 ± 0.022       | 113.7   | 164.5    |
+| pca_8     | MLP      | 0.528 ± 0.024       | 129.2   | 180.5    |
+| raw_200D  | Linear   | 0.388 ± 0.018       | 157.6   | 205.6    |
+| pca_64    | Linear   | 0.386 ± 0.017       | 157.9   | 206.0    |
+| pca_32    | Linear   | 0.379 ± 0.020       | 158.7   | 207.1    |
+| pca_16    | Linear   | 0.364 ± 0.020       | 161.1   | 209.6    |
+| pca_8     | Linear   | 0.325 ± 0.019       | 167.7   | 215.9    |
+
+On RE-Free, LightGBM and RF are tied at the top (≈ 0.760); the dataset is intrinsically
+harder than RE for every model.
 
 ---

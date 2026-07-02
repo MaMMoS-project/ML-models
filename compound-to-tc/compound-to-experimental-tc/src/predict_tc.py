@@ -47,6 +47,12 @@ EMB_FILE     = PROJECT_ROOT / "data" / "embeddings" / "element" / "matscholar200
 ONNX_DIR     = PROJECT_ROOT / "results" / "onnx_models"
 BEST_CSV     = PROJECT_ROOT / "results" / "exp_tc_best_by_dataset.csv"
 
+# RE physics features — needed for models trained with re_features:true, whose ONNX
+# takes a 207-D [embedding | 7 feats] input. Import the SAME module the trainer uses so
+# the feature definitions and ordering are guaranteed identical.
+sys.path.insert(0, str(PROJECT_ROOT))
+from src.re_features import compute_re_features, RE_FEATURE_NAMES
+
 # Sc, Y and all lanthanides (La–Lu)
 RE_ELEMENTS = frozenset({
     "Sc", "Y",
@@ -88,6 +94,15 @@ def compound_embedding(formula: str, elem_features: dict) -> np.ndarray:
     return vec
 
 
+def re_feature_vector(formula: str) -> np.ndarray:
+    """Return the 7 rare-earth physics features for a formula, in RE_FEATURE_NAMES
+    order — matching the trainer's np.hstack([embedding, RE feats]). Zero for RE-free
+    compounds. Only used when the selected ONNX model expects the 207-D input.
+    """
+    feats = compute_re_features(formula)
+    return np.array([feats[k] for k in RE_FEATURE_NAMES], dtype=np.float32)
+
+
 # ---------------------------------------------------------------------------
 # RE detection
 # ---------------------------------------------------------------------------
@@ -113,7 +128,10 @@ def _load_best_model_tags() -> "dict[str, str]":
     with open(BEST_CSV, newline="") as f:
         for row in csv.DictReader(f):
             base = f"{row['Dataset']}_{row['Embedding']}_{row['Model'].lower()}"
+            # Tag both the embedding-only and the RE-features (_refeats) file names, so
+            # whichever variant is on disk gets the "best for <Dataset>" label in --all.
             tags[base] = f"best for {row['Dataset']}"
+            tags[f"{base}_refeats"] = f"best for {row['Dataset']}"
     return tags
 
 
@@ -127,6 +145,21 @@ def _load_best_model_by_dataset() -> "dict[str, str]":
             base = f"{row['Dataset']}_{row['Embedding']}_{row['Model'].lower()}"
             result[row['Dataset']] = base
     return result
+
+
+def _resolve_group(base: str, groups: "dict[str, list[Path]]") -> "str | None":
+    """Map a best_by_dataset base name to an actually-present ONNX group.
+
+    The comparison CSV records a suffix-less base (e.g. ``RE_raw_200D_lgbm``), but a
+    ``re_features:true`` run writes the model with a ``_refeats`` marker
+    (``RE_raw_200D_lgbm_refeats``). Prefer an exact match; otherwise fall back to the
+    ``_refeats`` variant. Returns None if neither is present.
+    """
+    if base in groups:
+        return base
+    if f"{base}_refeats" in groups:
+        return f"{base}_refeats"
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -145,6 +178,23 @@ def group_onnx_models(onnx_dir: Path) -> "dict[str, list[Path]]":
         base = re.sub(r"_e\d+$", "", p.stem)
         groups.setdefault(base, []).append(p)
     return dict(sorted(groups.items()))
+
+
+def _model_dataset(onnx_path: Path) -> "str | None":
+    """Infer which dataset a model file was trained on from its name prefix.
+
+    ONNX files are named ``<Dataset>_<embedding>_<model>...onnx`` with Dataset one of
+    All / RE / RE-Free. Returns "All", "RE", "RE-Free", or None if unrecognised.
+    ("RE-Free_" is checked before "RE_" since the latter is a prefix of the former.)
+    """
+    name = onnx_path.name
+    if name.startswith("RE-Free_"):
+        return "RE-Free"
+    if name.startswith("RE_"):
+        return "RE"
+    if name.startswith("All_"):
+        return "All"
+    return None
 
 
 def _filter_groups(groups: "dict[str, list[Path]]", is_re: bool) -> "dict[str, list[Path]]":
@@ -179,12 +229,28 @@ def _ort_session(onnx_path: Path) -> rt.InferenceSession:
     return rt.InferenceSession(str(onnx_path), sess_options=opts)
 
 
-def predict_with_model(onnx_path: Path, emb: np.ndarray) -> float:
-    """Run ONNX inference and return scalar Tc prediction (K)."""
+def predict_with_model(onnx_path: Path, emb: np.ndarray,
+                       re_feats: "np.ndarray | None" = None) -> float:
+    """Run ONNX inference and return scalar Tc prediction (K).
+
+    Models trained with re_features:true expect a 207-D input
+    ``[embedding | 7 RE feats]``; embedding-only models expect 200-D. The correct input
+    is chosen from the ONNX graph's declared input width, so a directory mixing both
+    kinds of model is served transparently.
+    """
     sess        = _ort_session(onnx_path)
     input_name  = sess.get_inputs()[0].name
     output_name = sess.get_outputs()[0].name
-    X           = emb.reshape(1, -1)
+    n_in        = sess.get_inputs()[0].shape[1]
+    if isinstance(n_in, int) and n_in == emb.shape[0] + len(RE_FEATURE_NAMES):
+        if re_feats is None:
+            raise ValueError(
+                "model expects RE features (207-D input) but none were supplied"
+            )
+        x = np.concatenate([emb, re_feats])
+    else:
+        x = emb
+    X           = x.reshape(1, -1).astype(np.float32)
     result      = sess.run([output_name], {input_name: X})[0]
     return float(np.squeeze(result))
 
@@ -197,6 +263,7 @@ def _print_table(
     emb: np.ndarray,
     groups: "dict[str, list[Path]]",
     best_tags: "dict[str, str]",
+    re_feats: "np.ndarray | None" = None,
 ) -> None:
     """Run inference for all groups and print one summary row per logical model."""
     rows = []
@@ -205,7 +272,7 @@ def _print_table(
         member_preds = []
         for p in members:
             try:
-                member_preds.append(predict_with_model(p, emb))
+                member_preds.append(predict_with_model(p, emb, re_feats))
             except Exception as exc:
                 print(f"  {p.name}  ERROR: {exc}")
         if member_preds:
@@ -336,9 +403,10 @@ def main() -> None:
     for formula in compounds:
         print(f"\n{sep}")
 
-        # Compute embedding
+        # Compute embedding (and the RE features, for any re_features:true models)
         try:
             emb = compound_embedding(formula, elem_features)
+            re_feats = re_feature_vector(formula)
         except ValueError as exc:
             print(f"Compound : {formula}")
             print(f"ERROR: {exc}")
@@ -350,7 +418,7 @@ def main() -> None:
             print(f"Compound : {formula}  ({re_label})")
             print(sep)
             filtered = _filter_groups(all_groups, is_re)
-            _print_table(emb, filtered, best_tags)
+            _print_table(emb, filtered, best_tags, re_feats)
         elif args.best:
             is_re        = contains_re(formula)
             re_label     = "contains RE" if is_re else "RE-free"
@@ -361,14 +429,30 @@ def main() -> None:
             if best_base is None:
                 print(f"No best model found for dataset '{dataset_key}'. Run training first.")
                 continue
-            if best_base not in all_groups:
+            resolved = _resolve_group(best_base, all_groups)
+            if resolved is None:
                 print(f"Best model '{best_base}' not found in {ONNX_DIR}.")
                 continue
-            _print_table(emb, {best_base: all_groups[best_base]}, best_tags)
+            _print_table(emb, {resolved: all_groups[resolved]}, best_tags, re_feats)
         else:
-            print(f"Compound : {formula}")
+            is_re    = contains_re(formula)
+            model_ds = _model_dataset(onnx_path)
+            re_label = "contains RE" if is_re else "RE-free"
+            print(f"Compound : {formula}  ({re_label})")
             print(f"Model    : {onnx_path.name}")
-            tc = predict_with_model(onnx_path, emb)
+            # Refuse to predict with a model trained on the wrong chemistry — the RE and
+            # RE-Free models do not extrapolate across the RE boundary (e.g. Fe through
+            # the RE model gives a badly wrong Tc). The All model is valid for both.
+            if model_ds == "RE" and not is_re:
+                print("ERROR: this is a RE-free compound but the model is the RE-only "
+                      "model — refusing to predict. Use an All_* or RE-Free_* model.")
+                continue
+            if model_ds == "RE-Free" and is_re:
+                print("ERROR: this compound contains rare-earth element(s) but the model "
+                      "is the RE-Free model — refusing to predict. Use an All_* or RE_* "
+                      "model.")
+                continue
+            tc = predict_with_model(onnx_path, emb, re_feats)
             print(f"Tc pred  : {tc:.1f} K")
 
 

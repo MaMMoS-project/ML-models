@@ -29,8 +29,11 @@ def log_output(file_path):
             if directory:
                 os.makedirs(directory, exist_ok=True)
 
-            # line-buffered file handle (buffering=1) so each line is flushed
-            with open(file_path, "a", buffering=1) as f:
+            # Truncate per run ("w") so each run starts a fresh log instead of
+            # appending onto previous runs; line-buffered (buffering=1) so each
+            # line is flushed to disk continuously. Each log file has a single
+            # decorated entry point, so per-run truncation is safe.
+            with open(file_path, "w", buffering=1) as f:
                 tee = Tee(sys.stdout, f)
                 with redirect_stdout(tee):
                     result = func(*args, **kwargs)
