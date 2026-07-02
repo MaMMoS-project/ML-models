@@ -10,9 +10,8 @@ simulated Ms (A/m) and experimental Ms (A/m) and predict a corrected value.
 v0.2
 
 ## 0. Installation
-Use requirements.txt. In addition pytorch and rapids, compatible with your system, must be installed.
+Use requirements.txt. In addition pytorch, compatible with your system, must be installed.
 - https://pytorch.org/
-- https://docs.rapids.ai/install/
 
 ## Pipeline Overview
 
