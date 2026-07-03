@@ -321,6 +321,29 @@ name first, `_refeats` as fallback).
 
 A SLURM helper is provided: `run_1node-predict.sh` (runs `--compounds-file … --best`).
 
+### Validate against a reference set (`src/validate_reference_data.py`)
+
+`src/validate_reference_data.py` scores the models against an external reference list of
+compounds with known Curie/Néel temperatures (`data/validation_reference.csv`). For each
+compound it predicts Tc with **only the best model for that chemistry** — the best **RE**
+model for rare-earth compounds, the best **RE-Free** model otherwise (from
+`results/exp_tc_best_by_dataset.csv`) — as the **ensemble mean ± std** over the model's
+ONNX members (never a best-of-N pick). It reuses the exact prediction path from
+`predict_tc.py`, so it can't drift from the deployed predictor.
+
+```bash
+python src/validate_reference_data.py
+# or point at a different reference / output file
+python src/validate_reference_data.py --ref data/validation_reference.csv --out table.csv
+```
+
+It prints a table (`compound | RE? | reference | prediction | std | error | best model`),
+writes the same to `results/validation_reference_predictions.csv`, and reports a summary
+**MAE computed only over the true ferro/ferrimagnetic Curie temperatures** — antiferromagnets
+(Néel T) and non-magnetic entries are shown for sanity but excluded from the error, since
+the model only predicts a Curie temperature. See `validation_idea.txt` for the rationale
+and how to read the results.
+
 ---
 
 ## Results
