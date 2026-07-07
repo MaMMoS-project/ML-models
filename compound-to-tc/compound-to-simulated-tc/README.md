@@ -201,6 +201,35 @@ Hyperparameters are scaled to the training-set size:
 Each dataset is trained by a dedicated script. Run them individually:
 
 ```bash
+python src/train_sim_tc_re_free.py   # RE-Free dataset
+python src/train_sim_tc_re.py        # RE dataset
+python src/train_sim_tc_all.py       # All (combined) dataset
+```
+
+Or run all three in one go (backward-compatible):
+
+```bash
+python src/train_sim_tc.py
+```
+
+**Needs (per script):**
+```
+outputs/Simulated_Tc_RE-Free_w_embeddings_PCA.pkl    ← train_sim_tc_re_free.py
+outputs/Simulated_Tc_RE_w_embeddings_PCA.pkl         ← train_sim_tc_re.py
+outputs/Simulated_Tc_all_w_embeddings_PCA.pkl        ← train_sim_tc_all.py
+```
+
+**Outputs (per script):**
+```
+results/<Dataset>_results.csv             (one row per ensemble member)
+results/<Dataset>_results_agg.csv         (ensemble mean ± std per model/embedding)
+results/sim_tc_comparison.csv             (aggregated, updated from all datasets run so far)
+results/sim_tc_best_by_dataset.csv        (best by mean R², updated from all datasets run so far)
+results/figures/<dataset>_<embedding>_<model>.png
+results/onnx_models/<dataset>_<embedding>_<model>.onnx   (except LightGBM / re_features runs)
+logs/train_sim_tc_re_free.txt  |  train_sim_tc_re.txt  |  train_sim_tc_all.txt
+```
+ 
 ## Results
 
 All metrics are on a held-out 20 % test split. Metrics are R² (higher is better),
