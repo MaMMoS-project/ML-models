@@ -135,6 +135,7 @@ def training_pairs_emb():
             print(f"Ms threshold {ms_threshold:.0f} A/m: {before} → {len(df_data)} rows kept")
 
         for embedding_type in embedding_types:
+            
             emb_name = "raw_200D" if embedding_type is None else embedding_type
 
             # Check the embedding column actually exists before training
@@ -224,6 +225,7 @@ def training_pairs_emb():
                     use_embedding=True,
                     embedding_type=embedding_type,
                 )
+                
                 dataset_emb_results.append({
                     "Model_Family": "MLP", "Model": "FCNN",
                     "Dataset": dataset_name, "Embedding": emb_name,

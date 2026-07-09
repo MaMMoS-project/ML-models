@@ -234,7 +234,7 @@ class DataLoader:
                     )
                 X_emb = np.vstack(df['compound_embedding'].values)
             else:
-                col_name = f'comp_emb_pca_{embedding_type}_components'
+                col_name = f'comp_emb_{embedding_type}_components'
                 if col_name not in df.columns:
                     available = [c for c in df.columns if 'emb' in c.lower()]
                     raise ValueError(

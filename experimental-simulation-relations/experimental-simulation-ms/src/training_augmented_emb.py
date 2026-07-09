@@ -25,7 +25,7 @@ log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 os.makedirs(log_dir, exist_ok=True)
 
 
-@log_output('logs/training_augmented_emb.txt')
+# @log_output('logs/training_augmented_emb.txt')
 def training_augmented_emb():
 
     script_dir = Path(__file__).parent
@@ -98,6 +98,7 @@ def training_augmented_emb():
     all_results = []
 
     for config in dataset_configs:
+        
         dataset_name = config["name"]
         dataset_type = config["type"]
 
@@ -147,7 +148,7 @@ def training_augmented_emb():
                     print(f"  Skipping raw_200D — no compound_embedding column.")
                     continue
             else:
-                col_name = f'comp_emb_pca_{embedding_type}_components'
+                col_name = f'comp_emb_{embedding_type}_components'
                 if col_name not in df_data.columns:
                     print(f"  Skipping {emb_name} — column {col_name} not found.")
                     continue

@@ -9,7 +9,11 @@ simulated Ms (A/m) and experimental Ms (A/m) and predict a corrected value.
 ## Current version of model
 v0.2
 
-## Overview
+## 0. Installation
+Use requirements.txt. In addition pytorch, compatible with your system, must be installed.
+- https://pytorch.org/
+
+## Pipeline Overview
 
 The pipeline runs in five stages:
 
@@ -106,11 +110,17 @@ style cluster_3 fill:#F4F6F7,stroke:#5D6D7E,stroke-width:2px
 
 Models trained: Symbolic Regression (PySR), Linear (LASSO / Ridge / OLS), Random Forest, FCNN/MLP.
 
-Datasets: All pairs, RE-only (rare-earth compounds), RE-free.
+Datasets: All pairs, RE-only (rare-earth compounds), RE-free (not containing RE compounds).
 
 All models operate in log1p-space; metrics are reported in original A/m space.
 
-## Data
+## 1. Data Augmentation
+
+Run:
+
+```
+src/augment_data.py
+```
 
 Place the merged dataset at:
 
@@ -121,14 +131,16 @@ data/merged_df_python.csv
 Expected columns include `Ms (ampere/meter)_s` (simulated), `Ms (ampere/meter)_e`
 (experimental), and `has_rare_earth`.
 
-## Usage
-
-### Individual stages
+## 2. & 3. Embedding Creation and Compression
 
 ```bash
-python3 -m src.augment_data
 python3 -m src.create_embeddings
 python3 -m src.compress_embedding_PCA
+```
+
+## 4a-d Model Training
+
+```bash
 python3 -m src.training_pairs
 python3 -m src.training_pairs_emb
 python3 -m src.training_augmented
@@ -244,3 +256,28 @@ src/
     ├── random_forest.py       Random Forest trainer
     └── symbolic_regression.py PySR trainer
 ```
+
+### 📈 Model Performance Comparison
+
+(best models and symbolic regression baseline shown)
+
+| Dataset         | Model              | Embedding   | R²    | RMSE    |
+|----------------|---------------------|-------------|-------|---------|
+| All-Pairs      | **MLP (FCNN)**      | -           | 0.78  | 0.393   |
+| All-Pairs      | Linear Regression   | raw_200D    | 0.835 | 0.342   |
+| All-Pairs      | Symbolic Regression | -           | 0.782 | 0.393   |
+| All-Augm       | MLP (FCNN)          | -           | 0.791 | 0.399   |
+| All-Augm       | **MLP (FCNN)**      | PCA32       | 0.794 | 0.395   |
+| All-Augm       | Symbolic Regression | -           | 0.791 | 0.399   |
+| RE-Pairs       | Random Forest       |             | 0.467 | 0.621   |
+| RE-Pairs       | Ridge Regression    | raw_200D    | 0.747 | 0.427   |
+| RE-Pairs       | Symbolic Regression | -           | 0.411 | 0.653   |
+| RE-Augm        | MLP (FCNN)          | -           | 0.612 | 0.624   |
+| RE-Augm        | **MLP (FCNN)**      | PCA32       | 0.621 | 0.616   |
+| RE-Augm        | Symbolic Regression | -           | 0.612 | 0.624   |
+| RE-Free-Pairs  | Lasso               | -           | 0.873 | 0.293   |
+| RE-Free-Pairs  | Random Forest       | raw_200D    | 0.897 | 0.264   |
+| RE-Free-Pairs  | Symbolic Regression | -           | 0.872 | 0.295   |
+| RE-Free-Augm   | MLP (FCNN)          | -           | 0.869 | 0.300   |
+| RE-Free-Augm   | **MLP (FCNN)**      | PCA16       | 0.862 | 0.308   |
+| RE-Free-Augm   | Symbolic Regression | -           | 0.869 | 0.301   |
