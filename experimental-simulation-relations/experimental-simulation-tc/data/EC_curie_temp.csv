@@ -1,7 +1,8 @@
-#mammos csv v1
-#,,,,,,,,,,,,,,,,,
-#,,,,,,,,,,,,,,,,,
-#,,,,,,,,,,,,,,,,,
+# mammos csv v3
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
 composition,Tc_sim,Tc_sim_nemad,Tc_sim_dftv2,Tc_sim_spin,Tc_sim_re_free,Tc_exp,Tc_exp_ds1ds2,Tc_exp_re_free,Tc_exp_dftv2,Tc_exp_literature,Tc_delta,source_sim_target,source_exp_target,contains_rare_earth,pair_exists,use_for_emb,delta_info
 (0.85)YMnO3/0.15ZnFe2O4,,,,,,,,,,,,Tc_sim not available in any source,Tc_exp not available in any source,True,False,False,exp-sim
 (0.90)YMnO3/0.10ZnFe2O4,,,,,,,,,,,,Tc_sim not available in any source,Tc_exp not available in any source,True,False,False,exp-sim
