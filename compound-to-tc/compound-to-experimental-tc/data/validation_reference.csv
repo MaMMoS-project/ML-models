@@ -1,0 +1,38 @@
+formula,reference_Tc_or_TN_K,magnetic_type,is_curie_temperature,in_experimental_DB,in_simulated_DB,note
+Fe3GaTe2,360,ferromagnet,yes,no,no,"2D vdW ferromagnet, ~350-380 K, above room T (recent)"
+Fe5GeTe2,300,ferromagnet,yes,no,no,"2D vdW ferromagnet, ~270-310 K (recent)"
+Fe3GeTe2,230,ferromagnet,yes,yes,no,"2D vdW ferromagnet, bulk ~220-230 K"
+VI3,50,ferromagnet,yes,yes,no,2D ferromagnet
+Ni3Al,41,ferromagnet,yes,yes,no,weak itinerant ferromagnet
+ZrZn2,28,ferromagnet,yes,yes,no,weak itinerant ferromagnet
+Gd3Fe5O12,564,ferrimagnet,yes,yes,no,gadolinium iron garnet
+Fe3Sn2,657,ferromagnet,yes,yes,no,kagome ferromagnet
+Fe,1043,ferromagnet,yes,yes,yes,element
+Co,1388,ferromagnet,yes,yes,yes,element
+Ni,627,ferromagnet,yes,yes,yes,element
+Gd,293,ferromagnet,yes,yes,yes,"element, near room T"
+Fe3O4,858,ferrimagnet,yes,yes,yes,magnetite
+CoFe2O4,793,ferrimagnet,yes,yes,yes,spinel ferrite
+NiFe2O4,858,ferrimagnet,yes,yes,yes,spinel ferrite
+MnFe2O4,573,ferrimagnet,yes,yes,yes,spinel ferrite
+SrFe12O19,750,ferrimagnet,yes,yes,yes,hexaferrite
+Y3Fe5O12,560,ferrimagnet,yes,yes,yes,YIG
+CrO2,386,ferromagnet,yes,yes,yes,half-metal
+MnBi,628,ferromagnet,yes,yes,yes,
+MnAs,318,ferromagnet,yes,yes,yes,first-order transition
+EuO,69,ferromagnet,yes,yes,yes,rare-earth ferromagnet
+CrI3,61,ferromagnet,yes,yes,yes,2D ferromagnet (bulk)
+Co2MnSi,985,ferromagnet,yes,yes,yes,Heusler half-metal
+Fe2B,1015,ferromagnet,yes,yes,yes,
+FeO,198,antiferromagnet,no,no,no,Neel T (wustite)
+MnO,118,antiferromagnet,no,no,no,Neel T
+CoO,291,antiferromagnet,no,no,no,Neel T
+NiO,523,antiferromagnet,no,yes,no,Neel T
+Cr,311,antiferromagnet,no,yes,no,"Neel T (spin density wave), element"
+Cr2O3,307,antiferromagnet,no,no,yes,Neel T
+Mn3Sn,420,antiferromagnet,no,no,no,non-collinear AFM (Neel T)
+Cu,,nonmagnetic,no,yes,no,no magnetic ordering
+Al,,nonmagnetic,no,yes,no,no magnetic ordering
+ZnO,,nonmagnetic,no,yes,no,no magnetic ordering (undoped)
+NaCl,,nonmagnetic,no,no,no,no magnetic ordering
+H2O,,nonmagnetic,no,no,no,no magnetic ordering

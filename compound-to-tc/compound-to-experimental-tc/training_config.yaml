@@ -16,14 +16,21 @@
 # changes), so predict_tc cannot serve these models yet — accuracy study only.
   re_features: true
   models:
+    # Only the best + 2nd-best model families are trained. Ranking on the latest run
+    # (2026-07-10, held-out R2, best embedding per family) gives the SAME top-2 set for
+    # every dataset:
+    #   RE      : 1. LGBM 0.940  2. RF 0.936   | MLP ~0.92, Linear ~0.59
+    #   RE-Free : 1. LGBM 0.760  2. RF 0.760   | MLP ~0.63, Linear ~0.39  (LGBM/RF a tie)
+    # => No RE vs RE-Free conflict: top-2 = {LGBM, RF} for both. Linear and MLP are far
+    #    behind everywhere -> disabled.
     linear:
-      enabled: true
+      enabled: false
       ensemble: 10
     rf:
       enabled: true
       ensemble: 10
     mlp:
-      enabled: true
+      enabled: false
       ensemble: 10
     lgbm:
       enabled: true

@@ -4,6 +4,7 @@
 import numpy as np
 import pandas as pd
 import os
+from pymatgen.core import Composition
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -34,6 +35,17 @@ def clean_tc_column(series: pd.Series) -> pd.Series:
 
 def contains_rare_earth(composition: str) -> bool:
     return any(elem in composition for elem in RARE_EARTH_ELEMENTS)
+
+
+def reduced_formula(formula):
+    """Canonical reduced formula for deduplication (CoFe2O4 -> Fe2CoO4, H4O2 -> H2O), or
+    None if pymatgen cannot parse the string. Used so different spellings / element orderings
+    / stoichiometric multiples of the same compound are pooled instead of surviving as
+    separate rows with conflicting Tc values."""
+    try:
+        return Composition(str(formula).strip()).reduced_formula
+    except Exception:
+        return None
 
 
 def extract_tc_rows(
@@ -122,7 +134,13 @@ def process(df: pd.DataFrame, tc_col_out: str) -> pd.DataFrame:
     # per-composition median below.
     df = df[df["Tc"] >= 0]
 
-    # Deduplicate: take median Tc per composition
+    # Canonicalise to the reduced formula BEFORE deduplication so different spellings /
+    # element orderings / multiples of the same compound are pooled together. Unparsable
+    # strings become NaN and are dropped (create_embeddings drops them downstream anyway).
+    df["composition"] = df["composition"].apply(reduced_formula)
+    df = df[df["composition"].notna()]
+
+    # Deduplicate: take median Tc per (reduced) composition
     df = df.groupby("composition", as_index=False)["Tc"].median()
     df = df.rename(columns={"Tc": tc_col_out})
 
