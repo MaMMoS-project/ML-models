@@ -357,67 +357,7 @@ MAE and RMSE in Kelvin lower is better.
 
 ### Best model per dataset (ensemble mean ± std)
 
-| Dataset | Model | Embedding | R² | MAE (K) | RMSE (K) |
-| ------- | ----- | --------- | -- | ------- | -------- |
-| RE      | **Random Forest** | raw_200D | **0.768 ± 0.058** | 55.1 | 93.0 |
-| RE-Free | **Random Forest** | raw_200D | 0.517 ± 0.066 | 143.5 | 209.3 |
-
-Random Forest is the best model on both datasets; LightGBM is a close second (tied within
-noise) and both clearly beat MLP and Linear. The simulated-Tc task is harder than the
-experimental one, and RE-Free is the hardest case (R² ≈ 0.52).
-
-### RE — All models × embeddings (ensemble mean ± std, with RE features)
-
-Latest run: 4 families, `re_features: true`, N = 10. Sorted by R².
-
-| Embedding | Model    | R² (mean ± std) | MAE (K) | RMSE (K) |
-| --------- | -------- | --------------- | ------- | -------- |
-| raw_200D  | RF       | **0.768 ± 0.058** | 55.1 | 93.0 |
-| raw_200D  | LightGBM | 0.761 ± 0.062   | 52.2  | 94.3  |
-| pca_32    | LightGBM | 0.757 ± 0.050   | 57.7  | 95.3  |
-| pca_16    | LightGBM | 0.752 ± 0.058   | 58.1  | 96.2  |
-| pca_16    | RF       | 0.747 ± 0.061   | 59.5  | 97.3  |
-| pca_32    | RF       | 0.744 ± 0.059   | 60.5  | 97.8  |
-| pca_64    | LightGBM | 0.744 ± 0.051   | 58.2  | 98.1  |
-| pca_64    | RF       | 0.731 ± 0.057   | 62.5  | 100.4 |
-| pca_8     | RF       | 0.728 ± 0.066   | 60.3  | 101.0 |
-| pca_8     | LightGBM | 0.706 ± 0.073   | 60.2  | 104.9 |
-| pca_32    | MLP      | 0.646 ± 0.075   | 75.5  | 115.1 |
-| pca_16    | MLP      | 0.625 ± 0.061   | 78.3  | 118.9 |
-| raw_200D  | MLP      | 0.624 ± 0.067   | 77.5  | 118.9 |
-| pca_8     | MLP      | 0.556 ± 0.064   | 83.0  | 129.4 |
-| pca_64    | MLP      | 0.540 ± 0.125   | 84.8  | 130.6 |
-| pca_16    | Linear   | 0.434 ± 0.037   | 102.7 | 146.5 |
-| pca_64    | Linear   | 0.432 ± 0.044   | 102.1 | 146.7 |
-| raw_200D  | Linear   | 0.431 ± 0.044   | 102.8 | 146.8 |
-| pca_32    | Linear   | 0.430 ± 0.040   | 103.3 | 146.9 |
-| pca_8     | Linear   | 0.415 ± 0.035   | 104.0 | 148.9 |
-
-### RE-Free — All models × embeddings (ensemble mean ± std, with RE features)
-
-Latest run: 4 families, `re_features: true`, N = 10. Sorted by R². (RE features are
-all-zero for RE-free compounds, so they leave LightGBM/Linear unchanged and only perturb
-RF/MLP within noise.)
-
-| Embedding | Model    | R² (mean ± std) | MAE (K) | RMSE (K) |
-| --------- | -------- | --------------- | ------- | -------- |
-| raw_200D  | RF       | **0.517 ± 0.066** | 143.5 | 209.3 |
-| pca_32    | RF       | 0.508 ± 0.074   | 145.8 | 211.1 |
-| pca_64    | LightGBM | 0.505 ± 0.080   | 143.8 | 211.6 |
-| pca_64    | RF       | 0.498 ± 0.070   | 150.4 | 213.5 |
-| raw_200D  | LightGBM | 0.492 ± 0.083   | 145.8 | 214.6 |
-| pca_32    | LightGBM | 0.486 ± 0.087   | 146.5 | 215.6 |
-| pca_16    | RF       | 0.473 ± 0.064   | 152.0 | 218.7 |
-| pca_8     | RF       | 0.447 ± 0.070   | 154.4 | 224.1 |
-| pca_16    | LightGBM | 0.441 ± 0.079   | 151.7 | 224.9 |
-| pca_8     | LightGBM | 0.410 ± 0.072   | 163.2 | 231.5 |
-| pca_32    | MLP      | 0.280 ± 0.045   | 192.9 | 256.1 |
-| raw_200D  | MLP      | 0.274 ± 0.030   | 194.8 | 257.1 |
-| pca_16    | MLP      | 0.253 ± 0.051   | 198.6 | 260.6 |
-| raw_200D  | Linear   | 0.226 ± 0.031   | 203.4 | 265.5 |
-| pca_64    | Linear   | 0.224 ± 0.032   | 205.0 | 265.9 |
-| pca_32    | Linear   | 0.212 ± 0.026   | 206.4 | 267.9 |
-| pca_16    | Linear   | 0.205 ± 0.038   | 209.9 | 269.0 |
-| pca_64    | MLP      | 0.191 ± 0.078   | 198.9 | 270.9 |
-| pca_8     | Linear   | 0.189 ± 0.039   | 214.2 | 271.7 |
-| pca_8     | MLP      | 0.185 ± 0.060   | 210.9 | 272.4 |
+| Dataset | Embedding | Model |  N |    R² | R²_std |    MAE | MAE_std |    RMSE | RMSE_std |
+| ------- | --------- | ----- | -: | ----: | -----: | -----: | ------: | ------: | -------: |
+| RE      | raw_200D  | LGBM  | 10 | 0.940 |  0.006 | 36.502 |   1.393 |  67.332 |    2.862 |
+| RE-Free | pca_32    | LGBM  | 10 | 0.761 |  0.017 | 76.300 |   2.588 | 128.728 |    5.148 |
