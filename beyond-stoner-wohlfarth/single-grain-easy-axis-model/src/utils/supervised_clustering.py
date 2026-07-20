@@ -67,8 +67,8 @@ def train_and_tune(X_train, y_train):
 
 
 def supervised_hardsoft_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)',
-                          input_cols=['Ms (A/m)', 'A (J/m)', 'K (J/m^3)'], 
-                          save_path=NotImplemented):
+                          input_cols=['Ms (A/m)', 'A (J/m)', 'K (J/m^3)'],
+                          save_path=NotImplemented, labels=None):
     """
     Cluster magnetic materials into hard and soft using supervised classification based on threshold clustering labels.
     
@@ -84,7 +84,10 @@ def supervised_hardsoft_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)',
         List of column names to use as input features
     save_path : str, optional
         Path to save the plot and model
-        
+    labels : array-like, optional
+        Precomputed hard/soft labels (0: soft, 1: hard). If provided they are
+        used directly instead of the threshold clustering labels.
+
     Returns
     -------
     pd.DataFrame
@@ -94,10 +97,13 @@ def supervised_hardsoft_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)',
     ## only work on valid points, i.e. drop points if somewhere NaN
     #df = df.dropna()
 
-    # First get threshold clustering labels
-    df_threshold = threshold_clustering(df, Ms_col=Ms_col, Mr_col=Mr_col, save_path=save_path)
-    
-    y = df_threshold['Clusters'].values
+    if labels is not None:
+        y = np.asarray(labels)
+    else:
+        # First get threshold clustering labels
+        df_threshold = threshold_clustering(df, Ms_col=Ms_col, Mr_col=Mr_col, save_path=save_path)
+
+        y = df_threshold['Clusters'].values
     
     # Compute Mr/Ms ratio
     ratio = np.divide(df[Mr_col], df[Ms_col], 

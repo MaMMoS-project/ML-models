@@ -100,12 +100,44 @@ class Evaluator:
         # Save model if configured
         if self.config['evaluation']['save_models']:
             self._save_model(model, dataset_name, model_name, metrics, scaler)
-        
+            self._save_predictions(model, X_train, y_train, y_train_pred,
+                                   X_test, y_test, y_test_pred,
+                                   dataset_name, model_name)
+
         # Print metrics
         self.print_metrics(metrics, dataset_name, model_name)
-        
+
         return metrics
-    
+
+    def _save_predictions(self, model, X_train, y_train, y_train_pred,
+                          X_test, y_test, y_test_pred, dataset_name, model_name):
+        """Save per-sample train/test predictions (in the trained space) next to the model."""
+        model_dir = self.results_dir / 'models' / dataset_name
+        model_dir.mkdir(parents=True, exist_ok=True)
+
+        frames = []
+        for split, X, y_true, y_pred in [('train', X_train, y_train, y_train_pred),
+                                         ('test', X_test, y_test, y_test_pred)]:
+            y_true_np = y_true.to_numpy() if hasattr(y_true, 'to_numpy') else np.asarray(y_true)
+            y_pred_np = y_pred.to_numpy() if hasattr(y_pred, 'to_numpy') else np.asarray(y_pred)
+            output_names = list(y_true.columns) if hasattr(y_true, 'columns') else [
+                f'Output {i}' for i in range(y_true_np.shape[1])]
+            index = y_true.index if hasattr(y_true, 'index') else pd.RangeIndex(len(y_true_np))
+            frame = pd.DataFrame({'split': split}, index=index)
+            for j, col in enumerate(output_names):
+                frame[col] = y_true_np[:, j]
+                frame[f'pred {col}'] = y_pred_np[:, j]
+            if hasattr(model, 'predict_with_std'):
+                _, std = model.predict_with_std(X)
+                std_np = np.asarray(std).reshape(len(frame), len(output_names))
+                for j, col in enumerate(output_names):
+                    frame[f'sigma {col}'] = std_np[:, j]
+            frames.append(frame)
+
+        predictions_path = model_dir / f"{model_name}_predictions.csv"
+        pd.concat(frames).to_csv(predictions_path, index_label='index')
+        print(f"Predictions saved to {predictions_path}")
+
     def _compute_metrics(self, y_train, y_train_pred, y_test, y_test_pred, X_train, X_test):
         """Compute evaluation metrics on the exact same data used for training/testing."""
         # Convert to numpy if needed for consistent metric calculation

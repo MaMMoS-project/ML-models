@@ -22,7 +22,9 @@ import torch
 
 from src.utils.data_preprocessing import preprocess_data
 from src.utils.clustering_hardsoft import get_hard_soft_clusters, threshold_clustering, kmeans_clustering
-from src.utils.supervised_clustering import apply_supervised_clustering
+from src.utils.supervised_clustering import (apply_supervised_clustering,
+                                             supervised_hardsoft_clustering,
+                                             supervised_valid_points_clustering)
 from src.utils.labels_preprocessing import add_magnetic_properties
 from src.utils.log_to_file import log_output
 from src.models.evaluator import Evaluator
@@ -168,16 +170,33 @@ class MLPipeline:
         """Run the complete pipeline."""
         
         print(f"Using config file: {self.config}")
-        
+
         # Create results directory
         results_dir = Path(self.config['data']['results_dir'])
         results_dir.mkdir(exist_ok=True)
-        
+
+        # Seed numpy and torch from the cross-validation random state. The
+        # neural-network trainer does not seed torch itself; seeding here makes
+        # FCNN runs reproducible.
+        random_state = self.config.get('cross_validation', {}).get('random_state', 42)
+        np.random.seed(random_state)
+        torch.manual_seed(random_state)
+
         # Read the dataset
         try:
             #df = pd.read_csv(self.config['data']['input_file'])
             content = me.from_csv(self.config['data']['input_file'])
             df = content.to_dataframe(include_units=False)
+
+            # Optionally train the valid/invalid-inputs classifier on the raw
+            # dataset (before dropping failed simulations), where invalid rows
+            # are those with missing outputs.
+            if self.config.get('clustering', {}).get('train_validity_classifier', False):
+                df_validity = df.rename(columns={"Ms": "Ms (A/m)", "A": "A (J/m)", "K1": "K (J/m^3)", "Hc": "Hc (A/m)", "Mr": "Mr (A/m)", "BHmax": "BHmax (J/m^3)"})
+                output_cols = ['Hc (A/m)', 'Mr (A/m)', 'BHmax (J/m^3)']
+                df_validity['Valid_Inputs'] = df_validity[output_cols].notna().all(axis=1).astype(int)
+                supervised_valid_points_clustering(df_validity, save_path=str(results_dir))
+
             df = df.dropna()
             df = df.drop('D', axis=1)
 
@@ -242,6 +261,13 @@ class MLPipeline:
             df_cluster0 = df_clusters[df_clusters['Clusters_KMeans'] == 0]
             df_cluster1 = df_clusters[df_clusters['Clusters_KMeans'] == 1]
             cluster_col = 'Clusters_KMeans'
+
+            # Optionally train the hard/soft routing classifier on the k-means
+            # labels so the deployed chain matches the training partition.
+            if self.config.get('clustering', {}).get('train_hardsoft_classifier', False):
+                supervised_hardsoft_clustering(
+                    df_clusters, labels=df_clusters['Clusters_KMeans'].values,
+                    save_path=str(results_dir))
         else:  # Default to supervised
             # Use supervised clustering (either train new model or apply existing one)
             try:
