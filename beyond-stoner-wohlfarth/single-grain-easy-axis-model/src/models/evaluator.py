@@ -9,7 +9,7 @@ import json
 import torch
 import skl2onnx
 from skl2onnx import convert_sklearn, update_registered_converter
-from skl2onnx.common.data_types import FloatTensorType
+from skl2onnx.common.data_types import FloatTensorType, DoubleTensorType
 from skl2onnx.operator_converters.gaussian_process import convert_gaussian_process_regressor
 from skl2onnx.shape_calculators.gaussian_process import (
     calculate_sklearn_gaussian_process_regressor_shape,
@@ -329,9 +329,13 @@ class Evaluator:
         
         # Build pipeline with scaler + model
         pipeline = Pipeline([('scaler', scaler), ('model', model)])
-        
-        # Convert and save
-        initial_type = [('float_input', FloatTensorType([None, self._input_dim]))]
+
+        # Convert and save. Gaussian-process predictions are numerically
+        # sensitive to input precision (float32 export visibly degrades
+        # accuracy on clusters with thousands of training points), so export
+        # GP models in double precision.
+        tensor_type = DoubleTensorType if isinstance(model, GPRWrapper) else FloatTensorType
+        initial_type = [('float_input', tensor_type([None, self._input_dim]))]
         onnx_model = convert_sklearn(pipeline, initial_types=initial_type, target_opset=11)
         
         onnx_path = model_dir / f"{model_name}.onnx"
