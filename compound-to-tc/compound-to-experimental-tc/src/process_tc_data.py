@@ -183,7 +183,6 @@ def main() -> None:
 
     df_sim_out = df_sim.drop(columns="contains_re")
     df_sim_out.to_csv("./preprocessed_data/Simulation_Tc_all.csv", index=False)
-    df_sim_out.to_csv("./preprocessed_data/Simulated_Tc.csv", index=False)
 
     df_sim_re, df_sim_re_free = split_re(df_sim)
     df_sim_re.to_csv("./preprocessed_data/Simulation_Tc_RE.csv", index=False)
