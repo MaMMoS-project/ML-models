@@ -129,6 +129,19 @@ class LightGBMTrainer:
                 f.write(f"CV RMSE: {cv['RMSE']:.2f} +/- {cv['RMSE_std']:.2f}\n")
                 f.write(f"CV MAE: {cv['MAE']:.2f} +/- {cv['MAE_std']:.2f}\n")
 
+        # --- ONNX export (only the deployable raw_200D embedding variant) ---
+        try:
+            from onnx_export import maybe_export_onnx
+            maybe_export_onnx(
+                family="lgbm", model=model, scaler=None, input_dim=X_train.shape[1],
+                dataset_name=dataset_name, use_embedding=use_embedding,
+                embedding_type=embedding_type, loader=self.loader,
+                aug_label=getattr(self.evaluator, "figures_subdir", None),
+                output_dir=self.output_dir,
+            )
+        except Exception as _onnx_exc:
+            print(f"    ONNX export skipped/failed: {_onnx_exc}")
+
         result = {
             'R2': reported['R2'],
             'RMSE': reported['RMSE'],

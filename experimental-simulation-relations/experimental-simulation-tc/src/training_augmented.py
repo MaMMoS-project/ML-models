@@ -90,7 +90,7 @@ def training_augmented():
     from lightgbm_trainer import LightGBMTrainer, LIGHTGBM_AVAILABLE
     from fcnn_mlp import FCNNTrainer
     from base_trainer import (DataLoader, parse_delta_learning, parse_re_features,
-                              parse_cv_folds)
+                              parse_cv_folds, model_enabled, SkipModel)
 
     delta_learning = parse_delta_learning()
     use_re_features = parse_re_features()
@@ -160,6 +160,8 @@ def training_augmented():
 
             # ---- 1. Symbolic Regression --------------------------------
             try:
+                if not model_enabled("sr"):
+                    raise SkipModel
                 sr_trainer = SymbolicRegressionTrainer(
                     output_dir=str(results_dir / f"augmented_sr" / label)
                 )
@@ -180,11 +182,15 @@ def training_augmented():
                 })
                 dataset_results.append(row)
                 print(f"  Symbolic Regression - R²: {sr_metrics['R2']:.4f}")
+            except SkipModel:
+                print("  Symbolic Regression - disabled in training_config.yaml (skipping)")
             except Exception as e:
                 print(f"  Error running Symbolic Regression: {e}")
 
             # ---- 2. Linear models --------------------------------------
             try:
+                if not model_enabled("linear"):
+                    raise SkipModel
                 lin_trainer = LinearModelsTrainer(
                     output_dir=str(results_dir / f"augmented_linear" / label)
                 )
@@ -209,11 +215,15 @@ def training_augmented():
                 })
                 dataset_results.append(row)
                 print(f"  Linear - Best: {best_model.upper()}, R²: {best_metrics['R2']:.4f}")
+            except SkipModel:
+                print("  Linear - disabled in training_config.yaml (skipping)")
             except Exception as e:
                 print(f"  Error running Linear models: {e}")
 
             # ---- 3. Random Forest --------------------------------------
             try:
+                if not model_enabled("rf"):
+                    raise SkipModel
                 rf_trainer = RandomForestTrainer(
                     output_dir=str(results_dir / f"augmented_rf" / label)
                 )
@@ -235,12 +245,16 @@ def training_augmented():
                 })
                 dataset_results.append(row)
                 print(f"  Random Forest - R²: {rf_metrics['R2']:.4f}")
+            except SkipModel:
+                print("  Random Forest - disabled in training_config.yaml (skipping)")
             except Exception as e:
                 print(f"  Error running Random Forest: {e}")
 
             # ---- 3b. LightGBM (gradient-boosted trees) -----------------
             if LIGHTGBM_AVAILABLE:
                 try:
+                    if not model_enabled("lgbm"):
+                        raise SkipModel
                     gbm_trainer = LightGBMTrainer(
                         output_dir=str(results_dir / f"augmented_lightgbm" / label)
                     )
@@ -262,6 +276,8 @@ def training_augmented():
                     })
                     dataset_results.append(row)
                     print(f"  LightGBM - R²: {gbm_metrics['R2']:.4f}")
+                except SkipModel:
+                    print("  LightGBM - disabled in training_config.yaml (skipping)")
                 except Exception as e:
                     print(f"  Error running LightGBM: {e}")
             else:
@@ -269,6 +285,8 @@ def training_augmented():
 
             # ---- 4. FCNN/MLP -------------------------------------------
             try:
+                if not model_enabled("mlp"):
+                    raise SkipModel
                 mlp_trainer = FCNNTrainer(
                     output_dir=str(results_dir / f"augmented_fcnn" / label)
                 )
@@ -290,6 +308,8 @@ def training_augmented():
                 })
                 dataset_results.append(row)
                 print(f"  FCNN/MLP - R²: {mlp_metrics['R2']:.4f}")
+            except SkipModel:
+                print("  FCNN/MLP - disabled in training_config.yaml (skipping)")
             except Exception as e:
                 print(f"  Error running FCNN/MLP: {e}")
 

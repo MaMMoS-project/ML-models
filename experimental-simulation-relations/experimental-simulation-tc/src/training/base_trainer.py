@@ -15,8 +15,94 @@ from typing import Tuple, Dict, Optional
 sns.set_style("whitegrid")
 
 
+# ---------------------------------------------------------------------------
+# Configuration file (training_config.yaml at the project root)
+# ---------------------------------------------------------------------------
+# Central switchboard for all four training scripts. It holds the three former
+# CLI flags (delta_learning / re_features / cv) plus a per-family `models:` block
+# so individual families can be switched on/off. A CLI flag, if EXPLICITLY passed,
+# still overrides the file (for one-off runs). `--config PATH` selects an
+# alternative YAML (e.g. a delta-learning experiment) so the SLURM scripts stay
+# argument-free and fully reproducible from one file.
+
+try:
+    import yaml
+except ImportError:  # pragma: no cover
+    yaml = None
+
+
+class SkipModel(Exception):
+    """Raised inside a training block to skip a family disabled in the config.
+
+    Each training script catches this with a dedicated `except SkipModel` placed
+    BEFORE the generic `except Exception`, so a disabled family is reported as
+    'disabled' rather than as an error, and the remaining families still run.
+    """
+    pass
+
+
+def _project_root() -> Path:
+    # src/training/base_trainer.py -> parents[2] == project root
+    return Path(__file__).resolve().parents[2]
+
+
+def _config_path() -> Path:
+    """Resolve the config path, honouring an optional `--config PATH`."""
+    import argparse
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument('--config', dest='config', default=None)
+    args, _ = parser.parse_known_args()
+    if args.config:
+        p = Path(args.config)
+        return p if p.is_absolute() else _project_root() / p
+    return _project_root() / "training_config.yaml"
+
+
+_CONFIG_CACHE = None
+
+
+def load_config() -> dict:
+    """Load (and cache) the training config. Returns {} if absent/unparsable."""
+    global _CONFIG_CACHE
+    if _CONFIG_CACHE is not None:
+        return _CONFIG_CACHE
+    cfg = {}
+    path = _config_path()
+    if yaml is None:
+        print("WARNING: PyYAML not installed; training_config.yaml ignored, using defaults.")
+    elif not path.exists():
+        print(f"WARNING: {path} not found; using built-in defaults (all models enabled).")
+    else:
+        try:
+            with open(path) as f:
+                cfg = yaml.safe_load(f) or {}
+        except Exception as e:
+            print(f"WARNING: could not parse {path}: {e}. Using defaults.")
+            cfg = {}
+    _CONFIG_CACHE = cfg
+    return cfg
+
+
+def model_enabled(key: str, default: bool = True) -> bool:
+    """Whether model family `key` is enabled in the config's `models:` block.
+
+    Accepts either `key: true/false` or `key: {enabled: true/false}`. A missing
+    key falls back to `default` (True), so an incomplete config trains everything.
+    Keys: sr, linear, rf, lgbm, mlp.
+    """
+    models = (load_config().get("models") or {})
+    entry = models.get(key)
+    if entry is None:
+        return default
+    if isinstance(entry, bool):
+        return entry
+    if isinstance(entry, dict):
+        return bool(entry.get("enabled", True))
+    return default
+
+
 def parse_delta_learning() -> bool:
-    """Parse --delta-learning from command line arguments.
+    """`--delta-learning` flag, else `delta_learning:` from the config (default False).
 
     When set, models train on the correction Tc_exp - Tc_sim instead of Tc_exp
     directly. Metrics are still reported in Tc space (the Tc_sim baseline is added
@@ -24,14 +110,16 @@ def parse_delta_learning() -> bool:
     """
     import argparse
     parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument('--delta-learning', action='store_true',
-                        help='Train on the correction Tc_exp - Tc_sim instead of Tc_exp.')
+    parser.add_argument('--delta-learning', action='store_true', default=None,
+                        help='Train on the correction Tc_exp - Tc_sim (overrides config).')
     args, _ = parser.parse_known_args()
-    return args.delta_learning
+    if args.delta_learning is not None:
+        return args.delta_learning
+    return bool(load_config().get('delta_learning', False))
 
 
 def parse_re_features() -> bool:
-    """Parse --re-features from command line arguments.
+    """`--re-features` flag, else `re_features:` from the config (default False).
 
     When set, prepare_dataset appends 7 rare-earth physics features (free-ion
     Hund's-rules quantities incl. the de Gennes factor) derived from the
@@ -41,14 +129,16 @@ def parse_re_features() -> bool:
     """
     import argparse
     parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument('--re-features', action='store_true',
-                        help='Append rare-earth physics features (from composition).')
+    parser.add_argument('--re-features', action='store_true', default=None,
+                        help='Append rare-earth physics features (overrides config).')
     args, _ = parser.parse_known_args()
-    return args.re_features
+    if args.re_features is not None:
+        return args.re_features
+    return bool(load_config().get('re_features', False))
 
 
 def parse_cv_folds(default: int = 0) -> int:
-    """Parse --cv N from command line arguments.
+    """`--cv N` flag, else `cv:` from the config (default 0 = single 80/20 split).
 
     N >= 2 reports K-fold cross-validated metrics (mean +/- std over folds) as the
     headline numbers instead of a single 80/20 split. N = 0 (default) keeps the
@@ -57,10 +147,11 @@ def parse_cv_folds(default: int = 0) -> int:
     """
     import argparse
     parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument('--cv', type=int, default=default, dest='cv',
-                        help='K-fold CV for reporting (N>=2). 0 = single split (default).')
+    parser.add_argument('--cv', type=int, default=None, dest='cv',
+                        help='K-fold CV for reporting (N>=2). 0 = single split (overrides config).')
     args, _ = parser.parse_known_args()
-    return args.cv if args.cv and args.cv >= 2 else 0
+    val = args.cv if args.cv is not None else int(load_config().get('cv', default))
+    return val if val and val >= 2 else 0
 
 # Explicitly shut down loky's worker pool at exit so that Python 3.13's
 # resource tracker process is still alive when __del__ handlers run,

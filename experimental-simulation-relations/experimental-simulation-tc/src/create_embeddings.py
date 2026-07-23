@@ -546,7 +546,12 @@ def create_embeddings():
         try:
             import mammos_entity as me  # type: ignore[import]
             return me.from_csv(str(path)).to_dataframe(include_units=False)
-        except ImportError:
+        except (ImportError, AttributeError):
+            # mammos_entity is either not installed (ImportError) OR installed with an
+            # incompatible API (AttributeError: e.g. this version has no `from_csv`, which
+            # was killing create_embeddings on the cluster). Either way, fall back to the
+            # plain reader. The mammos CSV has a 4-line '#'-comment preamble before the
+            # header row, hence skiprows=4.
             return pd.read_csv(path, skiprows=4)
 
     for fname, dataset_name, _out_stem in files_to_process:

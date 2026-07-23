@@ -11,6 +11,54 @@ v0.2
 Use requirements.txt. In addition pytorch, compatible with your system, must be installed
 - PyTorch (version matching your hardware, see: https://pytorch.org/get-started/locally/)
 
+### ONNX export/prediction (optional)
+The ONNX export (during training) and `src/predict_tc.py` need three extra packages. They are
+**included in `requirements.txt`** (pinned), so `pip install -r requirements.txt` covers them;
+to add them to an existing environment:
+
+```
+pip install skl2onnx onnxmltools onnxruntime
+```
+
+- `skl2onnx` — export the Linear / Random Forest models (and, with `onnxmltools` registered,
+  LightGBM) to ONNX.
+- `onnxmltools` — provides the LightGBM→ONNX converter. If missing, **LightGBM** export is
+  skipped (other families still export).
+- `onnxruntime` — load and run the `.onnx` models in `src/predict_tc.py`.
+
+If none of these are installed, training still completes — ONNX export is simply skipped with a
+message (see §5). MLP export additionally uses `torch.onnx` (already covered by PyTorch above).
+Verified with `skl2onnx` 1.20, `onnxmltools` 1.16, `onnxruntime` 1.26.
+
+## Running the full pipeline
+
+End-to-end, in order, from the project root (each stage is documented in its own section below):
+
+```
+# Stage 0–3 : data preparation
+python3 -m src.build_merged_tc          # §0 -> data/merged_curie_temp.csv (reduced-formula dedup)
+python3 -m src.augment_data             # §1 -> outputs/Pairs_*, Augm_*
+python3 -m src.create_embeddings        # §2 -> outputs/*_w_embeddings.pkl
+python3 -m src.compress_embedding_PCA   # §3 -> outputs/*_w_embeddings_PCA.pkl
+
+# Stage 4 : training (config-driven, see §4.0; also exports ONNX, see §5.1)
+python3 -m src.training_original
+python3 -m src.training_original_emb
+python3 -m src.training_augmented
+python3 -m src.training_augmented_emb
+
+# Stage 5 : prediction (see §5.2)
+python3 -m src.predict_tc --compound Nd2Fe14B --tc-sim 550
+```
+
+On the cluster, the SLURM scripts run the whole chain (stages 0–4) in one job:
+- **`run_1node-RE.sh`** — uses the default `training_config.yaml`.
+- **`run_1node-RE-delta-learning.sh`** — the delta-learning experiment (`--config training_config.delta.yaml`).
+
+Both start from `build_merged_tc` and use `set -e`, so a failing stage aborts the job instead of
+silently training on stale intermediates. Model selection and the `delta_learning` / `re_features`
+/ `cv` options are read from the config file (§4.0) — no CLI flags needed.
+
 # Data Processing
 
 
@@ -246,11 +294,46 @@ Train baseline models on original (non-augmented, non-embedding) data. Namely,
 · LASSO regression,
 · RIDGE regression,
 · Random Forest,
+· LightGBM (gradient-boosted trees),
 · FCNN.
 
 The materials dataset is evaluated separately for RE and RE-free samples to account
 for potential differences in data distribution and model behavior. Experiments on the
 combined (“All”) dataset are included as a global baseline to assess generalization.
+
+## 4.0 Training configuration (`training_config.yaml`)
+
+All four training scripts (`training_original[_emb].py`, `training_augmented[_emb].py`)
+read a single config file at the project root, so a run is fully reproducible from one
+file and the SLURM scripts need no arguments. It controls the three options that used to
+be CLI flags **and** which model families are trained:
+
+```yaml
+delta_learning: false   # train on the correction (Tc_exp - Tc_sim); was --delta-learning
+re_features:    false   # append 7 rare-earth physics features;        was --re-features
+cv:             0        # K-fold CV for headline metrics (0 = single split); was --cv N
+
+models:                 # switch individual families on/off (faster turnaround)
+  sr:     {enabled: false}   # Symbolic Regression (PySR) — slowest by far
+  linear: {enabled: true}    # LASSO / Ridge / LinearRegression
+  rf:     {enabled: true}    # Random Forest
+  lgbm:   {enabled: true}    # LightGBM
+  mlp:    {enabled: false}   # FCNN / PyTorch MLP — slow
+```
+
+**Shipped default** disables the two slow families (`sr`, `mlp`) and keeps the three fast
+ones (`linear`, `rf`, `lgbm`). On the latest full run the ranking is **consistent across RE and
+RE-free** — LightGBM > MLP ≈ RF > Linear > SR, all within ~0.01 R² — so the accuracy top-3 is
+`{LightGBM, MLP, RandomForest}` for both (no RE vs RE-free conflict). Since MLP is slow and beats
+Linear by only ~0.001 R², the shipped config swaps **MLP → Linear**: three fast families at a
+negligible accuracy cost. Re-enable any family by flipping `enabled: true` (a missing key defaults
+to enabled) — e.g. set `mlp`/`sr` true for a full five-family comparison run.
+
+Overrides:
+- A CLI flag still wins if explicitly passed, e.g. `python3 -m src.training_original --delta-learning`.
+- `--config PATH` selects a different YAML. The delta-learning experiment lives in
+  `training_config.delta.yaml` (`delta_learning: true`, `re_features: true`, `cv: 5`) and is
+  launched by `run_1node-RE-delta-learning.sh` via `--config training_config.delta.yaml`.
 
 ## 4.1 Orginal dataset
 
@@ -272,7 +355,7 @@ OUTPUT:
 - ./results/figures/RE-Pairs_*_no_emb.png
 - ./results/figures/RE-Free-Pairs_*_no_emb.png
 - ./results/original_[model]
-- ./results/original_comparision/*.csv
+- ./results/original_comparison/*.csv
 ```
 
 ## 4.2 Orginal dataset with stoichiometric embedding
@@ -376,33 +459,121 @@ OUTPUT:
 - ./results/augmented_emb_comparison/augmented_emb_all_variants_best.csv
 - ./results/augmented_emb_comparison/augmented_emb_cross_variant_pivot.csv
 ```
-## 📈 Model Performance Comparison 
-(best models and symbolic regression baseline shown)
+## 5. ONNX export & prediction
 
-| Dataset         | Model              | Embedding   | R²    | RMSE    |
-|----------------|---------------------|-------------|-------|---------|
-| All-Pairs      | **MLP (FCNN)**      | -           | 0.848 | 94.56   |
-| All-Pairs      | MLP (FCNN)          | raw_200D    | 0.801 | 107.931 |
-| All-Pairs      | Symbolic Regression | -           | 0.841 | 96.758  |
-| All-Augm       | MLP (FCNN)          | -           | 0.935 | 69.907  |
-| All-Augm       | **Random Forest**   | PCA8        | 0.942 | 64.689  |
-| All-Augm       | Symbolic Regression | -           | 0.935 | 70.342  |
-| RE-Pairs       | MLP (FCNN)          | -           | 0.913 | 52.197  |
-| RE-Pairs       | **MLP (FCNN)**      | PCA8        | 0.946 | 37.26   |
-| RE-Pairs       | Symbolic Regression | -           | 0.913 | 52.234  |
-| RE-Augm        | Linear (LINEAR)     | -           | 0.980 | 38.240  |
-| RE-Augm        | **Random Forest**   | PCA16       | 0.984 | 33.854  |
-| RE-Augm        | Symbolic Regression | -           | 0.980 | 38.282  |
-| RE-Free-Pairs  | MLP (FCNN)          | -           | 0.792 | 129.820 |
-| RE-Free-Pairs  | **Linear (LASSO)**  | raw_200D    | 0.800 | 122.397 |
-| RE-Free-Pairs  | Symbolic Regression | -           | 0.789 | 130.646 |
-| RE-Free-Augm   | MLP (FCNN)          | -           | 0.829 | 119.460 |
-| RE-Free-Augm   | **Random Forest**   | raw_200D    | 0.909 | 83.60   |
-| RE-Free-Augm   | Symbolic Regression | -           | 0.827 | 120.166 |
+### 5.1 ONNX export (automatic during training)
+
+While the embedding training scripts (`training_original_emb.py`, `training_augmented_emb.py`)
+run, each trained **raw-200D** model is exported to ONNX under `results/onnx_models/`. This
+happens automatically — no extra step — and never breaks training (export failures are caught
+and reported).
+
+- **Families exported:** Linear, Random Forest, LightGBM, MLP. **Symbolic Regression is not
+  exported** (a symbolic expression is not a tensor graph).
+- **Only the raw-200D variant is exported.** The PCA variants use an *offline* PCA
+  (`compress_embedding_PCA.py`) whose fitted object is not persisted, and the no-embedding
+  models ignore the composition — neither can be served from a formula. Raw-200D is the only
+  servable variant.
+- **Requires** `skl2onnx`, `onnxmltools` (for LightGBM) and `onnxruntime` in the environment;
+  if absent, export is skipped with a message and training still completes.
+- **Each ONNX encodes the full input** `X = [embedding(200) | RE-features(7)? | Tc_sim(1)]`,
+  with any `StandardScaler` (Linear/MLP) bundled in. File names:
+
+  ```
+  <Dataset>[_<augvariant>]_<family>[_refeats][_delta].onnx
+  e.g.  RE-Augm_combined_augmented_lgbm.onnx
+        RE-Free-Pairs_rf_refeats_delta.onnx
+  ```
+  `_refeats` = trained with `re_features:true` (input is 207+1 D); `_delta` = trained with
+  `delta_learning:true` (the model outputs the correction `Tc_exp - Tc_sim`, so the predictor
+  adds `Tc_sim` back).
+
+### 5.2 Prediction — `src/predict_tc.py`
+
+Predicts the (corrected) **experimental** Curie temperature `Tc_exp` for a compound from the
+ONNX models in `results/onnx_models/`. Because this is the sim→exp **correction** model — not a
+direct compound→Tc predictor — you must supply **both** the chemical formula **and its simulated
+Curie temperature** `Tc_sim` (the models take `Tc_sim` as their last input feature). There is no
+way to correct a simulated value you don't provide.
+
+**Run:**
+
+```
+# Run every model matching the compound's chemistry and tabulate the results:
+python -m src.predict_tc --compound Nd2Fe14B --tc-sim 550
+
+# Or run one specific model:
+python -m src.predict_tc --compound Fe3Pt --tc-sim 420 \
+    --model results/onnx_models/RE-Free-Augm_combined_augmented_lgbm.onnx
+```
+
+**Arguments:**
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--compound` | yes | Chemical formula, e.g. `Nd2Fe14B`. |
+| `--tc-sim`   | yes | Simulated Curie temperature `Tc_sim` [K] for this compound (the model input). |
+| `--model`    | no  | Path to a single `.onnx` model. Omit to run **all** chemistry-matching models. |
+
+**How it works:** it computes the 200-D matscholar200 embedding, appends the 7 RE features **iff**
+the model file is `_refeats`, appends `Tc_sim` **last**, runs the ONNX, and — for `_delta` models —
+adds `Tc_sim` back to turn the predicted correction into `Tc_exp`. With no `--model`, it routes by
+chemistry: **RE** compounds → `RE-*` models, **RE-free** → `RE-Free-*`; `All-*` models always apply.
+
+**NEEDS:**
+- `data/embeddings/element/matscholar200.json` (element embeddings)
+- `src/re_features.py` (the same RE-feature module the trainer used)
+- `results/onnx_models/*.onnx` (produced by the embedding training scripts, §5.1)
+- `onnxruntime` + `pymatgen` installed (see §0)
+
+**OUTPUT:** a table on stdout, one row per model, e.g.:
+
+```
+Compound : Nd2Fe14B   (RE)
+Tc_sim   : 550.0 K   ->  predicted Tc_exp:
+------------------------------------------------------------------------
+model (onnx)                                              Tc_exp [K]
+------------------------------------------------------------------------
+RE-Augm_combined_augmented_lgbm.onnx                          585.3
+RE-Augm_combined_augmented_rf.onnx                            578.1
+All-Augm_combined_augmented_lgbm.onnx                         590.7
+------------------------------------------------------------------------
+```
+
+## 📈 Model Performance Comparison
+
+**Best model per dataset** from the latest full run — the delta-learning experiment
+(`training_config.delta.yaml`: `delta_learning:true`, `re_features:true`, `cv:5`), fast-trio
+families (LightGBM / Random Forest / Linear). R², RMSE and MAE are **5-fold cross-validated
+means** (reduced-formula-deduplicated data). `Aug` = augmentation variant for the augmented sets.
+
+| Dataset         | Best model    | Embedding | Aug     | R²     | RMSE [K] | MAE [K] |
+|-----------------|---------------|-----------|---------|--------|----------|---------|
+| All-Pairs       | LightGBM      | pca_16    | —       | 0.850  | 91.0     | 41.4    |
+| All-Augm        | LightGBM      | raw_200D  | Tc_exp  | 0.940  | 65.9     | 32.3    |
+| RE-Pairs        | Linear        | pca_8     | —       | 0.882  | 59.5     | 21.2    |
+| RE-Augm         | LightGBM      | pca_8     | Tc_exp  | 0.977  | 41.2     | 15.9    |
+| RE-Free-Pairs   | LightGBM      | pca_8     | —       | 0.777  | 126.3    | 73.3    |
+| RE-Free-Augm    | LightGBM      | raw_200D  | Tc_exp  | 0.867  | 95.8     | 55.4    |
+
+> The **RE** and **augmented** datasets are the strongest (RE-Augm R² ≈ 0.98); the small raw
+> **RE-Free-Pairs** set is the hardest. Numbers are lower than pre-deduplication because the
+> reduced-formula dedup removed duplicate-spelling train/test leakage — see `dedup_result.txt`.
+> To reproduce the baseline (non-delta) numbers instead, run with the default `training_config.yaml`.
 
 
 > 🔍 **Note**: The augmented datasets (`All-Augm`, `RE-Augm`, `RE-Free-Augm`) were created by combining **simulated (Tc_sim)** and **experimental (Tc_exp)** data to improve model generalization and performance.
 
 ### 📊 Summary of Results
 
-Data augmentation significantly improved model performance across all datasets. The best-performing models were MLP (FCNN) for All-Pairs, RE-Pairs, and RE-Free-Augm, Random Forest for All-Augm and RE-Augm, and LASSO for RE-Free-Pairs. While embeddings were not universally beneficial, low-dimensional PCA embeddings substantially improved performance for RE-Pairs (PCA8) and RE-Augm (PCA16), where they enabled the highest predictive accuracies. In contrast, models trained on the original Mat200 descriptors generally performed better for the remaining datasets. Symbolic regression consistently achieved performance comparable to the best machine learning models while providing interpretable relationships. The lower performance observed for the RE-Free datasets indicates a more challenging prediction task and supports their separate evaluation from the RE datasets.
+Data augmentation substantially improves performance on every split — the augmented datasets
+reach R² ≈ 0.94–0.98 versus 0.78–0.88 for the raw pairs. **LightGBM is the strongest family**,
+giving the best model on five of the six datasets; Linear wins the small RE-Pairs set. Low-
+dimensional PCA embeddings (`pca_8`/`pca_16`) are frequently best — especially on the RE and
+pairs datasets — while the raw 200-D descriptor wins on the augmented All / RE-Free sets. The RE
+datasets are predicted most accurately (RE-Augm R² ≈ 0.98) and the small **RE-Free-Pairs** set is
+the hardest, which supports evaluating RE and RE-free separately. Symbolic Regression and MLP are
+competitive but disabled in the shipped fast-trio config (§4.0); enable them for a full five-family
+comparison. All numbers above are 5-fold CV means on reduced-formula-deduplicated data under the
+delta-learning config — see `dedup_result.txt` for why they are lower, but more honest, than the
+pre-deduplication values.

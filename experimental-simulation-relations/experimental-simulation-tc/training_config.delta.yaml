@@ -1,0 +1,33 @@
+# ============================================================================
+# experimental-simulation-tc — DELTA-LEARNING experiment configuration
+# ============================================================================
+# Selected via  --config training_config.delta.yaml  (see run_1node-RE-delta-learning.sh).
+# This is the old `--delta-learning --re-features --cv 5` run, now expressed as a
+# config file. Everything else matches training_config.yaml.
+# ----------------------------------------------------------------------------
+
+# Train on the correction (Tc_exp - Tc_sim) instead of Tc_exp directly.
+delta_learning: true
+
+# Rare-earth physics features ON (helps the RE split).
+re_features: true
+
+# 5-fold CV for the headline metrics (the RE split is small and single-split noisy).
+cv: 5
+
+# CURRENT SETTING: the "fast trio" — LightGBM + RandomForest + Linear (same choice
+# as training_config.yaml). Accuracy top-3 is {LightGBM, MLP, RF} and consistent
+# across RE / RE-free (no conflict), but MLP is slow and beats Linear by only
+# ~0.001 R2, so MLP is swapped for Linear for turnaround. Re-enable sr/mlp for a
+# full 5-family comparison run.
+models:
+  sr:
+    enabled: false      # Symbolic Regression (PySR) — slowest by far; rank #5
+  linear:
+    enabled: true       # fast; ~ties MLP for #3/#4
+  rf:
+    enabled: true       # fast; top-3
+  lgbm:
+    enabled: true       # fast; rank #1 both RE & RE-free
+  mlp:
+    enabled: false      # FCNN / PyTorch MLP — slow; top-3 on accuracy but dropped for speed

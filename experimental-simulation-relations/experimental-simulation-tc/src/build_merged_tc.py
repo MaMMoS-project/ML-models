@@ -21,6 +21,15 @@ Deduplication (the fix vs the old notebook):
     across columns that were themselves per-source medians), and (3) silently dropping
     the dftv2/spin/literature sources from the unified target via a priority combine.
 
+    Composition keys are first canonicalised to their pymatgen REDUCED FORMULA
+    (canonical_key), so spelling / element-ordering / subscript / stoichiometric-multiple
+    variants of one compound (CoFe2O4 == Fe2CoO4, Fe2O3 == Fe4O6, H4O2 == H2O) pool into a
+    SINGLE row for BOTH targets and pair correctly in the sim/exp outer-merge. This removes
+    the train/test leakage that duplicate spellings cause (the embedding is a composition-
+    weighted average, so two spellings share an identical feature vector). Unparseable
+    strings fall back to the cleaned string (preserved, not dropped) since the delta-learning
+    pipeline still uses non-embeddable rows for their Tc_sim baseline.
+
 Raw sources (in data/) and their columns:
     simulated (-> Tc_sim):
         m-tcsum_nur_new.csv    'T_C/theo [K]'                        (DFT v2)
@@ -41,11 +50,13 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import functools
 import re
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from pymatgen.core import Composition
 
 HERE = Path(__file__).resolve().parent               # my-tc/src
 OUT_DIR = HERE.parent / "data"                        # my-tc/data
@@ -85,9 +96,36 @@ _REMOVAL_TOKENS = sorted([
 ])
 
 
+_SUBSCRIPT_MAP = str.maketrans("₀₁₂₃₄₅₆₇₈₉", "0123456789")
+
+
+@functools.lru_cache(maxsize=None)
+def canonical_key(formula: str) -> str:
+    """Canonical composition key for deduplication.
+
+    Normalises subscript digits, strips whitespace, then returns the pymatgen reduced
+    formula so different spellings / element orderings / subscript / stoichiometric-multiple
+    variants of ONE compound pool together (CoFe2O4 == Fe2CoO4, Fe2O3 == Fe4O6, H4O2 == H2O).
+    Falls back to the cleaned string when pymatgen cannot parse it, so dirty formulas
+    (flagged use_for_emb=False downstream) are PRESERVED, not dropped — unlike the
+    compound-to-* projects, this delta-learning pipeline still uses non-embeddable rows for
+    their Tc_sim baseline.
+    """
+    s = str(formula).translate(_SUBSCRIPT_MAP).strip()
+    try:
+        return Composition(s).reduced_formula
+    except Exception:
+        return s
+
+
 def _frame(comp, values, col):
-    """(composition, <col>) frame with numeric values, NaN dropped."""
-    out = pd.DataFrame({KEY: comp.astype(str).str.strip(),
+    """(composition, <col>) frame with numeric values, NaN dropped.
+
+    The composition is canonicalised to its reduced formula (canonical_key) so the
+    downstream pooled-median groupby and the sim/exp outer-merge deduplicate spelling /
+    ordering / subscript variants of the same compound.
+    """
+    out = pd.DataFrame({KEY: comp.astype(str).map(canonical_key),
                         col: pd.to_numeric(values, errors="coerce")})
     return out.dropna(subset=[col])
 
@@ -142,11 +180,8 @@ def build_merged_tc(raw_dir: Path = RAW_DIR, out_path: Path | None = None) -> pd
 
     merged = pd.merge(sim, exp, on=KEY, how="outer")
 
-    # normalise subscript digits in composition strings
-    subscript_map = str.maketrans(
-        {s: n for s, n in zip("₀₁₂₃₄₅₆₇₈₉", "0123456789")}
-    )
-    merged[KEY] = merged[KEY].str.translate(subscript_map)
+    # (subscript digits are already normalised inside canonical_key, before the dedup
+    # groupby, so no post-merge translation is needed here.)
 
     # rare-earth flag (substring match on the formula string, as in the notebook)
     merged["contains_rare_earth"] = merged[KEY].apply(

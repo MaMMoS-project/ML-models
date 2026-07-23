@@ -148,6 +148,22 @@ class LinearModelsTrainer:
                 results[model_type].update({'R2_std': cv['R2_std'], 'RMSE_std': cv['RMSE_std'],
                                             'MAE_std': cv['MAE_std'], 'cv_folds': cv_folds})
 
+        # --- ONNX export: best linear submodel, deployable raw_200D variant only ---
+        try:
+            from onnx_export import maybe_export_onnx
+            if results:
+                best_type = max(results, key=lambda k: results[k]['R2'])
+                maybe_export_onnx(
+                    family="linear", model=results[best_type]['model'],
+                    scaler=results[best_type]['scaler'], input_dim=X_train.shape[1],
+                    dataset_name=dataset_name, use_embedding=use_embedding,
+                    embedding_type=embedding_type, loader=self.loader,
+                    aug_label=getattr(self.evaluator, "figures_subdir", None),
+                    output_dir=self.output_dir,
+                )
+        except Exception as _onnx_exc:
+            print(f"    ONNX export skipped/failed: {_onnx_exc}")
+
         return results
     
     def _train_lasso(self, X_train, y_train):

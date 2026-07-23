@@ -129,7 +129,8 @@ def train_augmented_embedding():
     from random_forest import RandomForestTrainer
     from lightgbm_trainer import LightGBMTrainer, LIGHTGBM_AVAILABLE
     from fcnn_mlp import FCNNTrainer
-    from base_trainer import parse_delta_learning, parse_re_features, parse_cv_folds
+    from base_trainer import (parse_delta_learning, parse_re_features, parse_cv_folds,
+                              model_enabled, SkipModel)
 
     delta_learning = parse_delta_learning()
     use_re_features = parse_re_features()
@@ -227,6 +228,8 @@ def train_augmented_embedding():
 
                 # ---- 1. Linear models --------------------------------
                 try:
+                    if not model_enabled("linear"):
+                        raise SkipModel
                     lin_trainer = LinearModelsTrainer(
                         output_dir=str(results_dir / "augmented_emb_linear" / label)
                     )
@@ -258,11 +261,15 @@ def train_augmented_embedding():
                                 "R2": best["R2"], "RMSE": best["RMSE"], "MAE": best["MAE"]})
                     emb_results.append(row)
                     print(f"  Linear ({best_model.upper()}) R²: {best['R2']:.4f}")
+                except SkipModel:
+                    print("  Linear - disabled in training_config.yaml (skipping)")
                 except Exception as e:
                     print(f"  Error running Linear models: {e}")
 
                 # ---- 2. Random Forest --------------------------------
                 try:
+                    if not model_enabled("rf"):
+                        raise SkipModel
                     rf_trainer = RandomForestTrainer(
                         output_dir=str(results_dir / "augmented_emb_rf" / label)
                     )
@@ -292,12 +299,16 @@ def train_augmented_embedding():
                                 "MAE": rf_metrics["MAE"]})
                     emb_results.append(row)
                     print(f"  Random Forest R²: {rf_metrics['R2']:.4f}")
+                except SkipModel:
+                    print("  Random Forest - disabled in training_config.yaml (skipping)")
                 except Exception as e:
                     print(f"  Error running Random Forest: {e}")
 
                 # ---- 2b. LightGBM (gradient-boosted trees) ----------
                 if LIGHTGBM_AVAILABLE:
                     try:
+                        if not model_enabled("lgbm"):
+                            raise SkipModel
                         gbm_trainer = LightGBMTrainer(
                             output_dir=str(results_dir / "augmented_emb_lightgbm" / label)
                         )
@@ -327,6 +338,8 @@ def train_augmented_embedding():
                                     "MAE": gbm_metrics["MAE"]})
                         emb_results.append(row)
                         print(f"  LightGBM R²: {gbm_metrics['R2']:.4f}")
+                    except SkipModel:
+                        print("  LightGBM - disabled in training_config.yaml (skipping)")
                     except Exception as e:
                         print(f"  Error running LightGBM: {e}")
                 else:
@@ -334,6 +347,8 @@ def train_augmented_embedding():
 
                 # ---- 3. FCNN/MLP ------------------------------------
                 try:
+                    if not model_enabled("mlp"):
+                        raise SkipModel
                     mlp_trainer = FCNNTrainer(
                         output_dir=str(results_dir / "augmented_emb_fcnn" / label)
                     )
@@ -363,6 +378,8 @@ def train_augmented_embedding():
                                 "MAE": mlp_metrics["MAE"]})
                     emb_results.append(row)
                     print(f"  FCNN/MLP R²: {mlp_metrics['R2']:.4f}")
+                except SkipModel:
+                    print("  FCNN/MLP - disabled in training_config.yaml (skipping)")
                 except Exception as e:
                     print(f"  Error running FCNN/MLP: {e}")
 

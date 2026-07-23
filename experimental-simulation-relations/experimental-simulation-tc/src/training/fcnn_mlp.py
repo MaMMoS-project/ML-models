@@ -221,6 +221,19 @@ class FCNNTrainer:
         print(f"  RMSE = {test_metrics['RMSE']:.2f} K")
         print(f"  MAE = {test_metrics['MAE']:.2f} K")
 
+        # --- ONNX export (only the deployable raw_200D embedding variant) ---
+        try:
+            from onnx_export import maybe_export_onnx
+            maybe_export_onnx(
+                family="mlp", model=model, scaler=scaler, input_dim=X_train.shape[1],
+                dataset_name=dataset_name, use_embedding=use_embedding,
+                embedding_type=embedding_type, loader=self.loader,
+                aug_label=getattr(self.evaluator, "figures_subdir", None),
+                output_dir=self.output_dir,
+            )
+        except Exception as _onnx_exc:
+            print(f"    ONNX export skipped/failed: {_onnx_exc}")
+
         # Optional K-fold CV reporting. Each fold scales on its own train data,
         # carves a validation split from the fold's TRAIN for early stopping (so
         # the held-out fold stays unseen), and trains a fresh MLP via _fit_torch.

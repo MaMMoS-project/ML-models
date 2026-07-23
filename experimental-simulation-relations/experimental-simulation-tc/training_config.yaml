@@ -1,0 +1,60 @@
+# ============================================================================
+# experimental-simulation-tc — training configuration
+# ============================================================================
+# Central switchboard for the four training scripts:
+#   src/training_original.py        src/training_original_emb.py
+#   src/training_augmented.py       src/training_augmented_emb.py
+#
+# Previously delta-learning / re-features / cv were CLI flags and the five model
+# families were always run. They now all live here, so a run is fully reproducible
+# from this one file and the SLURM scripts need no arguments.
+#
+# A CLI flag, if EXPLICITLY passed, still overrides this file (for one-off runs),
+# e.g.  python -m src.training_original --delta-learning
+# Point a run at a different YAML with  --config path/to/other.yaml
+# (see training_config.delta.yaml for the delta-learning experiment).
+# ----------------------------------------------------------------------------
+
+# --- Global training options (formerly --delta-learning / --re-features / --cv) ---
+
+# Train on the correction (Tc_exp - Tc_sim) instead of Tc_exp directly. Metrics
+# are still reported in Tc space (the Tc_sim baseline is added back), so comparable.
+delta_learning: false
+
+# Append 7 rare-earth physics features (de Gennes factor, S-state fraction,
+# free-ion moment, ...) derived from 'composition'. Zero for RE-free rows, so
+# safe on every dataset.
+re_features: false
+
+# K-fold CV for the headline metrics. N >= 2 -> report mean +/- std over folds;
+# 0 -> single 80/20 split (default).
+cv: 0
+
+# --- Model families: switch individual families on/off for faster turnaround ---
+#
+# This project trains FIVE families. Set `enabled: false` to skip a family
+# entirely. A missing key defaults to enabled (an incomplete config trains all).
+#
+# Ranking on the full 5-family run (2026-07-10, held-out R2, best variant/embedding
+# per family) is CONSISTENT across RE and RE-free — the same order for both, no
+# conflict:
+#   RE      : LightGBM 0.982 > MLP 0.981 > RF 0.980 > Linear 0.979 > SR 0.975
+#   RE-free : LightGBM 0.895 > MLP 0.884 > RF 0.884 > Linear 0.882 > SR 0.882
+# (margins are tiny — top-5 within ~0.01 R2 — so this is a near-tie, but the order
+# is stable between RE and RE-free.)
+#
+# CURRENT SETTING: the "fast trio" — LightGBM + RandomForest + Linear. The accuracy
+# top-3 is {LightGBM, MLP, RF}, but MLP is a SLOW family and beats Linear by only
+# ~0.001 R2, so we swap MLP -> Linear: three fast families, best turnaround, at a
+# ~0.001 R2 cost. Re-enable sr/mlp (set `enabled: true`) for a full comparison run.
+models:
+  sr:
+    enabled: false      # Symbolic Regression (PySR) — slowest by far; rank #5
+  linear:
+    enabled: true       # LASSO / Ridge / LinearRegression — fast; ~ties MLP for #3/#4
+  rf:
+    enabled: true       # Random Forest — fast; top-3
+  lgbm:
+    enabled: true       # LightGBM (gradient-boosted trees) — fast; rank #1 both RE & RE-free
+  mlp:
+    enabled: false      # FCNN / PyTorch MLP — slow (epochs); top-3 on accuracy but dropped for speed

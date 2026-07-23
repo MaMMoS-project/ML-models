@@ -1036,8 +1036,8 @@ class CurieTempAugmenter:
     def _write_mammos_csv(self, path: Path, df: pd.DataFrame) -> None:
         """Write dataframe to a MammoS-compatible CSV file with simplified columns.
 
-        The format mirrors EC_curie_temp.csv: a 4-line Mammos header followed by
-        a standard CSV header and data rows.
+        The format (used by the ./outputs/*_emb.csv files this method writes) is a
+        4-line MammoS header followed by a standard CSV header and data rows.
         """
         # Keep only essential columns if they exist in the dataframe
         essential_columns = ['composition', 'Tc_sim', 'Tc_exp', 'Tc_delta']
