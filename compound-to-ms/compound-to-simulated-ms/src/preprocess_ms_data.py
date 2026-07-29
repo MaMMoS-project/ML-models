@@ -13,7 +13,6 @@ It reads the raw SIMULATED Ms sources from ``data/``, converts every source to a
 median-of-medians, no per-source pre-averaging), flags rare-earth membership with pymatgen,
 drops compositions whose formula pymatgen cannot parse, and writes:
 
-    preprocessed_data/Simulated_Ms.csv          composition, Ms, contains_re
     preprocessed_data/Simulated_Ms_all.csv      composition, Ms
     preprocessed_data/Simulated_Ms_RE.csv       composition, Ms   (rare-earth only)
     preprocessed_data/Simulated_Ms_RE-Free.csv  composition, Ms   (rare-earth free)
@@ -220,7 +219,6 @@ def main() -> None:
     re_df, re_free = split_re(df)
 
     df.drop(columns="contains_re").to_csv(out_dir / "Simulated_Ms_all.csv", index=False)
-    df.to_csv(out_dir / "Simulated_Ms.csv", index=False)
     re_df.to_csv(out_dir / "Simulated_Ms_RE.csv", index=False)
     re_free.to_csv(out_dir / "Simulated_Ms_RE-Free.csv", index=False)
 
