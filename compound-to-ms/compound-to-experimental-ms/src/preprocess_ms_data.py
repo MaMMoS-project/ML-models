@@ -13,7 +13,6 @@ median (matching my_ms/src/build_merged_dataset.py and the compound-to-tc projec
 mean, no median-of-medians, no per-source pre-averaging), flags rare-earth membership with
 pymatgen, drops compositions whose formula pymatgen cannot parse, and writes:
 
-    preprocessed_data/Experimental_Ms.csv          composition, Ms, contains_re
     preprocessed_data/Experimental_Ms_all.csv      composition, Ms
     preprocessed_data/Experimental_Ms_RE.csv       composition, Ms   (rare-earth only)
     preprocessed_data/Experimental_Ms_RE-Free.csv  composition, Ms   (rare-earth free)
@@ -226,7 +225,6 @@ def main() -> None:
     re_df, re_free = split_re(df)
 
     df.drop(columns="contains_re").to_csv(out_dir / "Experimental_Ms_all.csv", index=False)
-    df.to_csv(out_dir / "Experimental_Ms.csv", index=False)
     re_df.to_csv(out_dir / "Experimental_Ms_RE.csv", index=False)
     re_free.to_csv(out_dir / "Experimental_Ms_RE-Free.csv", index=False)
 
