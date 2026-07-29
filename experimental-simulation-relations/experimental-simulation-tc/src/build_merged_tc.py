@@ -65,6 +65,27 @@ RAW_DIR = OUT_DIR                                      # raw source files live i
 KEY = "composition"
 RARE_EARTHS = ["La", "Ce", "Pr", "Nd", "Pm", "Sm", "Eu", "Gd", "Tb",
                "Dy", "Ho", "Er", "Tm", "Yb", "Lu", "Sc", "Y"]
+RARE_EARTH_SET = set(RARE_EARTHS)
+_ELEM_TOKEN = re.compile(r"[A-Z][a-z]?")
+
+
+def contains_rare_earth(formula: str) -> bool:
+    """True if the composition contains a rare-earth element (Sc, Y, La..Lu).
+
+    Uses a proper element parse rather than a raw substring test on the formula
+    string.  A substring test misfires on annotated / messy compositions — e.g.
+    the "Y" in the author name of "Fe2MnSi (Yoon and Booth, 1974)" was matched as
+    yttrium, flagging a rare-earth-free Heusler alloy as RE.  For clean formulas
+    the pymatgen parse is authoritative; for strings pymatgen cannot parse we fall
+    back to extracting element-symbol tokens ([A-Z][a-z]?) and intersecting with
+    the rare-earth set (which correctly reads "Yo" out of "Yoon", not "Y").
+    """
+    s = str(formula)
+    try:
+        elements = {str(e) for e in Composition(s).elements}
+    except Exception:
+        elements = set(_ELEM_TOKEN.findall(s))
+    return bool(elements & RARE_EARTH_SET)
 
 # Junk / placeholder tokens: a composition containing any of these is not a clean fixed
 # formula and is flagged use_for_emb=False (carried over verbatim from the notebook).
@@ -183,10 +204,9 @@ def build_merged_tc(raw_dir: Path = RAW_DIR, out_path: Path | None = None) -> pd
     # (subscript digits are already normalised inside canonical_key, before the dedup
     # groupby, so no post-merge translation is needed here.)
 
-    # rare-earth flag (substring match on the formula string, as in the notebook)
-    merged["contains_rare_earth"] = merged[KEY].apply(
-        lambda c: any(el in c for el in RARE_EARTHS)
-    )
+    # rare-earth flag via a proper element parse (see contains_rare_earth); this
+    # avoids the substring false positives of the earlier notebook logic.
+    merged["contains_rare_earth"] = merged[KEY].apply(contains_rare_earth)
     # clean-formula flag for embedding
     pattern = "|".join(map(re.escape, _REMOVAL_TOKENS))
     merged["use_for_emb"] = ~merged[KEY].str.contains(pattern, regex=True)
@@ -196,8 +216,17 @@ def build_merged_tc(raw_dir: Path = RAW_DIR, out_path: Path | None = None) -> pd
     out_path.parent.mkdir(parents=True, exist_ok=True)
     merged.to_csv(out_path, index=False)
 
+    # also write the RE and RE-free subsets as separate files, for completeness
+    re_mask = merged["contains_rare_earth"]
+    re_path = out_path.with_name(f"{out_path.stem}_RE{out_path.suffix}")
+    re_free_path = out_path.with_name(f"{out_path.stem}_RE-free{out_path.suffix}")
+    merged[re_mask].to_csv(re_path, index=False)
+    merged[~re_mask].to_csv(re_free_path, index=False)
+
     both = merged["Tc_sim"].notna() & merged["Tc_exp"].notna()
     print(f"Wrote {out_path}  ({len(merged)} rows)")
+    print(f"Wrote {re_path}  ({int(re_mask.sum())} RE rows)")
+    print(f"Wrote {re_free_path}  ({int((~re_mask).sum())} RE-free rows)")
     print(f"  Tc_sim values : {int(merged['Tc_sim'].notna().sum())}")
     print(f"  Tc_exp values : {int(merged['Tc_exp'].notna().sum())}")
     print(f"  pairs (both)  : {int(both.sum())}")
