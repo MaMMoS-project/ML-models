@@ -101,35 +101,15 @@ def _resolve_pkl(output_dir: Path, file_prefix: str) -> Path | None:
 
 
 def _make_patched_prepare(original_prepare):
-    """Return a patched prepare_dataset that resolves PCA column names."""
+    """Delegate to the loader's prepare_dataset.
+
+    prepare_dataset now resolves PCA embedding column names itself AND applies
+    delta-learning / RE-features, so the historical column-resolution monkeypatch
+    is no longer needed — delegating keeps every code path (delta, reconstruction)
+    consistent.
+    """
     def patched(df, dataset_type, use_embedding=False, embedding_type=None):
-        if not (use_embedding and embedding_type is not None):
-            return original_prepare(df, dataset_type, use_embedding, embedding_type)
-
-        target_col = 'Tc_exp'
-        y = df[target_col].values
-
-        # Raw embedding
-        if embedding_type is None:
-            X = np.vstack(df['compound_embedding'].values)
-        else:
-            candidates = [
-                f'comp_emb_pca_{embedding_type}_components',
-                f'comp_emb_{embedding_type}_components',
-                embedding_type,
-            ]
-            col_name = next((c for c in candidates if c in df.columns), None)
-            if col_name is None:
-                raise ValueError(
-                    f"Embedding column for type {embedding_type} not found. "
-                    f"Available embedding columns: "
-                    f"{[c for c in df.columns if 'emb' in c.lower()]}"
-                )
-            print(f"  Using column '{col_name}' for embedding type '{embedding_type}'")
-            X = np.vstack(df[col_name].values)
-
-        Tc_sim = df['Tc_sim'].values.reshape(-1, 1)
-        return np.hstack([X, Tc_sim]), y
+        return original_prepare(df, dataset_type, use_embedding, embedding_type)
 
     return patched
 
@@ -147,7 +127,14 @@ def train_augmented_embedding():
 
     from linear_models import LinearModelsTrainer
     from random_forest import RandomForestTrainer
+    from lightgbm_trainer import LightGBMTrainer, LIGHTGBM_AVAILABLE
     from fcnn_mlp import FCNNTrainer
+    from base_trainer import (parse_delta_learning, parse_re_features, parse_cv_folds,
+                              model_enabled, SkipModel)
+
+    delta_learning = parse_delta_learning()
+    use_re_features = parse_re_features()
+    cv_folds = parse_cv_folds()
 
     print("=" * 80)
     print("AUGMENTED DATA TRAINING WITH EMBEDDINGS — ALL AUGMENTATION VARIANTS")
@@ -241,11 +228,16 @@ def train_augmented_embedding():
 
                 # ---- 1. Linear models --------------------------------
                 try:
+                    if not model_enabled("linear"):
+                        raise SkipModel
                     lin_trainer = LinearModelsTrainer(
                         output_dir=str(results_dir / "augmented_emb_linear" / label)
                     )
                     lin_trainer.evaluator.figures_subdir = label
                     orig_load = lin_trainer.loader.load_augmented_data
+                    lin_trainer.loader.delta_learning = delta_learning
+                    lin_trainer.loader.use_re_features = use_re_features
+                    lin_trainer.loader.cv_folds = cv_folds
                     orig_prep = lin_trainer.loader.prepare_dataset
                     lin_trainer.loader.load_augmented_data = lambda dt=None: df_data.copy()
                     lin_trainer.loader.prepare_dataset = _make_patched_prepare(orig_prep)
@@ -269,16 +261,23 @@ def train_augmented_embedding():
                                 "R2": best["R2"], "RMSE": best["RMSE"], "MAE": best["MAE"]})
                     emb_results.append(row)
                     print(f"  Linear ({best_model.upper()}) R²: {best['R2']:.4f}")
+                except SkipModel:
+                    print("  Linear - disabled in training_config.yaml (skipping)")
                 except Exception as e:
                     print(f"  Error running Linear models: {e}")
 
                 # ---- 2. Random Forest --------------------------------
                 try:
+                    if not model_enabled("rf"):
+                        raise SkipModel
                     rf_trainer = RandomForestTrainer(
                         output_dir=str(results_dir / "augmented_emb_rf" / label)
                     )
                     rf_trainer.evaluator.figures_subdir = label
                     orig_load = rf_trainer.loader.load_augmented_data
+                    rf_trainer.loader.delta_learning = delta_learning
+                    rf_trainer.loader.use_re_features = use_re_features
+                    rf_trainer.loader.cv_folds = cv_folds
                     orig_prep = rf_trainer.loader.prepare_dataset
                     rf_trainer.loader.load_augmented_data = lambda dt=None: df_data.copy()
                     rf_trainer.loader.prepare_dataset = _make_patched_prepare(orig_prep)
@@ -300,16 +299,64 @@ def train_augmented_embedding():
                                 "MAE": rf_metrics["MAE"]})
                     emb_results.append(row)
                     print(f"  Random Forest R²: {rf_metrics['R2']:.4f}")
+                except SkipModel:
+                    print("  Random Forest - disabled in training_config.yaml (skipping)")
                 except Exception as e:
                     print(f"  Error running Random Forest: {e}")
 
+                # ---- 2b. LightGBM (gradient-boosted trees) ----------
+                if LIGHTGBM_AVAILABLE:
+                    try:
+                        if not model_enabled("lgbm"):
+                            raise SkipModel
+                        gbm_trainer = LightGBMTrainer(
+                            output_dir=str(results_dir / "augmented_emb_lightgbm" / label)
+                        )
+                        gbm_trainer.evaluator.figures_subdir = label
+                        orig_load = gbm_trainer.loader.load_augmented_data
+                        gbm_trainer.loader.delta_learning = delta_learning
+                        gbm_trainer.loader.use_re_features = use_re_features
+                        gbm_trainer.loader.cv_folds = cv_folds
+                        orig_prep = gbm_trainer.loader.prepare_dataset
+                        gbm_trainer.loader.load_augmented_data = lambda dt=None: df_data.copy()
+                        gbm_trainer.loader.prepare_dataset = _make_patched_prepare(orig_prep)
+
+                        gbm_metrics = gbm_trainer.train_and_evaluate(
+                            dataset_name=dataset_name,
+                            dataset_type=dataset_type,
+                            is_augmented=is_augmented,
+                            use_embedding=True,
+                            embedding_type=embedding_type,
+                        )
+
+                        gbm_trainer.loader.load_augmented_data = orig_load
+                        gbm_trainer.loader.prepare_dataset = orig_prep
+
+                        row = _base_row()
+                        row.update({"Model_Family": "LightGBM", "Model": "LGBM",
+                                    "R2": gbm_metrics["R2"], "RMSE": gbm_metrics["RMSE"],
+                                    "MAE": gbm_metrics["MAE"]})
+                        emb_results.append(row)
+                        print(f"  LightGBM R²: {gbm_metrics['R2']:.4f}")
+                    except SkipModel:
+                        print("  LightGBM - disabled in training_config.yaml (skipping)")
+                    except Exception as e:
+                        print(f"  Error running LightGBM: {e}")
+                else:
+                    print("  LightGBM not installed — skipping (pip install lightgbm)")
+
                 # ---- 3. FCNN/MLP ------------------------------------
                 try:
+                    if not model_enabled("mlp"):
+                        raise SkipModel
                     mlp_trainer = FCNNTrainer(
                         output_dir=str(results_dir / "augmented_emb_fcnn" / label)
                     )
                     mlp_trainer.evaluator.figures_subdir = label
                     orig_load = mlp_trainer.loader.load_augmented_data
+                    mlp_trainer.loader.delta_learning = delta_learning
+                    mlp_trainer.loader.use_re_features = use_re_features
+                    mlp_trainer.loader.cv_folds = cv_folds
                     orig_prep = mlp_trainer.loader.prepare_dataset
                     mlp_trainer.loader.load_augmented_data = lambda dt=None: df_data.copy()
                     mlp_trainer.loader.prepare_dataset = _make_patched_prepare(orig_prep)
@@ -331,6 +378,8 @@ def train_augmented_embedding():
                                 "MAE": mlp_metrics["MAE"]})
                     emb_results.append(row)
                     print(f"  FCNN/MLP R²: {mlp_metrics['R2']:.4f}")
+                except SkipModel:
+                    print("  FCNN/MLP - disabled in training_config.yaml (skipping)")
                 except Exception as e:
                     print(f"  Error running FCNN/MLP: {e}")
 

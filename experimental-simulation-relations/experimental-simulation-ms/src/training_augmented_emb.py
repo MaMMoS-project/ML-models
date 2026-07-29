@@ -25,7 +25,7 @@ log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 os.makedirs(log_dir, exist_ok=True)
 
 
-@log_output('logs/training_augmented_emb.txt')
+# @log_output('logs/training_augmented_emb.txt')
 def training_augmented_emb():
 
     script_dir = Path(__file__).parent
@@ -102,6 +102,7 @@ def training_augmented_emb():
     all_results = []
 
     for config in dataset_configs:
+        
         dataset_name = config["name"]
         dataset_type = config["type"]
 
