@@ -167,14 +167,3 @@ to suppress it (e.g. for scripted/batch use).
 `--best`/`--all` auto-detect rare-earth content and pick the right dataset's model(s). The
 RE and RE-Free models do not extrapolate across the RE boundary, so `predict_ms` **refuses**
 a mismatched `--model` (use an `All_*` model, which is valid for both).
-
-## Cluster (SLURM)
-
-CPU-only helpers (no GPU — the enabled families are CPU-only):
-`run_1node-ALL.sh`, `run_1node-RE.sh`, `run_1node-RE-free.sh`, and `run_1node-predict.sh`.
-They pin BLAS threads (`OMP/MKL/OPENBLAS_NUM_THREADS=1`) and cap joblib workers
-(`COMBOUND_N_JOBS=64`) to avoid oversubscription.
-
-```bash
-sbatch run_1node-ALL.sh
-```
