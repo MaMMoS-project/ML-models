@@ -90,7 +90,7 @@ models:
   lasso:
     enabled: true
     module: train_lasso
-    function: train_lasso
+    function: train_lasso_lars
     params:
       alpha: 0.01
       tol: 1e-4
