@@ -148,3 +148,76 @@ Below results for the best model (Gaussian Process) and second best model (Rando
 
 To run an inference please run:
 python3 ./scripts/load_onnx_models.py 
+
+## 5. Validation on fresh (held-out) data
+
+The deployed inverse model is validated on a genuinely fresh dataset. The models are trained on
+the V2 dataset (`data/single_grain_cube_50nm_aligned.csv`); an older, independently generated V1
+dataset of 1,497 single-grain simulations (`data/magnetic_materials.csv`, same 50 nm aligned
+geometry) is used as an external hold-out. The two datasets share **0 %** of their `(Ms, A, K1)`
+parameter triples, so every validation point is genuinely unseen. The full deployed pipeline is
+applied to each point (hard/soft classification from `Hc, Mr, (BH)max` → the class-specific
+random-forest regressor) and the predicted intrinsic properties `Ms, A, K1` are compared with the
+simulated ground truth.
+
+Run:
+
+```
+python3 scripts/validate_fresh_v1.py
+```
+
+```mermaid
+flowchart LR
+
+    subgraph cluster_3["5. Validate on fresh data"]
+        direction TB
+
+        A5["./data/magnetic_materials.csv (fresh V1, 0 % overlap)"] --> B5["python3 scripts/validate_fresh_v1.py"]
+        A6["./plots/ + ./results/best_model_cluster{0,1} (deployed model)"] --> B5
+
+        B5 --> O1["./validation_v1/parity.png"]
+        B5 --> O2["./validation_v1/stats.csv"]
+        B5 --> O3["./validation_v1/classifier_routing.csv"]
+    end
+```
+
+Of the 1,497 fresh points, 11 fall outside the training volume (excluded as extrapolation),
+leaving **1,486** points (1,305 hard, 181 soft) for the comparison.
+
+### Per-target results (fresh V1 data)
+
+| Target (intrinsic) | R² | R²(log) | Median rel. error | MAE |
+| --- | --- | --- | --- | --- |
+| Spontaneous magnetisation `Ms` | **0.965** | 0.985 | **0.6 %** | 6.9×10⁴ A/m |
+| Exchange stiffness `A` | **−1.04** | −1.04 | 52.0 % | 3.4×10⁻¹² J/m |
+| Anisotropy constant `K1` | **0.980** | 0.964 | 4.8 % | 2.6×10⁵ J/m³ |
+
+`Ms` and `K1` are recovered excellently on unseen data, confirming that the surrogate generalises
+rather than memorising the training set. **`A`, however, is not recoverable** (negative R²; the
+predictions collapse to a near-constant band regardless of the true value — see the middle panel
+of `validation_v1/parity.png`). This is expected physically, not a model defect: the exchange
+stiffness has only a weak effect on the extrinsic single-grain properties, so the inverse mapping
+`(Hc, Mr, (BH)max) → A` is ill-posed / non-identifiable. `A` predictions from this inverse model
+should therefore not be trusted.
+
+### Hard/soft classifier routing
+
+| Metric | Value |
+| --- | --- |
+| Points validated | 1,486 |
+| Classifier accuracy | 97.4 % |
+| Misrouted (wrong regressor used) | 39 (2.6 %) |
+| &nbsp;&nbsp;soft (`Mr/Ms ≤ 0.4`) predicted as hard | 39 |
+| &nbsp;&nbsp;hard (`Mr/Ms > 0.4`) predicted as soft | 0 |
+
+The classifier is 97.4 % accurate on the fresh data, and its errors are entirely one-sided (soft
+magnets routed to the hard regressor — the same asymmetry seen in the forward model). Here the
+misrouting has a negligible effect on the targets: isolating the correctly-routed points barely
+changes the metrics (`Ms` 0.965 → 0.971, `K1` unchanged at 0.980, `A` unchanged), so the residual
+error is dominated by the intrinsic non-identifiability of `A`, not by classifier routing. The
+misrouted points are ringed in red in the parity plot.
+
+OUTPUT (in `./validation_v1/`):
+- `parity.png` — predicted vs. true `Ms, A, K1` (log–log), coloured by predicted class, misrouted points ringed
+- `stats.csv` — per-target R², R²(log), MAE, RMSE, median relative error
+- `classifier_routing.csv` — hard/soft routing accuracy on the fresh data
