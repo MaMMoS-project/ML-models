@@ -32,7 +32,7 @@ flowchart LR
     subgraph cluster_0["1. Analyze Magnetic Data"]
         direction TB
 
-        A0["./data/magnetic_materials.csv"] --> B0["python3 -m scripts.analyze_magnetic_data"]
+        A0["./data/single_grain_cube_50nm_aligned.csv"] --> B0["python3 -m scripts.analyze_magnetic_data"]
 
         B0 --> O1["./plots/*.png<br/>analysis plots"]
         B0 --> O2["./plots/supervised_clustering_model.pkl"]
@@ -42,7 +42,7 @@ flowchart LR
 ```
 
 NEEDS:
-- ./data/magnetic_materials.csv
+- ./data/single_grain_cube_50nm_aligned.csv
 
 OUTPUT:
 - stdout
@@ -73,7 +73,7 @@ flowchart LR
     subgraph cluster_1["2. Train Model"]
         direction TB
 
-        A1["./data/magnetic_materials.csv"] --> B1["python3 -m scripts.train_model --config config/ml_config_test.yaml"]
+        A1["./data/single_grain_cube_50nm_aligned.csv"] --> B1["python3 -m scripts.train_model --config config/ml_config_test.yaml"]
         A2["./plots/ (outputs from Step 1)"] --> B1
 
         B1 --> O1["./results/models"]
@@ -83,7 +83,7 @@ flowchart LR
 ```
 
 NEEDS:
-- ./data/magnetic_materials.csv
+- ./data/single_grain_cube_50nm_aligned.csv
 - output files ./plots/ of 1
 
 OUTPUT:

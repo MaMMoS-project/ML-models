@@ -1,3 +1,4 @@
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -11,6 +12,73 @@ MODELS = {
     "soft": BASE_DIR / "../results/models/LogTransformation_cluster0/random_forest.onnx",
     "hard": BASE_DIR / "../results/models/LogTransformation_cluster1/random_forest.onnx",
 }
+
+# Training data the models were fitted on (same file as the training config's input_file).
+# Used to warn when a prediction request lies outside the training volume (extrapolation).
+TRAINING_DATA = BASE_DIR / "../data/single_grain_cube_50nm_aligned.csv"
+
+# Fallback (min, max) design ranges for [Ms (A/m), A (J/m), K (J/m^3)], used only if the
+# training CSV cannot be read. Regenerate these if the training data changes.
+_FALLBACK_BOUNDS = {"Ms": (7.96e4, 3.97e6), "A": (1.0e-13, 1.0e-11), "K": (1.0e4, 9.93e6)}
+_BOUNDS_CACHE = None
+
+
+def _training_bounds():
+    """Per-feature (min, max) of Ms, A, K over the training data (cached).
+
+    Reads the min/max directly from the training CSV so the bounds stay correct if the
+    data is regenerated; falls back to the documented design ranges if it cannot be read.
+    """
+    global _BOUNDS_CACHE
+    if _BOUNDS_CACHE is not None:
+        return _BOUNDS_CACHE
+    try:
+        import pandas as pd
+        lines = open(TRAINING_DATA).readlines()
+        hdr = next(i for i, l in enumerate(lines) if l.startswith("Ms,"))
+        df = pd.read_csv(TRAINING_DATA, skiprows=hdr)
+        _BOUNDS_CACHE = {
+            "Ms": (float(df["Ms"].min()), float(df["Ms"].max())),
+            "A": (float(df["A"].min()), float(df["A"].max())),
+            "K": (float(df["K1"].min()), float(df["K1"].max())),
+        }
+    except Exception as exc:
+        warnings.warn(f"Could not read the training volume from {TRAINING_DATA} ({exc}); "
+                      f"using fallback design ranges.")
+        _BOUNDS_CACHE = dict(_FALLBACK_BOUNDS)
+    return _BOUNDS_CACHE
+
+
+def check_in_training_volume(Ms, A, K, warn=True):
+    """Check whether each (Ms, A, K) input lies inside the training volume.
+
+    Returns a boolean (array) that is True where all three inputs are within the training
+    data's min/max box. Does NOT block prediction — when ``warn`` is True it emits a
+    warning for the out-of-volume inputs, whose predictions are extrapolations and may be
+    unreliable.
+    """
+    X, original_shape, is_scalar = _prepare_inputs(Ms, A, K)
+    bounds = _training_bounds()
+    in_range = np.ones(X.shape[0], dtype=bool)
+    per_feat_out = {}
+    for j, name in enumerate(("Ms", "A", "K")):
+        lo, hi = bounds[name]
+        out = (X[:, j] < lo) | (X[:, j] > hi)
+        in_range &= ~out
+        if out.any():
+            per_feat_out[name] = int(out.sum())
+    n_out = int((~in_range).sum())
+    if warn and n_out:
+        detail = ", ".join(f"{k}={v}" for k, v in per_feat_out.items())
+        warnings.warn(
+            f"{n_out} of {X.shape[0]} input(s) fall OUTSIDE the training volume "
+            f"(out-of-range counts per feature: {detail}). These predictions are "
+            f"extrapolations beyond the fitted data and may be unreliable.",
+            stacklevel=2,
+        )
+    if is_scalar:
+        return bool(in_range.item())
+    return in_range.reshape(original_shape)
 
 _SESSION_OPTIONS = ort.SessionOptions()
 _SESSION_OPTIONS.log_severity_level = 3
@@ -64,6 +132,8 @@ def classify_magnetic_material(Ms, A, K):
 def calculate_extrinsic_properties(Ms, A, K):
     X, original_shape, is_scalar = _prepare_inputs(Ms, A, K)
 
+    # Warn (but do not block) if the request lies outside the training volume.
+    check_in_training_volume(Ms, A, K, warn=True)
 
     # 0. Determine whether input is valid
     print("Validating the input..\n")
