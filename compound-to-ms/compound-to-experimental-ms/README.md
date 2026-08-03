@@ -40,6 +40,18 @@ data/<raw sources>                         (per-project copies of the 7 raw file
                       └─ src/predict_ms.py   ──► Ms (A/m) for any formula
 ```
 
+```mermaid
+flowchart LR
+    A["Raw data<br/>(7 source files)"]
+    B["Preprocess<br/><code>preprocess_ms_data.py</code><br/>↓<br/>Experimental_Ms*.csv"]
+    C["Embeddings<br/><code>create_embeddings.py</code><br/>↓<br/>200-D *.pkl"]
+    D["PCA Compression<br/><code>compress_embeddings_pca.py</code><br/>↓<br/>8/16/32/64-D *.pkl"]
+    E["Train Models<br/><code>train_ms*.py</code><br/>↓<br/>ONNX models + metrics"]
+    F["Predict<br/><code>predict_ms.py</code><br/>↓<br/>Ms (A/m)"]
+
+    A --> B --> C --> D --> E --> F
+```
+
 ## 0. Installation
 
 Python ≥ 3.12. Create a venv and install `requirements.txt`:
@@ -149,14 +161,3 @@ to suppress it (e.g. for scripted/batch use).
 `--best`/`--all` auto-detect rare-earth content and pick the right dataset's model(s). The
 RE and RE-Free models do not extrapolate across the RE boundary, so `predict_ms` **refuses**
 a mismatched `--model` (use an `All_*` model, which is valid for both).
-
-## Cluster (SLURM)
-
-CPU-only helpers (no GPU — the enabled families are CPU-only):
-`run_1node-ALL.sh`, `run_1node-RE.sh`, `run_1node-RE-free.sh`, and `run_1node-predict.sh`.
-They pin BLAS threads (`OMP/MKL/OPENBLAS_NUM_THREADS=1`) and cap joblib workers
-(`COMBOUND_N_JOBS=64`) to avoid oversubscription.
-
-```bash
-sbatch run_1node-ALL.sh
-```
