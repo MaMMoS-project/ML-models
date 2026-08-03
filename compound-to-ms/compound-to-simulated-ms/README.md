@@ -39,6 +39,22 @@ data/<raw sources>                         (per-project copies of the 7 raw file
                                                               results/sim_ms_best_by_dataset.csv
                       └─ src/predict_ms.py   ──► Ms (A/m) for any formula
 ```
+```mermaid
+flowchart LR
+    A["data/<raw sources>"]
+    B["preprocess_ms_data.py"]
+    C["preprocessed_data/<br/>Simulated_Ms*.csv"]
+    D["create_embeddings.py"]
+    E["outputs/<br/>*_w_embeddings.pkl"]
+    F["compress_embeddings_pca.py"]
+    G["outputs/<br/>*_w_embeddings_PCA.pkl"]
+    H["train_ms*.py"]
+    I["results/<br/>ONNX models<br/>sim_ms_best_by_dataset.csv"]
+    J["predict_ms.py"]
+    K["Predicted Ms (A/m)"]
+
+    A --> B --> C --> D --> E --> F --> G --> H --> I --> J --> K
+```
 
 ## 0. Installation
 
