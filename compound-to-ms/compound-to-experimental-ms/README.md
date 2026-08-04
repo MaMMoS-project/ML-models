@@ -198,6 +198,7 @@ a mismatched `--model` (use an `All_*` model, which is valid for both).
 | All | pca_8 | Linear | 10 | 0.365 ± 0.019 | 0.570 ± 0.010 | 0.704 ± 0.010 | 179000 ± 6000 | 0.461 ± 0.009 |
 
 ### Results RE-Materials
+
 | Dataset | Embedding | Model  | Ensembles | R² (mean ± std) | MAE (mean ± std) | RMSE (mean ± std) | MAE_Am (mean ± std) | MedRelErr (mean ± std) |
 | ------- | --------- | ------ | --------- | --------------- | ---------------- | ----------------- | ------------------- | ---------------------- |
 | RE      | raw_200D  | LGBM   | 10        | 0.887 ± 0.014   | 0.216 ± 0.006    | 0.324 ± 0.011     | 67268 ± 3702        | 0.134 ± 0.012          |
