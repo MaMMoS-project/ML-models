@@ -6,7 +6,8 @@ dataset ``_all``). The extra input is the relative angle between the external fi
 uniaxial anisotropy axis K1.
 
 Prediction pipeline:
-    inputs [Ms, A, K1, relative_angle]  (relative_angle in RADIANS, in [0, pi])
+    inputs [Ms, A, K1, relative_angle]  (relative_angle in RADIANS, unsigned axis-field
+                                         angle arccos(|u_K . u_H|), in [0, pi/2])
       -> log1p on Ms, A, K1  (relative_angle is left untransformed; see log_exclude_cols)
       -> ONNX random forest  (the StandardScaler is baked into the ONNX graph)
       -> expm1 on the outputs
@@ -133,7 +134,9 @@ def calculate_extrinsic_properties(Ms, A, K, angle):
         Spontaneous magnetisation [A/m], exchange stiffness [J/m], uniaxial anisotropy
         constant K1 [J/m^3].
     angle : float or array
-        Relative angle between H and the K1 axis, in RADIANS (range [0, pi]).
+        Relative angle between H and the K1 axis, in RADIANS. This is the unsigned
+        axis-field angle arccos(|u_K . u_H|), so the trained range is [0, pi/2]
+        (0 = along the easy axis, pi/2 = perpendicular); values > pi/2 are extrapolation.
     """
     X, original_shape, is_scalar = _prepare_inputs(Ms, A, K, angle)
 

@@ -188,7 +188,11 @@ For all three targets, the RF models does not show strong overfitting and the pe
 Unlike the easy-axis model, this model is **not** split into hard/soft clusters
 (`clustering.method: none` in the config): a single random-forest regressor is trained on the
 whole dataset. The extra input is the **relative angle between the external field H and the
-uniaxial anisotropy axis K1**, given in **radians** (range `[0, pi]`).
+uniaxial anisotropy axis K1**, given in **radians**. Because K1 defines an *axis* (not a
+direction), this is the **unsigned** angle `arccos(|û_K · û_H|)`, so its range — and the range the
+model was trained on — is **`[0, π/2]`** (0 = field along the easy axis, π/2 = perpendicular). A
+field 135° off-axis is physically equivalent to 45° and must be supplied as `π/4`; angles above
+`π/2` are outside the training range and are treated as extrapolation.
 
 To run an inference:
 
