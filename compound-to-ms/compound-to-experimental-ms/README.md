@@ -162,6 +162,8 @@ to suppress it (e.g. for scripted/batch use).
 RE and RE-Free models do not extrapolate across the RE boundary, so `predict_ms` **refuses**
 a mismatched `--model` (use an `All_*` model, which is valid for both).
 
+## 6. Results
+
 | Dataset | Embedding | Model | Ensemble Members | R2 (mean ± std) | MAE (mean ± std) | RMSE (mean ± std) | MAE_Am (mean ± std) | MedRelErr (mean ± std) |
 |---|---|---|---:|---|---|---|---|---|
 | All | raw_200D | LGBM | 10 | 0.804 ± 0.012 | 0.279 ± 0.004 | 0.390 ± 0.009 | 72240 ± 1500 | 0.192 ± 0.005 |
