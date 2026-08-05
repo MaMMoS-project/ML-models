@@ -32,7 +32,7 @@ from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))          # so `import load_onnx_models` works either way
-import load_onnx_models as lom          # reuse the real deployed inverse pipeline
+import predict as lom          # reuse the real deployed inverse pipeline
 ROOT = HERE.parent
 OUT = ROOT / "validation_v1"
 OUT.mkdir(exist_ok=True)
