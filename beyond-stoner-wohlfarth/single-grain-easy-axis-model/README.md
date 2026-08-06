@@ -118,7 +118,7 @@ OUTPUT:
 - stdout
 - ./results/metrics_tables
 
-## Results
+## Results Hard Magnets
 
 ### 🏆 Best Model Metrics for target Hc (A/m)
 | Model | Soft               |  Hard                 |
@@ -143,4 +143,4 @@ OUTPUT:
 ## 4. Inference
 
 To run an inference please run:
-python3 ./scripts/load_onnx_models.py 
+python3 ./scripts/predict.py 
