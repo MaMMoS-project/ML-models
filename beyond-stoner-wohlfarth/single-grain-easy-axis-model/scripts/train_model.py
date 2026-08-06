@@ -183,10 +183,10 @@ class MLPipeline:
 
             df = df.rename(columns={"Ms": "Ms (A/m)", "A": "A (J/m)", "K1": "K (J/m^3)", "Hc": "Hc (A/m)", "Mr": "Mr (A/m)", "BHmax": "BHmax (J/m^3)"})
 
-            print("Datasize before droping: \n",df.shape[0])
+            print("Datasize before droping: \n", df.shape[0])
             df = df[df['Mr (A/m)'] >= 1e4]
             df = df[df['Hc (A/m)'] >= 1e4]
-            print("Datasize after droping: \n",df.shape[0])
+            print("Datasize after droping: \n", df.shape[0])
 
             print("Dataset loaded successfully")
             print(f"Dataset shape: {df.shape}")
