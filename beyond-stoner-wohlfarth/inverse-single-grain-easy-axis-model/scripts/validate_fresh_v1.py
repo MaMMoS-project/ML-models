@@ -49,6 +49,7 @@ INPUTS = ["Hc", "Mr", "BHmax"]
 # Okabe-Ito colourblind-safe pair; shape is a redundant (secondary) encoding.
 CLASS_STYLE = {"soft": ("#E69F00", "^"), "hard": ("#0072B2", "o")}
 INK, MUTED = "#222222", "#888888"
+LABEL_REL_ERR = 0.01   # ~1% sim. error — here on the extrinsic INPUTS, not the (exact) targets
 
 
 def load_mammos_csv(path):
@@ -177,6 +178,12 @@ def main():
     print("\n=== per-target validation statistics (fresh, in-volume V1 data) ===")
     with pd.option_context("display.float_format", lambda x: f"{x:.4g}"):
         print(tbl.to_string(index=False))
+    p = 100 * LABEL_REL_ERR
+    print(f"\nNote: for the INVERSE model the ~{p:.0f}% simulation error is on the extrinsic INPUTS "
+          f"(Hc, Mr, BHmax); the intrinsic targets (Ms, A, K1) are exact. It is therefore INPUT "
+          f"noise (propagated by Monte-Carlo in load_onnx_models.calculate_intrinsic_properties), "
+          f"not a floor on the truth. The errors above — especially A — are model/identifiability "
+          f"error and dominate the ~{p:.0f}% input-noise contribution.")
 
     # --- hard/soft classifier routing check ---
     n_used = int(use.sum())
