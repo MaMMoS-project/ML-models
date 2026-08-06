@@ -22,6 +22,21 @@ TRAINING_DATA = BASE_DIR / "../data/single_grain_cube_50nm_aligned.csv"
 _FALLBACK_BOUNDS = {"Ms": (7.96e4, 3.97e6), "A": (1.0e-13, 1.0e-11), "K": (1.0e4, 9.93e6)}
 _BOUNDS_CACHE = None
 
+# Known ~1% simulation error on the target values (Hc, Mr, BHmax). It is reported as an
+# irreducible aleatoric band (<target>_lo / <target>_hi) around every prediction, independent
+# of which model class produced the ONNX. Combine in quadrature with any model (epistemic)
+# uncertainty if that is added later.
+LABEL_REL_ERR = 0.01
+
+
+def _add_uncertainty_band(result, targets):
+    """Attach <t>_lo / <t>_hi = prediction * (1 -/+ LABEL_REL_ERR) for each target."""
+    for t in targets:
+        v = result.get(t)
+        result[f"{t}_lo"] = None if v is None else v * (1.0 - LABEL_REL_ERR)
+        result[f"{t}_hi"] = None if v is None else v * (1.0 + LABEL_REL_ERR)
+    return result
+
 
 def _training_bounds():
     """Per-feature (min, max) of Ms, A, K over the training data (cached).
@@ -162,27 +177,27 @@ def calculate_extrinsic_properties(Ms, A, K):
       y = np.expm1(y_log)
 
       if is_scalar:
-          return {
+          return _add_uncertainty_band({
               "Hc": y[0, 0],
               "Mr": y[0, 1],
               "BHmax": y[0, 2],
               "class": mat_class,
-          }
+          }, ("Hc", "Mr", "BHmax"))
 
-      return {
+      return _add_uncertainty_band({
           "Hc": y[:, 0].reshape(original_shape),
           "Mr": y[:, 1].reshape(original_shape),
           "BHmax": y[:, 2].reshape(original_shape),
           "class": np.asarray(mat_class).reshape(original_shape),
-      }
+      }, ("Hc", "Mr", "BHmax"))
     else:
       print("The input does not produce valid results. Returning None\n")
-      return {
+      return _add_uncertainty_band({
           "Hc": None,
           "Mr": None,
           "BHmax": None,
           "class": None,
-      }
+      }, ("Hc", "Mr", "BHmax"))
 
 
 
