@@ -40,6 +40,22 @@ _LOG_MASK = np.array([True, True, True, False])
 
 _BOUNDS_CACHE = None
 
+# Known ~1% simulation error on the target values (Hc, Mr, BHmax). It is reported as an
+# irreducible aleatoric band (<target>_lo / <target>_hi) around every prediction, independent
+# of which model class produced the ONNX. Combine in quadrature with any model (epistemic)
+# uncertainty if that is added later.
+LABEL_REL_ERR = 0.01
+
+
+def _add_uncertainty_band(result, targets):
+    """Attach <t>_lo / <t>_hi = prediction * (1 -/+ LABEL_REL_ERR) for each target."""
+    for t in targets:
+        v = result.get(t)
+        result[f"{t}_lo"] = None if v is None else v * (1.0 - LABEL_REL_ERR)
+        result[f"{t}_hi"] = None if v is None else v * (1.0 + LABEL_REL_ERR)
+    return result
+
+
 _SESSION_OPTIONS = ort.SessionOptions()
 _SESSION_OPTIONS.log_severity_level = 3
 
@@ -155,12 +171,13 @@ def calculate_extrinsic_properties(Ms, A, K, angle):
     y = np.expm1(y_log)
 
     if is_scalar:
-        return {"Hc": y[0, 0], "Mr": y[0, 1], "BHmax": y[0, 2]}
-    return {
+        return _add_uncertainty_band(
+            {"Hc": y[0, 0], "Mr": y[0, 1], "BHmax": y[0, 2]}, ("Hc", "Mr", "BHmax"))
+    return _add_uncertainty_band({
         "Hc": y[:, 0].reshape(original_shape),
         "Mr": y[:, 1].reshape(original_shape),
         "BHmax": y[:, 2].reshape(original_shape),
-    }
+    }, ("Hc", "Mr", "BHmax"))
 
 
 if __name__ == "__main__":

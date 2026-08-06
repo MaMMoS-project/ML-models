@@ -44,6 +44,7 @@ UNITS = {"Hc": "A/m", "Mr": "A/m", "BHmax": "J/m³"}
 # this is only to see whether one regime predicts worse. Okabe-Ito colourblind-safe.
 CLASS_STYLE = {"soft": ("#E69F00", "^"), "hard": ("#0072B2", "o")}
 INK, MUTED = "#222222", "#888888"
+LABEL_REL_ERR = 0.01   # ~1% simulation error on the target values (noise floor on the truth)
 
 
 def load_mammos_csv(path):
@@ -101,6 +102,11 @@ def parity_plot(df, pred, use, cls, ang_deg, path):
         allv = np.concatenate([yt_all[base], yp_all[base]]); allv = allv[allv > 0]
         lo, hi = np.percentile(allv, 1) / 1.5, allv.max() * 1.5
         ax.plot([lo, hi], [lo, hi], "--", color=MUTED, lw=1.2, zorder=1)
+        # ±1% simulation-noise floor on the (target) truth: no model can validate below it.
+        xs = np.array([lo, hi])
+        ax.fill_between(xs, xs * (1 - LABEL_REL_ERR), xs * (1 + LABEL_REL_ERR),
+                        color=MUTED, alpha=0.25, lw=0, zorder=1,
+                        label="±1% sim. floor" if i == 0 else None)
         ax.set_xlim(lo, hi); ax.set_ylim(lo, hi)
         for c in ("hard", "soft"):
             m = base & (cls == c)
@@ -161,6 +167,13 @@ def main():
     print("\n=== per-target validation statistics (fresh, in-volume V1 data; aligned slice) ===")
     with pd.option_context("display.float_format", lambda x: f"{x:.4g}"):
         print(tbl.to_string(index=False))
+    floor = 100 * LABEL_REL_ERR
+    print(f"\nThe targets carry a ~{floor:.0f}% simulation error, so a median relative error at or "
+          f"below ~{floor:.0f}% is at the noise floor (cannot be meaningfully improved):")
+    for r in rows:
+        med = 100 * r["MedRelErr"]
+        print(f"    {r['target']:<16} med|rel|={med:5.1f}%   "
+              f"[{'NOISE-LIMITED' if med <= floor else 'above floor'}]")
 
     parity_plot(df, pred, use, cls, ang_deg, OUT / "parity.png")
 
