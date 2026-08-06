@@ -172,7 +172,7 @@ class MLPipeline:
         # Read the dataset
         try:
             #df = pd.read_csv(self.config['data']['input_file'])
-            content = me.read_csv(self.config['data']['input_file'])
+            content = me.from_csv(self.config['data']['input_file'])
             df = content.to_dataframe(include_units=False)
             df = df.rename(columns={"Ms": "Ms (A/m)", "A": "A (J/m)", "K1": "K (J/m^3)", "Hc": "Hc (A/m)", "Mr": "Mr (A/m)", "BHmax": "BHmax (J/m^3)"})
             print(df.head())
