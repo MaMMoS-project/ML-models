@@ -197,7 +197,7 @@ field 135° off-axis is physically equivalent to 45° and must be supplied as `�
 To run an inference:
 
 ```
-python3 ./scripts/load_onnx_models.py
+python3 ./scripts/predict.py
 ```
 
 Or from Python:
