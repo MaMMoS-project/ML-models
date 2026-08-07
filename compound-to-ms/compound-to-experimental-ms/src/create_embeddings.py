@@ -103,7 +103,7 @@ def create_embeddings() -> None:
 
     elem_features = _load_elem_features(EMB_FILE)
     dim = len(next(iter(elem_features.values())))
-    print(f"\nElement embeddings: {EMB_FILE}")
+    # print(f"\nElement embeddings: {EMB_FILE}")
     print(f"Vocabulary: {len(elem_features)} elements  |  dimension: {dim}")
 
     for ds in DATASETS:
