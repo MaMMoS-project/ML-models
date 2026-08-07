@@ -131,7 +131,7 @@ def create_embeddings() -> None:
         print(f"  Embeddable rows        : {len(df)}")
 
         df.to_pickle(out_path)
-        print(f"  Saved → {out_path}")
+        # print(f"  Saved → {out_path}")
 
     print("\nDone. Next step: python src/compress_embeddings_pca.py")
 
