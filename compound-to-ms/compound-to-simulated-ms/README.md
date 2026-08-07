@@ -188,6 +188,8 @@ a mismatched `--model` (use an `All_*` model, which is valid for both).
 
 ## 6. Results
 
+All models trained with the default option where known ferrimagnets are dropped and ms-threshold is 50000 (A/m).
+
 ### Best model per dataset
 
 | Dataset     | Embedding | Model | N  | R² (mean ± std) | MAE (mean ± std) | RMSE (mean ± std) | MAE_Am (mean ± std) | MedRelErr (mean ± std) |
@@ -197,8 +199,6 @@ a mismatched `--model` (use an `All_*` model, which is valid for both).
 | RE          | raw_200D  | MLP   | 10 | 0.759 ± 0.014    | 0.276 ± 0.009    | 0.391 ± 0.011     | 70440.066 ± 0.000     | 0.190 ± 0.000          |
 
 ### Results All-Materials
-
-Trained with the default option where known ferrimagnets are dropped and ms-threshold is 50000 (A/m).
 
 | Embedding | Model      | R² (mean ± std)     | MAE (mean ± std)    | RMSE (mean ± std)   | MAE (A/m) (mean ± std) | Median Rel. Err. (mean ± std) |
 | :-------- | :--------- | :------------------ | :------------------ | :------------------ | :--------------------- | :---------------------------- |
