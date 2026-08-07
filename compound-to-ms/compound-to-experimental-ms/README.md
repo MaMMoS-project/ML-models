@@ -164,6 +164,8 @@ a mismatched `--model` (use an `All_*` model, which is valid for both).
 
 ## 6. Results
 
+All models trained with the default option where known ferrimagnets are dropped and ms-threshold is 50000 (A/m).
+
 ### Best model per dataset
 
 | Dataset | Embedding | Model |  N |    R² | R² Std |   MAE | MAE Std |  RMSE | RMSE Std |    MAE_Am | MedRelErr |
