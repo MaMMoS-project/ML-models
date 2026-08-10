@@ -159,24 +159,33 @@ OUTPUT:
 - ./results/metrics_tables
 
 
-# 4. Results Best Model
-For all three targets, the RF models does not show strong overfitting and the performance is the best.
+# 4. Results
 
-### 🏆 Best Model Metrics for target \(H_c\) (A/m)
 
-| Model | All |
-| ----- | ----------------------- |
-| RF (train) | MSE: **0.0332**<br>R²: **0.9833** |
-| RF (test) | MSE: **0.2261**<br>R²: **0.8864** |
+### Results target \(H_c\) (A/m)
 
-### 🏆 Best Model Metrics for target \(M_r\) (A/m)
+| Model             | Split |      MAE |      MSE |  Adj. R² |       R² |      Gini |     MAPE |
+| ----------------- | ----- | -------: | -------: | -------: | -------: | --------: | -------: |
+| random_forest     | train | 0.090545 | 0.033171 | 0.983318 | 0.983327 | -0.363079 | 0.891853 |
+| random_forest     | test  | 0.249792 | 0.226111 | 0.886223 | 0.886454 | -0.362589 | 2.186894 |
+| neural_network    | train | 0.258966 | 0.206392 | 0.896205 | 0.896257 | -0.362655 | 2.433033 |
+| neural_network    | test  | 0.280884 | 0.213939 | 0.892347 | 0.892566 | -0.362742 | 2.409184 |
+| linear_regression | train | 0.615169 | 0.799054 | 0.598153 | 0.598357 | -0.359391 | 5.443620 |
+| linear_regression | test  | 0.609116 | 0.769106 | 0.612991 | 0.613778 | -0.359635 | 5.158328 |
+| lasso             | train | 0.618246 | 0.799499 | 0.597930 | 0.598134 | -0.359404 | 5.465591 |
+| lasso             | test  | 0.612301 | 0.769622 | 0.612732 | 0.613519 | -0.359648 | 5.181255 |
+| gaussian_process  | train | 0.000067 | 0.000000 | 1.000000 | 1.000000 | -0.363138 | 0.000668 |
+| gaussian_process  | test  | 0.249656 | 0.239372 | 0.879550 | 0.879795 | -0.362673 | 2.214252 |
+
+
+### Results target \(M_r\) (A/m)
 
 | Model | All |
 | ----- | ----------------------- |
 | RF (train) | MSE: **0.0373**<br>R²: **0.9728** |
 | RF (test) | MSE: **0.2468**<br>R²: **0.8238** |
 
-### 🏆 Best Model Metrics for target \(BH_{\max}\) (J/m³)
+### Results target \(BH_{\max}\) (J/m³)
 
 | Model | All |
 | ----- | ----------------------- |
