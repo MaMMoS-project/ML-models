@@ -1,7 +1,7 @@
 # ML Pipeline Configuration
 
 data:
-  input_file: "data/processed/micromagnetics_angle_dependent_symmetries.csv" 
+  input_file: "../data/processed/micromagnetics_angle_dependent_symmetries.csv" 
   results_dir: "results"
   compute_difference: false  # Whether to compute analytical magnetic properties and their differences
 #  results_dir: "results_diff"
