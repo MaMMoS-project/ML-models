@@ -48,71 +48,52 @@ def classify_magnetic_material(Hc, Mr, BHmax):
     return labels.reshape(original_shape)
 
 
-# NOTE ON UNCERTAINTY (this is the INVERSE model): the ~1% simulation error is on the
-# EXTRINSIC quantities Hc, Mr, (BH)max, which here are the *inputs* — the intrinsic targets
-# (Ms, A, K1) are exact. So the 1% is INPUT noise, not label noise: it is propagated through
-# the pipeline by Monte-Carlo, NOT applied as a flat output band (its effect on each output
-# depends on the local sensitivity of the inverse map — e.g. it is enormous for the
-# ill-posed exchange stiffness A).
-LABEL_REL_ERR = 0.01
+def calculate_intrinsic_properties(Hc, Mr, BHmax):
+    """Predict intrinsic magnetic properties (Ms, A, K) from extrinsic properties (Hc, Mr, BHmax).
 
-
-def _predict_raw(X):
-    """classify -> per-class regressor -> expm1 on a raw (N,3) [Hc,Mr,BHmax] array.
-    Returns (y[N,3] = Ms,A,K ; classes[N])."""
-    Xf = np.asarray(X, np.float32)
-    cs = ort.InferenceSession(str(HARDSOFT_CLASSIFIER_MODEL), _SESSION_OPTIONS)
-    classes = np.where(cs.run(None, {cs.get_inputs()[0].name: Xf})[0] == 0, "soft", "hard").ravel()
-    X_log = np.log1p(Xf)
-    y_log = np.empty((Xf.shape[0], 3), dtype=np.float32)
-    for cls in ("soft", "hard"):
-        m = classes == cls
-        if m.any():
-            s = ort.InferenceSession(str(MODELS[cls]), _SESSION_OPTIONS)
-            y_log[m] = s.run(None, {s.get_inputs()[0].name: X_log[m]})[0]
-    return np.expm1(y_log), classes
-
-
-def calculate_intrinsic_properties(Hc, Mr, BHmax, propagate_input_noise=True, n_mc=64, seed=0):
-    """Predict intrinsic properties (Ms, A, K) from extrinsic properties (Hc, Mr, BHmax).
-
-    The regressors expect log-transformed inputs and produce log-transformed outputs, matching
-    the LogTransformation preprocessing used during training.
-
-    With ``propagate_input_noise`` (default True), the ~1% simulation error on the extrinsic
-    INPUTS is propagated to the outputs by Monte-Carlo (``n_mc`` draws of 1% multiplicative
-    Gaussian noise), and ``<t>_lo`` / ``<t>_hi`` report the 16th/84th percentiles (≈ ±1σ).
+    The regression models expect log-transformed inputs and produce log-transformed outputs,
+    matching the LogTransformation preprocessing used during training.
 
     Returns
     -------
-    dict with keys 'Ms', 'A', 'K' (+ '<t>_lo'/'<t>_hi') and 'class' ('soft'/'hard').
+    dict with keys 'Ms' (A/m), 'A' (J/m), 'K' (J/m^3), 'class' ('soft' or 'hard').
     """
     X, original_shape, is_scalar = _prepare_inputs(Hc, Mr, BHmax)
-    y, classes = _predict_raw(X)                         # point prediction from the given inputs
-    N = X.shape[0]
 
-    lo = hi = None
-    if propagate_input_noise and n_mc and n_mc > 1:
-        rng = np.random.default_rng(seed)
-        noise = rng.normal(1.0, LABEL_REL_ERR, size=(N, n_mc, 3)).astype(np.float32)
-        Xmc = (X[:, None, :] * noise).reshape(N * n_mc, 3)
-        ymc, _ = _predict_raw(Xmc)
-        ymc = ymc.reshape(N, n_mc, 3)
-        lo = np.percentile(ymc, 16, axis=1)              # ≈ -1σ from 1% input noise
-        hi = np.percentile(ymc, 84, axis=1)              # ≈ +1σ
+    # 1. Determine class
+    mat_class = classify_magnetic_material(Hc, Mr, BHmax)
+    classes = np.atleast_1d(mat_class).ravel()
 
-    def shape(a):
-        if a is None:
-            return None
-        return float(a[0]) if is_scalar else a.reshape(original_shape)
+    # 2. Preprocess: log1p matches the LogTransformation applied during training
+    X_log = np.log1p(X)
 
-    result = {}
-    for i, nm in enumerate(("Ms", "A", "K")):
-        result[nm] = shape(y[:, i])
-        result[f"{nm}_lo"] = shape(None if lo is None else lo[:, i])
-        result[f"{nm}_hi"] = shape(None if hi is None else hi[:, i])
-    result["class"] = classes[0] if is_scalar else np.asarray(classes).reshape(original_shape)
-    return result
+    # 3. Predict using the correct model for each class
+    y_log = np.empty((X_log.shape[0], 3), dtype=np.float32)
+
+    for cls in ["soft", "hard"]:
+        mask = classes == cls
+        if np.any(mask):
+            session = ort.InferenceSession(str(MODELS[cls]), _SESSION_OPTIONS)
+            X_subset = X_log[mask]
+            y_log[mask] = session.run(None, {session.get_inputs()[0].name: X_subset})[0]
+
+    # 4. Postprocess: invert log1p
+    y = np.expm1(y_log)
+
+    if is_scalar:
+        return {
+            "Ms": y[0, 0],
+            "A": y[0, 1],
+            "K": y[0, 2],
+            "class": mat_class,
+        }
+
+    return {
+        "Ms": y[:, 0].reshape(original_shape),
+        "A": y[:, 1].reshape(original_shape),
+        "K": y[:, 2].reshape(original_shape),
+        "class": np.asarray(mat_class).reshape(original_shape),
+    }
 
 
 if __name__ == "__main__":

@@ -87,8 +87,14 @@ def training_augmented():
     from symbolic_regression import SymbolicRegressionTrainer
     from linear_models import LinearModelsTrainer
     from random_forest import RandomForestTrainer
+    from lightgbm_trainer import LightGBMTrainer, LIGHTGBM_AVAILABLE
     from fcnn_mlp import FCNNTrainer
-    from base_trainer import DataLoader
+    from base_trainer import (DataLoader, parse_delta_learning, parse_re_features,
+                              parse_cv_folds, model_enabled, SkipModel)
+
+    delta_learning = parse_delta_learning()
+    use_re_features = parse_re_features()
+    cv_folds = parse_cv_folds()
 
     print("=" * 80)
     print("AUGMENTED DATA TRAINING (NO EMBEDDINGS) — ALL AUGMENTATION VARIANTS")
@@ -126,6 +132,9 @@ def training_augmented():
             augmented_file=variant["aug_file"],
             re_augmented_file=variant["re_aug_file"],
             re_free_augmented_file=variant["re_free_aug_file"],
+            delta_learning=delta_learning,
+            use_re_features=use_re_features,
+            cv_folds=cv_folds,
         )
 
         variant_results = []
@@ -151,6 +160,8 @@ def training_augmented():
 
             # ---- 1. Symbolic Regression --------------------------------
             try:
+                if not model_enabled("sr"):
+                    raise SkipModel
                 sr_trainer = SymbolicRegressionTrainer(
                     output_dir=str(results_dir / f"augmented_sr" / label)
                 )
@@ -171,11 +182,15 @@ def training_augmented():
                 })
                 dataset_results.append(row)
                 print(f"  Symbolic Regression - R²: {sr_metrics['R2']:.4f}")
+            except SkipModel:
+                print("  Symbolic Regression - disabled in training_config.yaml (skipping)")
             except Exception as e:
                 print(f"  Error running Symbolic Regression: {e}")
 
             # ---- 2. Linear models --------------------------------------
             try:
+                if not model_enabled("linear"):
+                    raise SkipModel
                 lin_trainer = LinearModelsTrainer(
                     output_dir=str(results_dir / f"augmented_linear" / label)
                 )
@@ -200,11 +215,15 @@ def training_augmented():
                 })
                 dataset_results.append(row)
                 print(f"  Linear - Best: {best_model.upper()}, R²: {best_metrics['R2']:.4f}")
+            except SkipModel:
+                print("  Linear - disabled in training_config.yaml (skipping)")
             except Exception as e:
                 print(f"  Error running Linear models: {e}")
 
             # ---- 3. Random Forest --------------------------------------
             try:
+                if not model_enabled("rf"):
+                    raise SkipModel
                 rf_trainer = RandomForestTrainer(
                     output_dir=str(results_dir / f"augmented_rf" / label)
                 )
@@ -226,11 +245,48 @@ def training_augmented():
                 })
                 dataset_results.append(row)
                 print(f"  Random Forest - R²: {rf_metrics['R2']:.4f}")
+            except SkipModel:
+                print("  Random Forest - disabled in training_config.yaml (skipping)")
             except Exception as e:
                 print(f"  Error running Random Forest: {e}")
 
+            # ---- 3b. LightGBM (gradient-boosted trees) -----------------
+            if LIGHTGBM_AVAILABLE:
+                try:
+                    if not model_enabled("lgbm"):
+                        raise SkipModel
+                    gbm_trainer = LightGBMTrainer(
+                        output_dir=str(results_dir / f"augmented_lightgbm" / label)
+                    )
+                    gbm_trainer.loader = custom_loader
+                    gbm_trainer.evaluator.figures_subdir = label
+                    gbm_metrics = gbm_trainer.train_and_evaluate(
+                        dataset_name=dataset_name,
+                        dataset_type=dataset_type,
+                        is_augmented=is_augmented,
+                        use_embedding=use_embedding,
+                    )
+                    row = _make_base_row()
+                    row.update({
+                        "Model_Family": "LightGBM",
+                        "Model": "LGBM",
+                        "R2": gbm_metrics["R2"],
+                        "RMSE": gbm_metrics["RMSE"],
+                        "MAE": gbm_metrics["MAE"],
+                    })
+                    dataset_results.append(row)
+                    print(f"  LightGBM - R²: {gbm_metrics['R2']:.4f}")
+                except SkipModel:
+                    print("  LightGBM - disabled in training_config.yaml (skipping)")
+                except Exception as e:
+                    print(f"  Error running LightGBM: {e}")
+            else:
+                print("  LightGBM not installed — skipping (pip install lightgbm)")
+
             # ---- 4. FCNN/MLP -------------------------------------------
             try:
+                if not model_enabled("mlp"):
+                    raise SkipModel
                 mlp_trainer = FCNNTrainer(
                     output_dir=str(results_dir / f"augmented_fcnn" / label)
                 )
@@ -252,6 +308,8 @@ def training_augmented():
                 })
                 dataset_results.append(row)
                 print(f"  FCNN/MLP - R²: {mlp_metrics['R2']:.4f}")
+            except SkipModel:
+                print("  FCNN/MLP - disabled in training_config.yaml (skipping)")
             except Exception as e:
                 print(f"  Error running FCNN/MLP: {e}")
 

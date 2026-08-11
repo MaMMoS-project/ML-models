@@ -60,9 +60,50 @@ from sklearn.preprocessing import StandardScaler
 from torch.utils.data import DataLoader as TorchDataLoader
 from torch.utils.data import TensorDataset
 
+try:
+    from lightgbm import LGBMRegressor
+    LIGHTGBM_AVAILABLE = True
+except Exception:
+    LIGHTGBM_AVAILABLE = False
+
+# LightGBM's sklearn wrapper records internal feature names ("Column_0", ...) on
+# fit, so predicting on the plain numpy arrays we pass triggers a benign sklearn
+# "X does not have valid feature names, but LGBMRegressor was fitted with feature
+# names" UserWarning (predictions are unaffected). Silence it to keep the logs clean.
+warnings.filterwarnings("ignore", message="X does not have valid feature names")
+
+# skl2onnx has no native LightGBM converter, so register onnxmltools' one. Once
+# registered, the existing _export_sklearn_onnx path converts pipelines containing an
+# LGBMRegressor too (so LightGBM models can be deployed via predict_tc). If onnxmltools
+# is not installed, LightGBM ONNX export is skipped (training still works).
+LGBM_ONNX_AVAILABLE = False
+if LIGHTGBM_AVAILABLE:
+    try:
+        from skl2onnx import update_registered_converter
+        from skl2onnx.common.shape_calculator import (
+            calculate_linear_regressor_output_shapes,
+        )
+        from onnxmltools.convert.lightgbm.operator_converters.LightGbm import (
+            convert_lightgbm,
+        )
+        update_registered_converter(
+            LGBMRegressor, "LightGbmLGBMRegressor",
+            calculate_linear_regressor_output_shapes, convert_lightgbm,
+            options={"split": None},
+        )
+        LGBM_ONNX_AVAILABLE = True
+    except Exception:
+        LGBM_ONNX_AVAILABLE = False
+
+# Pin the ONNX opsets: the registered LightGBM converter emits ai.onnx.ml v5, which
+# skl2onnx 1.20 does not yet support, so cap it at v3 (verified to round-trip exactly).
+# Harmless for the RF / Linear / scaler pipelines (identical output with or without it).
+_ONNX_TARGET_OPSET = {"": 17, "ai.onnx.ml": 3}
+
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from src.log_to_file import log_output
+from src.re_features import compute_re_features, RE_FEATURE_NAMES
 
 RANDOM_SEED = 42
 np.random.seed(RANDOM_SEED)
@@ -86,6 +127,7 @@ def _load_model_config() -> Dict[str, Dict]:
         "linear": {"enabled": True, "ensemble": 1},
         "rf":     {"enabled": True, "ensemble": 1},
         "mlp":    {"enabled": True, "ensemble": 1},
+        "lgbm":   {"enabled": True, "ensemble": 1},
     }
     if not CONFIG_PATH.exists():
         return defaults
@@ -110,6 +152,23 @@ def _load_model_config() -> Dict[str, Dict]:
 
 
 MODEL_CONFIG = _load_model_config()
+
+
+def _load_re_features_flag() -> bool:
+    """Return the top-level `re_features:` flag from training_config.yaml (default False).
+
+    When True, prepare the feature matrix as [embedding | 7 RE physics features]
+    (see src/re_features.py). The features are zero for RE-free compositions, so
+    enabling them is safe on every dataset.
+    """
+    if not CONFIG_PATH.exists():
+        return False
+    with open(CONFIG_PATH) as f:
+        cfg = yaml.safe_load(f) or {}
+    return bool(cfg.get("re_features", False))
+
+
+USE_RE_FEATURES = _load_re_features_flag()
 
 DATASETS = [
     {
@@ -297,6 +356,69 @@ def train_rf(
     return m, model, None
 
 
+# LightGBM hyperparameter search space (gradient-boosted trees).
+LGBM_PARAM_DIST = {
+    "n_estimators":     [200, 400, 600, 800],
+    "learning_rate":    [0.01, 0.03, 0.05, 0.1],
+    "num_leaves":       [15, 31, 63, 127],
+    "max_depth":        [-1, 5, 10, 20],
+    "min_child_samples":[5, 10, 20, 50],
+    "subsample":        [0.7, 0.85, 1.0],
+    "colsample_bytree": [0.7, 0.85, 1.0],
+}
+
+
+def tune_lgbm(X: np.ndarray, y: np.ndarray, seed: int = RANDOM_SEED) -> Dict:
+    """Randomised LightGBM hyperparameter search ONCE; return the best params.
+
+    Mirrors tune_rf: tuned a single time per (dataset, embedding) and reused
+    across ensemble members. CRITICAL n_jobs discipline (same as RF, avoids the
+    nested-oversubscription hang): the estimator runs single-threaded
+    (n_jobs=1) while the outer RandomizedSearchCV parallelises across _N_JOBS.
+    n_iter is scaled inversely with training-set size, like tune_rf.
+    """
+    n_iter = max(10, round(200_000 / len(X)))
+    print(f"    (LGBM search: n_iter={n_iter}, cv=3 on {len(X)} samples)...", end="  ", flush=True)
+    rs = RandomizedSearchCV(
+        LGBMRegressor(random_state=seed, n_jobs=1, verbose=-1),
+        LGBM_PARAM_DIST, n_iter=n_iter, cv=3, scoring="r2",
+        n_jobs=_N_JOBS, random_state=seed, verbose=0,
+    )
+    rs.fit(X, y)
+    print("done")
+    return rs.best_params_
+
+
+def train_lgbm(
+    X_train: np.ndarray, y_train: np.ndarray,
+    X_test: np.ndarray,  y_test: np.ndarray,
+    run_name: str, out_dir: Path,
+    seed: int = RANDOM_SEED,
+    best_params: Optional[Dict] = None,
+) -> Tuple[Dict, "LGBMRegressor", None]:
+    """Train one LightGBM model (no feature scaling needed for trees).
+
+    Like train_rf: if ``best_params`` is given (the normal ensemble path) the
+    model is trained directly and parallelised across all cores; otherwise the
+    randomised search is run on this split first. Returns (metrics, model, None);
+    the trailing None mirrors the (model, scaler) contract of the other trainers.
+    """
+    if best_params is None:
+        best_params = tune_lgbm(X_train, y_train, seed=seed)
+
+    model = LGBMRegressor(**best_params, random_state=seed, n_jobs=_N_JOBS, verbose=-1)
+    model.fit(X_train, y_train)
+    ytr_p = model.predict(X_train)
+    yte_p = model.predict(X_test)
+    m = compute_metrics(y_test, yte_p)
+    save_figure(
+        y_train, ytr_p, y_test, yte_p,
+        title=f"LightGBM – {run_name}",
+        out_path=out_dir / f"{run_name}_lgbm.png",
+    )
+    return m, model, None
+
+
 class _MLP(nn.Module):
     def __init__(self, input_dim: int, hidden_dims: Tuple[int, ...]):
         super().__init__()
@@ -446,7 +568,9 @@ def _export_sklearn_onnx(
     steps.append(("model", model))
     pipe = Pipeline(steps)
     initial_type = [("X", FloatTensorType([None, input_dim]))]
-    onnx_proto = convert_sklearn(pipe, initial_types=initial_type)
+    onnx_proto = convert_sklearn(
+        pipe, initial_types=initial_type, target_opset=_ONNX_TARGET_OPSET
+    )
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with open(out_path, "wb") as f:
         f.write(onnx_proto.SerializeToString())
@@ -515,6 +639,31 @@ def _export_mlp_onnx(
 # Per-dataset training logic (reused by the individual dataset scripts)
 # ---------------------------------------------------------------------------
 
+def aggregate_members(df_members: pd.DataFrame) -> pd.DataFrame:
+    """Collapse per-ensemble-member rows into mean +/- std per model config.
+
+    The per-member rows come from random 80/20 splits, so reporting the single
+    best member (max R2) is optimistically biased. This aggregates each
+    (Dataset, Embedding, Model) group to the mean and std across its members,
+    which is the honest headline (and what best-by-dataset should rank on).
+    For a single-member ("ensemble: 1") group the std is reported as 0.
+    """
+    grouped = (
+        df_members
+        .groupby(["Dataset", "Embedding", "Model"], as_index=False)
+        .agg(
+            N=("R2", "size"),
+            R2=("R2", "mean"),     R2_std=("R2", "std"),
+            MAE=("MAE", "mean"),   MAE_std=("MAE", "std"),
+            RMSE=("RMSE", "mean"), RMSE_std=("RMSE", "std"),
+        )
+    )
+    # std is NaN when a group has a single member -> report 0.
+    for col in ("R2_std", "MAE_std", "RMSE_std"):
+        grouped[col] = grouped[col].fillna(0.0)
+    return grouped.sort_values("R2", ascending=False).reset_index(drop=True)
+
+
 def train_one_dataset(ds: Dict, figures_dir: Path) -> List[Dict]:
     """Train all model/embedding combinations for one dataset config.
 
@@ -540,6 +689,24 @@ def train_one_dataset(ds: Dict, figures_dir: Path) -> List[Dict]:
 
     raw_dim = int(df["compound_embedding"].iloc[0].shape[0])
 
+    # Optional rare-earth physics features, appended to every embedding's X as the
+    # LAST columns. Computed once per dataset (aligned with df row order) and zero
+    # for RE-free compositions. When on, the input dim changes, so ONNX export is
+    # skipped (deployment handling deferred — see _load_re_features_flag).
+    re_feat_matrix: Optional[np.ndarray] = None
+    if USE_RE_FEATURES:
+        if "composition" not in df.columns:
+            print("  RE features requested but no 'composition' column – skipping them.")
+        else:
+            re_feat_matrix = np.array(
+                [[compute_re_features(c)[k] for k in RE_FEATURE_NAMES]
+                 for c in df["composition"].values],
+                dtype=float,
+            )
+            n_re_rows = int((re_feat_matrix[:, 0] > 0).sum())
+            print(f"  RE physics features: ON ({len(RE_FEATURE_NAMES)} cols, "
+                  f"{n_re_rows}/{len(df)} rows with RE content)")
+
     ds_results: List[Dict] = []
 
     for emb_label, col_name in EMB_VARIANTS.items():
@@ -548,6 +715,9 @@ def train_one_dataset(ds: Dict, figures_dir: Path) -> List[Dict]:
             continue
 
         X = np.vstack(df[col_name].values)
+        if re_feat_matrix is not None:
+            # Append the 7 RE physics features as the last columns of X.
+            X = np.hstack([X, re_feat_matrix])
         y = df["Tc_sim"].values.astype(float)
 
         run_name = f"{ds_name}_{emb_label}"
@@ -568,22 +738,28 @@ def train_one_dataset(ds: Dict, figures_dir: Path) -> List[Dict]:
             ("Linear", train_linear, "linear"),
             ("RF",     train_rf,     "rf"),
             ("MLP",    train_mlp,    "mlp"),
+            ("LGBM",   train_lgbm,   "lgbm"),
         ]:
             cfg = MODEL_CONFIG[key]
             if not cfg["enabled"]:
                 continue
+            if model_label == "LGBM" and not LIGHTGBM_AVAILABLE:
+                print("    LightGBM not installed – skipping (pip install lightgbm).")
+                continue
             n_ensemble = cfg["ensemble"]
 
-            # For RF, run the hyperparameter search ONCE per embedding and share
-            # the result across all ensemble members (see tune_rf).  Tuning on
-            # the first member's training split keeps that member fully leak-free
-            # and preserves the documented n_iter scaling (based on n_train).
-            rf_best_params: Optional[Dict] = None
-            if model_label == "RF":
+            # For the tree models (RF, LGBM), run the hyperparameter search ONCE
+            # per embedding and share the result across all ensemble members (see
+            # tune_rf / tune_lgbm).  Tuning on a fixed-seed split preserves the
+            # documented n_iter scaling (based on n_train); ensemble diversity
+            # still comes from the per-member train/test splits.
+            tuned_params: Optional[Dict] = None
+            if model_label in ("RF", "LGBM"):
                 X_tune, _, y_tune, _ = train_test_split(
                     X, y, test_size=0.2, random_state=RANDOM_SEED
                 )
-                rf_best_params = tune_rf(X_tune, y_tune, seed=RANDOM_SEED)
+                tune_fn = tune_rf if model_label == "RF" else tune_lgbm
+                tuned_params = tune_fn(X_tune, y_tune, seed=RANDOM_SEED)
 
             for i in range(n_ensemble):
                 seed = RANDOM_SEED + i
@@ -595,11 +771,11 @@ def train_one_dataset(ds: Dict, figures_dir: Path) -> List[Dict]:
                 progress    = f" (ensemble {i + 1}/{n_ensemble})" if n_ensemble > 1 else ""
                 print(f"    Training {model_label}{progress}...", end="  ")
                 try:
-                    if model_label == "RF":
-                        m, trained_model, trained_scaler = train_rf(
+                    if model_label in ("RF", "LGBM"):
+                        m, trained_model, trained_scaler = train_fn(
                             X_train, y_train, X_test, y_test,
                             member_name, figures_dir, seed=seed,
-                            best_params=rf_best_params,
+                            best_params=tuned_params,
                         )
                     else:
                         m, trained_model, trained_scaler = train_fn(
@@ -615,40 +791,66 @@ def train_one_dataset(ds: Dict, figures_dir: Path) -> List[Dict]:
                         Dataset=ds_name, Embedding=emb_label, Model=model_label,
                         EnsembleIdx=i, R2=m["R2"], MAE=m["MAE"], RMSE=m["RMSE"],
                     ))
-                    onnx_path = ONNX_DIR / f"{run_name}_{model_label.lower()}{suffix}.onnx"
-                    try:
-                        if model_label == "MLP":
-                            _export_mlp_onnx(trained_model, trained_scaler, pca, raw_dim, onnx_path)
-                        else:
-                            _export_sklearn_onnx(trained_model, trained_scaler, pca, raw_dim, onnx_path)
-                    except Exception as onnx_exc:
-                        print(f"    ONNX export failed: {onnx_exc}")
+                    # --- ONNX export ---------------------------------------
+                    # With RE features the model takes [embedding | 7 RE feats], so the
+                    # deployed ONNX input grows to raw_dim + 7 and PCA is NOT applied
+                    # in-graph. Only raw_200D is wired (PCA variants would need a
+                    # ColumnTransformer to PCA the embedding but pass the 7 feats
+                    # through). A "_refeats" marker keeps the two contracts' files apart.
+                    n_re = len(RE_FEATURE_NAMES)
+                    skip_reason = None
+                    if USE_RE_FEATURES and emb_label != "raw_200D":
+                        skip_reason = ("RE features: only raw_200D is ONNX-exportable "
+                                       "(PCA variants need a ColumnTransformer)")
+                    elif model_label == "LGBM" and not LGBM_ONNX_AVAILABLE:
+                        skip_reason = "LightGBM needs onnxmltools (install to enable)"
+                    if skip_reason:
+                        print(f"    ONNX export skipped ({skip_reason})")
+                    else:
+                        refeats_marker = "_refeats" if USE_RE_FEATURES else ""
+                        export_pca = None if USE_RE_FEATURES else pca
+                        export_dim = raw_dim + (n_re if USE_RE_FEATURES else 0)
+                        onnx_path = (ONNX_DIR /
+                                     f"{run_name}_{model_label.lower()}{refeats_marker}{suffix}.onnx")
+                        try:
+                            if model_label == "MLP":
+                                _export_mlp_onnx(trained_model, trained_scaler, export_pca, export_dim, onnx_path)
+                            else:
+                                _export_sklearn_onnx(trained_model, trained_scaler, export_pca, export_dim, onnx_path)
+                        except Exception as onnx_exc:
+                            print(f"    ONNX export failed: {onnx_exc}")
                 except Exception as exc:
                     print(f"FAILED: {exc}")
 
     if ds_results:
-        df_ds = (
-            pd.DataFrame(ds_results)
-            .sort_values("R2", ascending=False)
-            .reset_index(drop=True)
-        )
+        # Per-member detail (full record of every ensemble member).
+        df_members = pd.DataFrame(ds_results)
         ds_csv = RESULTS_DIR / f"{ds_name}_sim_results.csv"
-        df_ds.to_csv(ds_csv, index=False)
+        df_members.sort_values("R2", ascending=False).reset_index(drop=True).to_csv(
+            ds_csv, index=False
+        )
+
+        # Honest headline: mean +/- std across ensemble members.
+        df_agg = aggregate_members(df_members)
+        agg_csv = RESULTS_DIR / f"{ds_name}_sim_results_agg.csv"
+        df_agg.to_csv(agg_csv, index=False)
 
         print(f"\n{'─'*70}")
-        print(f"Results for dataset: {ds_name}")
+        print(f"Results for dataset: {ds_name}  (ensemble mean ± std over N members)")
         print(f"{'─'*70}")
-        print(df_ds.to_string(index=False))
+        print(df_agg.to_string(index=False))
 
-        best_row = df_ds.iloc[0]
+        best_row = df_agg.iloc[0]
         print(
             f"\n  *** Best model for {ds_name}: "
             f"{best_row['Model']} [{best_row['Embedding']}]"
-            f"  R²={best_row['R2']:.4f}"
+            f"  R²={best_row['R2']:.4f}±{best_row['R2_std']:.4f}"
             f"  RMSE={best_row['RMSE']:.1f} K"
-            f"  MAE={best_row['MAE']:.1f} K ***"
+            f"  MAE={best_row['MAE']:.1f} K"
+            f"  (N={int(best_row['N'])}) ***"
         )
-        print(f"  Saved → {ds_csv}")
+        print(f"  Saved → {ds_csv}  (per-member)")
+        print(f"  Saved → {agg_csv}  (aggregated)")
 
     return ds_results
 
@@ -670,8 +872,12 @@ def update_global_summary() -> None:
         print("\nNo per-dataset CSVs found; skipping global summary.")
         return
 
+    # Aggregate the per-member rows to the honest mean +/- std headline before
+    # comparing across datasets, so the global ranking is not driven by the single
+    # luckiest random split.
+    df_members = pd.concat(frames, ignore_index=True)
     df_res = (
-        pd.concat(frames, ignore_index=True)
+        aggregate_members(df_members)
         .sort_values(["Dataset", "Embedding", "R2"], ascending=[True, True, False])
         .reset_index(drop=True)
     )
@@ -687,12 +893,13 @@ def update_global_summary() -> None:
     best_global.to_csv(best_csv, index=False)
 
     print("\n" + "=" * 70)
-    print("OVERALL BEST MODEL PER DATASET")
+    print("OVERALL BEST MODEL PER DATASET  (ensemble mean ± std)")
     print("=" * 70)
     print(best_global.to_string(index=False))
-    print(f"\nAll results          : {out_csv}")
-    print(f"Best per dataset     : {best_csv}")
-    print(f"Per-dataset tables   : {RESULTS_DIR}/<dataset>_sim_results.csv")
+    print(f"\nAll results (aggregated) : {out_csv}")
+    print(f"Best per dataset         : {best_csv}")
+    print(f"Per-dataset tables       : {RESULTS_DIR}/<dataset>_sim_results.csv (per-member)")
+    print(f"                           {RESULTS_DIR}/<dataset>_sim_results_agg.csv (aggregated)")
 
 
 # ---------------------------------------------------------------------------
