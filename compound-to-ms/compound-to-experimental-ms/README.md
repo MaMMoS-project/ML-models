@@ -164,6 +164,18 @@ a mismatched `--model` (use an `All_*` model, which is valid for both).
 
 ## 6. Results
 
+All models trained with the default option where known ferrimagnets are dropped and ms-threshold is 50000 (A/m).
+
+### Best model per dataset
+
+| Dataset | Embedding | Model |  N |    R² | R² Std |   MAE | MAE Std |  RMSE | RMSE Std |    MAE_Am | MedRelErr |
+| ------- | --------- | ----- | -: | ----: | -----: | ----: | ------: | ----: | -------: | --------: | --------: |
+| RE      | raw_200D  | LGBM  | 10 | 0.891 |  0.008 | 0.215 |   0.006 | 0.323 |    0.010 | 66465.866 |     0.132 |
+| All     | raw_200D  | LGBM  | 10 | 0.805 |  0.010 | 0.279 |   0.004 | 0.389 |    0.009 | 71940.701 |     0.192 |
+| RE-Free | raw_200D  | LGBM  | 10 | 0.744 |  0.012 | 0.303 |   0.007 | 0.408 |    0.010 | 72449.077 |     0.219 |
+
+### Results All-Materials
+
 | Dataset | Embedding | Model | Ensemble Members | R2 (mean ± std) | MAE (mean ± std) | RMSE (mean ± std) | MAE_Am (mean ± std) | MedRelErr (mean ± std) |
 |---|---|---|---:|---|---|---|---|---|
 | All | raw_200D | LGBM | 10 | 0.804 ± 0.012 | 0.279 ± 0.004 | 0.390 ± 0.009 | 72240 ± 1500 | 0.192 ± 0.005 |
@@ -187,6 +199,7 @@ a mismatched `--model` (use an `All_*` model, which is valid for both).
 | All | pca_16 | Linear | 10 | 0.497 ± 0.017 | 0.505 ± 0.010 | 0.630 ± 0.012 | 175000 ± 11000 | 0.402 ± 0.012 |
 | All | pca_8 | Linear | 10 | 0.365 ± 0.019 | 0.570 ± 0.010 | 0.704 ± 0.010 | 179000 ± 6000 | 0.461 ± 0.009 |
 
+### Results RE-Materials
 
 | Dataset | Embedding | Model  | Ensembles | R² (mean ± std) | MAE (mean ± std) | RMSE (mean ± std) | MAE_Am (mean ± std) | MedRelErr (mean ± std) |
 | ------- | --------- | ------ | --------- | --------------- | ---------------- | ----------------- | ------------------- | ---------------------- |
@@ -211,6 +224,7 @@ a mismatched `--model` (use an `All_*` model, which is valid for both).
 | RE      | pca_32    | Linear | 10        | 0.687 ± 0.015   | 0.435 ± 0.012    | 0.548 ± 0.012     | 211906 ± 61996      | 0.344 ± 0.015          |
 | RE      | pca_64    | Linear | 10        | 0.696 ± 0.010   | 0.429 ± 0.010    | 0.545 ± 0.013     | 224570 ± 70548      | 0.340 ± 0.016          |
 
+### Results RE-Free Materials
 | Dataset | Embedding | Model | Ensembles | R² (mean ± std) | MAE (mean ± std) | RMSE (mean ± std) | MAE_Am (mean ± std) | MedRelErr (mean ± std) |
 |---------|-----------|-------|-----------|-----------------|------------------|-------------------|---------------------|------------------------|
 | RE-Free | raw_200D  | LGBM  | 10        | 0.748 ± 0.024   | 0.303 ± 0.011    | 0.405 ± 0.012     | 72,938 ± 3,549      | 0.216 ± 0.011          |
