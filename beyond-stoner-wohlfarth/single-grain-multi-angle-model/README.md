@@ -159,29 +159,56 @@ OUTPUT:
 - ./results/metrics_tables
 
 
-# 4. Results Best Model
-For all three targets, the RF models does not show strong overfitting and the performance is the best.
+# 4. Results
 
-### 🏆 Best Model Metrics for target \(H_c\) (A/m)
 
-| Model | All |
-| ----- | ----------------------- |
-| RF (train) | MSE: **0.0332**<br>R²: **0.9833** |
-| RF (test) | MSE: **0.2261**<br>R²: **0.8864** |
+### Results target \(H_c\) (A/m)
 
-### 🏆 Best Model Metrics for target \(M_r\) (A/m)
+| Model             | Split |   MAE |   MSE | Adj. R² |    R² |   Gini |  MAPE |
+| ----------------- | ----- | ----: | ----: | ------: | ----: | -----: | ----: |
+| random_forest     | train | 0.091 | 0.033 |   0.983 | 0.983 | -0.363 | 0.892 |
+| random_forest     | test  | 0.250 | 0.226 |   0.886 | 0.886 | -0.363 | 2.187 |
+| neural_network    | train | 0.259 | 0.206 |   0.896 | 0.896 | -0.363 | 2.433 |
+| neural_network    | test  | 0.281 | 0.214 |   0.892 | 0.893 | -0.363 | 2.409 |
+| linear_regression | train | 0.615 | 0.799 |   0.598 | 0.598 | -0.359 | 5.444 |
+| linear_regression | test  | 0.609 | 0.769 |   0.613 | 0.614 | -0.360 | 5.158 |
+| lasso             | train | 0.618 | 0.799 |   0.598 | 0.598 | -0.359 | 5.466 |
+| lasso             | test  | 0.612 | 0.770 |   0.613 | 0.614 | -0.360 | 5.181 |
+| gaussian_process  | train | 0.000 | 0.000 |   1.000 | 1.000 | -0.363 | 0.001 |
+| gaussian_process  | test  | 0.250 | 0.239 |   0.880 | 0.880 | -0.363 | 2.214 |
 
-| Model | All |
-| ----- | ----------------------- |
-| RF (train) | MSE: **0.0373**<br>R²: **0.9728** |
-| RF (test) | MSE: **0.2468**<br>R²: **0.8238** |
 
-### 🏆 Best Model Metrics for target \(BH_{\max}\) (J/m³)
+### Results target \(M_r\) (A/m)
 
-| Model | All |
-| ----- | ----------------------- |
-| RF (train) | MSE: **0.1185**<br>R²: **0.9781** |
-| RF (test) | MSE: **0.8262**<br>R²: **0.8520** |
+| Model             | Split |   MAE |   MSE | Adj. R² |    R² |   Gini |    MAPE |
+| ----------------- | ----- | ----: | ----: | ------: | ----: | -----: | ------: |
+| random_forest     | train | 0.079 | 0.037 |   0.973 | 0.973 | -0.355 | 106.242 |
+| random_forest     | test  | 0.216 | 0.247 |   0.823 | 0.824 | -0.354 |   1.699 |
+| neural_network    | train | 0.247 | 0.231 |   0.831 | 0.831 | -0.354 | 228.257 |
+| neural_network    | test  | 0.266 | 0.243 |   0.826 | 0.827 | -0.354 |   2.032 |
+| linear_regression | train | 0.638 | 0.846 |   0.383 | 0.383 | -0.347 | 286.069 |
+| linear_regression | test  | 0.644 | 0.824 |   0.410 | 0.412 | -0.348 |   4.954 |
+| lasso             | train | 0.640 | 0.846 |   0.383 | 0.383 | -0.347 | 287.221 |
+| lasso             | test  | 0.646 | 0.825 |   0.410 | 0.411 | -0.348 |   4.973 |
+| gaussian_process  | train | 0.000 | 0.000 |   1.000 | 1.000 | -0.355 |   0.050 |
+| gaussian_process  | test  | 0.238 | 0.264 |   0.811 | 0.812 | -0.354 |   1.881 |
+
+
+### Results target \(BH_{\max}\) (J/m³)
+
+| Model             | Split |   MAE |   MSE | Adj. R² |    R² |   Gini |   MAPE |
+| ----------------- | ----- | ----: | ----: | ------: | ----: | -----: | -----: |
+| random_forest     | train | 0.155 | 0.119 |   0.978 | 0.978 | -0.389 |  2.402 |
+| random_forest     | test  | 0.421 | 0.826 |   0.852 | 0.852 | -0.388 |  5.789 |
+| neural_network    | train | 0.444 | 0.693 |   0.872 | 0.872 | -0.388 |  6.551 |
+| neural_network    | test  | 0.482 | 0.783 |   0.859 | 0.860 | -0.388 |  6.378 |
+| linear_regression | train | 1.298 | 3.320 |   0.387 | 0.388 | -0.371 | 18.086 |
+| linear_regression | test  | 1.298 | 3.356 |   0.398 | 0.399 | -0.372 | 16.737 |
+| lasso             | train | 1.300 | 3.320 |   0.387 | 0.388 | -0.371 | 18.118 |
+| lasso             | test  | 1.301 | 3.357 |   0.397 | 0.398 | -0.372 | 16.770 |
+| gaussian_process  | train | 0.000 | 0.000 |   1.000 | 1.000 | -0.390 |  0.002 |
+| gaussian_process  | test  | 0.461 | 0.914 |   0.836 | 0.836 | -0.388 |  6.744 |
+
 
 # 5. Inference
 
