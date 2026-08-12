@@ -1,0 +1,2 @@
+# generate mermaid plot from mmd file:
+mmdc -i workflow.mmd -o ml_workflow_inverse.png

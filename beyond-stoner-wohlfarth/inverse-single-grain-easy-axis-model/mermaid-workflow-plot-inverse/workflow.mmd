@@ -1,0 +1,37 @@
+flowchart TB
+
+A("Extrinsic Properties<br/><b>(Hc, Mr, BHmax)</b>")
+
+C("Magnet Type<br/>Classifier")
+
+A --> C
+
+C --> H("Hard Magnet")
+C --> S("Soft Magnet")
+
+subgraph HM["Hard Magnet"]
+    direction TB
+    H --> R1("Surrogate Model")
+    R1 --> P1("Intrinsic Properties")
+end
+
+subgraph SM["Soft Magnet"]
+    direction TB
+    S --> R2("Surrogate Model")
+    R2 --> P2("Intrinsic Properties")
+end
+
+%% Styling
+
+classDef input fill:#F5F5F5,stroke:#555,stroke-width:2px,color:#111,font-size:18px;
+classDef clf fill:#FFE082,stroke:#F57F17,stroke-width:2px,color:#111,font-size:18px;
+classDef model fill:#E3F2FD,stroke:#1565C0,stroke-width:2px,color:#111,font-size:18px;
+
+class A input;
+class C clf;
+class H,S clf;
+class R1,R2 model;
+class P1,P2 model;
+
+%% Link styling
+linkStyle default stroke:#555,stroke-width:2px;
