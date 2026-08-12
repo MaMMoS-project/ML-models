@@ -139,14 +139,15 @@ class MLPipeline:
                     
                     # Evaluate the model using our evaluator with the scaled data
                     metrics = self.evaluator.evaluate_model(
-                        model, X_train, y_train, X_test, y_test, dataset_name, model_name, errors=errors
+                        model, X_train, y_train, X_test, y_test, dataset_name, model_name, errors=errors, scaler=scaler
                     )
                     
                     # Store results
                     results[f"{dataset_name}_{scaler_type}"] = {
                         'model': model,
                         'best_params': best_params,
-                        'metrics': metrics
+                        'metrics': metrics,
+                        'scaler': scaler
                     }
                     
                     # Add errors if available
@@ -171,7 +172,7 @@ class MLPipeline:
         # Read the dataset
         try:
             #df = pd.read_csv(self.config['data']['input_file'])
-            content = me.io.entities_from_file(self.config['data']['input_file'])
+            content = me.from_csv(self.config['data']['input_file'])
             df = content.to_dataframe(include_units=False)
             df = df.rename(columns={"Ms": "Ms (A/m)", "A": "A (J/m)", "K1": "K (J/m^3)", "Hc": "Hc (A/m)", "Mr": "Mr (A/m)", "BHmax": "BHmax (J/m^3)"})
             print(df.head())

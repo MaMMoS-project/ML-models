@@ -10,7 +10,7 @@ from typing import Dict, List, Optional
 from sklearn.linear_model import Lasso, Ridge, LinearRegression
 from sklearn.model_selection import GridSearchCV
 from sklearn.exceptions import ConvergenceWarning
-from base_trainer import DataLoader, ModelEvaluator, split_data
+from base_trainer import DataLoader, ModelEvaluator, split_data, cross_val_report
 
 warnings.filterwarnings("ignore", category=ConvergenceWarning)
 
@@ -81,8 +81,15 @@ class LinearModelsTrainer:
             test_metrics = self.evaluator.compute_metrics(y_test_true, y_test_pred_log)
 
             print(f"Best params: {best_params}")
-            print(f"Test R² = {test_metrics['R2']:.4f}")
-            print(f"Test RMSE = {test_metrics['RMSE']:.4f}")
+            print(f"Single-split Test R² = {test_metrics['R2']:.4f}")
+            print(f"Single-split Test RMSE = {test_metrics['RMSE']:.4f}")
+
+            # Optional K-fold CV reporting (full dataset, same fitted config).
+            cv_folds = getattr(self.loader, 'cv_folds', 0)
+            cv = None
+            if cv_folds and cv_folds >= 2:
+                cv = cross_val_report(model, X, y, self.loader, n_splits=cv_folds)
+                print(f"{cv_folds}-fold CV R² = {cv['R2']:.4f} ± {cv['R2_std']:.4f} (headline)")
 
             emb_suffix = f"_{embedding_type}" if use_embedding else "_no_emb"
             output_path = self.output_dir / f"{dataset_name}_{model_type}{emb_suffix}.png"
@@ -94,13 +101,16 @@ class LinearModelsTrainer:
                 output_path=str(output_path),
             )
 
+            reported = {'R2': cv['R2'], 'RMSE': cv['RMSE'], 'MAE': cv['MAE']} if cv else test_metrics
             results[model_type] = {
-                'R2': test_metrics['R2'],
-                'RMSE': test_metrics['RMSE'],
-                'MAE': test_metrics['MAE'],
+                'R2': reported['R2'],
+                'RMSE': reported['RMSE'],
+                'MAE': reported['MAE'],
                 'best_params': best_params,
                 'model': model,
             }
+            if cv:
+                results[model_type].update({'R2_std': cv['R2_std'], 'cv_folds': cv_folds})
 
         return results
 

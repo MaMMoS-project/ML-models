@@ -1,0 +1,51 @@
+flowchart TB
+
+    A("Intrinsic Magnetic Properties<br/>(Ms, A, K)")
+
+    V("Validity Screening<br/>Classifier")
+
+    B("Valid Samples")
+
+    X("Rejected Samples (NaN values)")
+
+    C("Magnet Type<br/>Classifier")
+
+    A --> V
+
+    V -->|Invalid| X
+    V -->|Valid| B
+
+    B --> C
+
+    C --> H("Hard Magnet")
+    C --> S("Soft Magnet")
+
+    subgraph HM["Hard Magnet"]
+        direction TB
+        H --> R1("Surrogate Model")
+        R1 --> P1("Extrinsic Properties")
+    end
+
+    subgraph SM["Soft Magnet"]
+        direction TB
+        S --> R2("Surrogate Model")
+        R2 --> P2("Extrinsic Properties")
+    end
+
+    %% styling
+
+    classDef input fill:#F5F5F5,stroke:#555,stroke-width:1.5px;
+    classDef screen fill:#C8E6C9,stroke:#2E7D32,stroke-width:1.5px;
+    classDef reject fill:#FFCDD2,stroke:#C62828,stroke-width:1.5px;
+    classDef valid fill:#A5D6A7,stroke:#1B5E20,stroke-width:1.5px;
+    classDef clf fill:#FFE082,stroke:#F57F17,stroke-width:1.5px;
+    classDef model fill:#E3F2FD,stroke:#1565C0,stroke-width:1.5px;
+
+    class A input;
+    class V screen;
+    class B valid;
+    class X reject;
+    class C clf;
+    class H,S clf;
+    class R1,R2 model;
+    class P1,P2 model;

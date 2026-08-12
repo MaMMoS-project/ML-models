@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 from typing import Dict, Optional
-from base_trainer import DataLoader, ModelEvaluator, split_data
+from base_trainer import DataLoader, ModelEvaluator, split_data, cross_val_report_fn
 
 try:
     import torch
@@ -66,6 +66,86 @@ if TORCH_AVAILABLE:
             if self.device.type == 'cuda':
                 torch.backends.cudnn.benchmark = True
 
+        def _auto_arch(self, n_train, hidden_dims, batch_size):
+            """Auto-size [h, h] hidden dims and batch size from the training count."""
+            if hidden_dims is None:
+                h = min(128, max(16, n_train // 50))
+                hidden_dims = [h, h]
+            if batch_size is None:
+                batch_size = min(256, max(16, n_train // 10))
+            return hidden_dims, batch_size
+
+        def _fit_model(self, X_tr, y_tr, X_val, y_val, hidden_dims, batch_size,
+                       num_epochs, learning_rate, ckpt_path, verbose=True):
+            """Train an MLP with early stopping on (X_val, y_val); return best model.
+
+            Used by both the single-split path and each CV fold. Training and the
+            target are in log1p / delta space exactly as prepared by the loader.
+            """
+            pin = self.device.type == 'cuda'
+            train_loader = TorchDataLoader(
+                TensorDataset(torch.FloatTensor(X_tr), torch.FloatTensor(y_tr)),
+                batch_size=batch_size, shuffle=True, pin_memory=pin,
+            )
+            val_loader = TorchDataLoader(
+                TensorDataset(torch.FloatTensor(X_val), torch.FloatTensor(y_val)),
+                batch_size=batch_size, shuffle=False, pin_memory=pin,
+            )
+            model = MLP(input_dim=X_tr.shape[1], hidden_dims=hidden_dims).to(self.device)
+            criterion = nn.MSELoss()
+            optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+            scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+                optimizer, mode='min', factor=0.5, patience=30
+            )
+            best_loss = float('inf')
+            patience_counter = 0
+            max_patience = 100
+            for epoch in range(num_epochs):
+                model.train()
+                train_loss = 0.0
+                for batch_X, batch_y in train_loader:
+                    batch_X, batch_y = batch_X.to(self.device), batch_y.to(self.device)
+                    optimizer.zero_grad()
+                    loss = criterion(model(batch_X), batch_y)
+                    loss.backward()
+                    optimizer.step()
+                    train_loss += loss.item()
+                train_loss /= len(train_loader)
+
+                model.eval()
+                val_loss = 0.0
+                with torch.no_grad():
+                    for batch_X, batch_y in val_loader:
+                        batch_X, batch_y = batch_X.to(self.device), batch_y.to(self.device)
+                        val_loss += criterion(model(batch_X), batch_y).item()
+                val_loss /= len(val_loader)
+                scheduler.step(val_loss)
+
+                if verbose and (epoch + 1) % 20 == 0:
+                    print(f"Epoch [{epoch+1}/{num_epochs}], "
+                          f"Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}")
+
+                if val_loss < best_loss:
+                    best_loss = val_loss
+                    patience_counter = 0
+                    torch.save(model.state_dict(), ckpt_path)
+                else:
+                    patience_counter += 1
+                    if patience_counter >= max_patience:
+                        if verbose:
+                            print(f"Early stopping at epoch {epoch+1}")
+                        break
+
+            model.load_state_dict(torch.load(ckpt_path, weights_only=True))
+            model.eval()
+            return model
+
+        def _predict(self, model, X):
+            """Predict in the model's target space (delta if delta-learning)."""
+            model.eval()
+            with torch.no_grad():
+                return model(torch.FloatTensor(X).to(self.device)).cpu().numpy()
+
         def train_and_evaluate(
             self,
             dataset_name: str,
@@ -101,15 +181,7 @@ if TORCH_AVAILABLE:
             X_train, X_test, y_train, y_test = split_data(X, y)
 
             n_train = len(X_train)
-
-            # Auto-size architecture to the training set
-            if hidden_dims is None:
-                hidden_size = min(128, max(16, n_train // 50))
-                hidden_dims = [hidden_size, hidden_size]
-
-            # Auto-size batch: ~10 batches per epoch for small sets, cap at 256
-            if batch_size is None:
-                batch_size = min(256, max(16, n_train // 10))
+            hidden_dims, batch_size = self._auto_arch(n_train, hidden_dims, batch_size)
 
             print(f"Training samples: {n_train}")
             print(f"Test samples: {len(X_test)}")
@@ -117,80 +189,15 @@ if TORCH_AVAILABLE:
             print(f"Hidden dimensions: {hidden_dims} (auto)")
             print(f"Batch size: {batch_size} (auto)")
 
-            train_dataset = TensorDataset(
-                torch.FloatTensor(X_train), torch.FloatTensor(y_train)
-            )
-            test_dataset = TensorDataset(
-                torch.FloatTensor(X_test), torch.FloatTensor(y_test)
-            )
-            pin = self.device.type == 'cuda'
-            train_loader = TorchDataLoader(
-                train_dataset, batch_size=batch_size, shuffle=True, pin_memory=pin,
-            )
-            test_loader = TorchDataLoader(
-                test_dataset, batch_size=batch_size, shuffle=False, pin_memory=pin,
-            )
-
-            model = MLP(input_dim=X_train.shape[1], hidden_dims=hidden_dims).to(self.device)
-            criterion = nn.MSELoss()
-            optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-            scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-                optimizer, mode='min', factor=0.5, patience=30
-            )
-
             print("\nTraining in log1p space...")
-            best_loss = float('inf')
-            patience_counter = 0
-            max_patience = 100
             best_model_path = self.output_dir / f"{dataset_name}_MLP_best.pt"
+            model = self._fit_model(
+                X_train, y_train, X_test, y_test, hidden_dims, batch_size,
+                num_epochs, learning_rate, best_model_path,
+            )
 
-            for epoch in range(num_epochs):
-                model.train()
-                train_loss = 0.0
-                for batch_X, batch_y in train_loader:
-                    batch_X, batch_y = batch_X.to(self.device), batch_y.to(self.device)
-                    optimizer.zero_grad()
-                    outputs = model(batch_X)
-                    loss = criterion(outputs, batch_y)
-                    loss.backward()
-                    optimizer.step()
-                    train_loss += loss.item()
-                train_loss /= len(train_loader)
-
-                model.eval()
-                val_loss = 0.0
-                with torch.no_grad():
-                    for batch_X, batch_y in test_loader:
-                        batch_X, batch_y = batch_X.to(self.device), batch_y.to(self.device)
-                        outputs = model(batch_X)
-                        val_loss += criterion(outputs, batch_y).item()
-                val_loss /= len(test_loader)
-                scheduler.step(val_loss)
-
-                if (epoch + 1) % 20 == 0:
-                    print(f"Epoch [{epoch+1}/{num_epochs}], "
-                          f"Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}")
-
-                if val_loss < best_loss:
-                    best_loss = val_loss
-                    patience_counter = 0
-                    torch.save(model.state_dict(), best_model_path)
-                else:
-                    patience_counter += 1
-                    if patience_counter >= max_patience:
-                        print(f"Early stopping at epoch {epoch+1}")
-                        break
-
-            model.load_state_dict(torch.load(best_model_path, weights_only=True))
-
-            model.eval()
-            with torch.no_grad():
-                y_train_pred_log = model(
-                    torch.FloatTensor(X_train).to(self.device)
-                ).cpu().numpy()
-                y_test_pred_log = model(
-                    torch.FloatTensor(X_test).to(self.device)
-                ).cpu().numpy()
+            y_train_pred_log = self._predict(model, X_train)
+            y_test_pred_log = self._predict(model, X_test)
 
             # Map predictions and targets back to log1p(Ms_exp) space (no-op
             # unless delta_learning is on) so metrics stay comparable across runs.
@@ -202,10 +209,32 @@ if TORCH_AVAILABLE:
             train_metrics = self.evaluator.compute_metrics(y_train_true, y_train_pred_log)
             test_metrics = self.evaluator.compute_metrics(y_test_true, y_test_pred_log)
 
-            print(f"\nFinal Test Metrics (log1p space):")
+            print(f"\nSingle-split Test Metrics (log1p space):")
             print(f"  R² = {test_metrics['R2']:.4f}")
             print(f"  RMSE = {test_metrics['RMSE']:.4f}")
             print(f"  MAE = {test_metrics['MAE']:.4f}")
+
+            # Optional K-fold CV reporting. Each fold trains a fresh MLP (same
+            # auto-sized architecture); early stopping uses a val split carved
+            # from the fold's TRAIN data, so the held-out fold stays unseen.
+            cv_folds = getattr(self.loader, 'cv_folds', 0)
+            cv = None
+            if cv_folds and cv_folds >= 2:
+                cv_ckpt = self.output_dir / f"{dataset_name}_MLP_cvfold.pt"
+
+                def _fit_predict(X_tr, y_tr, X_te):
+                    Xt, Xv, yt, yv = split_data(X_tr, y_tr)
+                    m = self._fit_model(Xt, yt, Xv, yv, hidden_dims, batch_size,
+                                        num_epochs, learning_rate, cv_ckpt, verbose=False)
+                    return self._predict(m, X_te)
+
+                cv = cross_val_report_fn(_fit_predict, X, y, self.loader, n_splits=cv_folds)
+                print(f"\n{cv_folds}-fold CV Metrics (headline):")
+                print(f"  R²   = {cv['R2']:.4f} ± {cv['R2_std']:.4f}")
+                print(f"  RMSE = {cv['RMSE']:.4f} ± {cv['RMSE_std']:.4f}")
+                print(f"  MAE  = {cv['MAE']:.4f} ± {cv['MAE_std']:.4f}")
+
+            reported = {'R2': cv['R2'], 'RMSE': cv['RMSE'], 'MAE': cv['MAE']} if cv else test_metrics
 
             emb_suffix = f"_{embedding_type}" if use_embedding else "_no_emb"
             output_path = self.output_dir / f"{dataset_name}_MLP{emb_suffix}.png"
@@ -224,16 +253,23 @@ if TORCH_AVAILABLE:
                 f.write(f"Hidden dims: {hidden_dims}\n")
                 f.write(f"Batch size: {batch_size}\n")
                 f.write(f"Learning rate: {learning_rate}\n")
-                f.write(f"R2: {test_metrics['R2']:.4f}\n")
-                f.write(f"RMSE: {test_metrics['RMSE']:.4f}\n")
-                f.write(f"MAE: {test_metrics['MAE']:.4f}\n")
+                f.write(f"Single-split R2: {test_metrics['R2']:.4f}\n")
+                if cv:
+                    f.write(f"CV folds: {cv_folds}\n")
+                    f.write(f"CV R2: {cv['R2']:.4f} +/- {cv['R2_std']:.4f}\n")
+                    f.write(f"CV RMSE: {cv['RMSE']:.4f} +/- {cv['RMSE_std']:.4f}\n")
+                    f.write(f"CV MAE: {cv['MAE']:.4f} +/- {cv['MAE_std']:.4f}\n")
 
-            return {
-                'R2': test_metrics['R2'],
-                'RMSE': test_metrics['RMSE'],
-                'MAE': test_metrics['MAE'],
+            result = {
+                'R2': reported['R2'],
+                'RMSE': reported['RMSE'],
+                'MAE': reported['MAE'],
                 'model': model,
             }
+            if cv:
+                result.update({'R2_std': cv['R2_std'], 'RMSE_std': cv['RMSE_std'],
+                               'MAE_std': cv['MAE_std'], 'cv_folds': cv_folds})
+            return result
 
 
 def main():

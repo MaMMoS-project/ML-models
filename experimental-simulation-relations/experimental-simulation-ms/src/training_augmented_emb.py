@@ -39,10 +39,14 @@ def training_augmented_emb():
     from linear_models import LinearModelsTrainer
     from random_forest import RandomForestTrainer
     from fcnn_mlp import FCNNTrainer
-    from base_trainer import SIM_COL, EXP_COL, parse_ms_threshold, parse_delta_learning
+    from lightgbm_trainer import LightGBMTrainer, LIGHTGBM_AVAILABLE
+    from base_trainer import (SIM_COL, EXP_COL, parse_ms_threshold,
+                              parse_delta_learning, parse_re_features, parse_cv_folds)
 
     ms_threshold = parse_ms_threshold()
     delta_learning = parse_delta_learning()
+    use_re_features = parse_re_features()
+    cv_folds = parse_cv_folds()
 
     print("=" * 80)
     print("AUGMENTED DATA TRAINING WITH EMBEDDINGS")
@@ -135,10 +139,18 @@ def training_augmented_emb():
         mlp_trainer = FCNNTrainer(
             output_dir=str(results_dir / "augmented_emb_fcnn")
         )
-        for _t in (lin_trainer, rf_trainer, mlp_trainer):
+        gbm_trainer = LightGBMTrainer(
+            output_dir=str(results_dir / "augmented_emb_lightgbm")
+        ) if LIGHTGBM_AVAILABLE else None
+        _trainers = [lin_trainer, rf_trainer, mlp_trainer]
+        if gbm_trainer is not None:
+            _trainers.append(gbm_trainer)
+        for _t in _trainers:
             _t.loader.load_augmented_data = make_loader_patch(df_data)
             _t.loader.load_pairs_data = make_loader_patch(df_data)
             _t.loader.delta_learning = delta_learning
+            _t.loader.use_re_features = use_re_features
+            _t.loader.cv_folds = cv_folds
 
         for embedding_type in embedding_types:
             emb_name = "raw_200D" if embedding_type is None else embedding_type
@@ -199,6 +211,26 @@ def training_augmented_emb():
                 print(f"  Random Forest - R²: {rf_metrics['R2']:.4f}")
             except Exception as e:
                 print(f"Error running Random Forest: {e}")
+
+            # 2b. LightGBM
+            if gbm_trainer is not None:
+                try:
+                    gbm_metrics = gbm_trainer.train_and_evaluate(
+                        dataset_name=dataset_name,
+                        dataset_type=dataset_type,
+                        is_augmented=is_augmented,
+                        use_embedding=True,
+                        embedding_type=embedding_type,
+                    )
+                    dataset_emb_results.append({
+                        "Model_Family": "LightGBM", "Model": "LGBM",
+                        "Dataset": dataset_name, "Embedding": emb_name,
+                        "R2": gbm_metrics["R2"], "RMSE": gbm_metrics["RMSE"],
+                        "MAE": gbm_metrics["MAE"],
+                    })
+                    print(f"  LightGBM - R²: {gbm_metrics['R2']:.4f}")
+                except Exception as e:
+                    print(f"Error running LightGBM: {e}")
 
             # 3. FCNN/MLP
             try:
