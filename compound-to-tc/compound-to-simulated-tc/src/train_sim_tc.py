@@ -849,8 +849,8 @@ def train_one_dataset(ds: Dict, figures_dir: Path) -> List[Dict]:
             f"  MAE={best_row['MAE']:.1f} K"
             f"  (N={int(best_row['N'])}) ***"
         )
-        print(f"  Saved → {ds_csv}  (per-member)")
-        print(f"  Saved → {agg_csv}  (aggregated)")
+        # print(f"  Saved → {ds_csv}  (per-member)")
+        # print(f"  Saved → {agg_csv}  (aggregated)")
 
     return ds_results
 
@@ -896,10 +896,10 @@ def update_global_summary() -> None:
     print("OVERALL BEST MODEL PER DATASET  (ensemble mean ± std)")
     print("=" * 70)
     print(best_global.to_string(index=False))
-    print(f"\nAll results (aggregated) : {out_csv}")
-    print(f"Best per dataset         : {best_csv}")
-    print(f"Per-dataset tables       : {RESULTS_DIR}/<dataset>_sim_results.csv (per-member)")
-    print(f"                           {RESULTS_DIR}/<dataset>_sim_results_agg.csv (aggregated)")
+    # print(f"\nAll results (aggregated) : {out_csv}")
+    # print(f"Best per dataset         : {best_csv}")
+    # print(f"Per-dataset tables       : {RESULTS_DIR}/<dataset>_sim_results.csv (per-member)")
+    # print(f"                           {RESULTS_DIR}/<dataset>_sim_results_agg.csv (aggregated)")
 
 
 # ---------------------------------------------------------------------------
@@ -929,6 +929,6 @@ def train_sim_tc() -> None:
 
 if __name__ == "__main__":
     log_path = PROJECT_ROOT / "logs" / "train_sim_tc.txt"
-    print(f"Output logged to: {log_path}")
+    # print(f"Output logged to: {log_path}")
     train_sim_tc()
-    print(f"Done. Results in: {RESULTS_DIR}")
+    # print(f"Done. Results in: {RESULTS_DIR}")

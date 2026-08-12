@@ -101,7 +101,7 @@ def create_embeddings() -> None:
 
     elem_features = _load_elem_features(EMB_FILE)
     dim = len(next(iter(elem_features.values())))
-    print(f"\nElement embeddings: {EMB_FILE}")
+    # print(f"\nElement embeddings: {EMB_FILE}")
     print(f"Vocabulary: {len(elem_features)} elements  |  dimension: {dim}")
 
     for ds in DATASETS:
@@ -129,13 +129,13 @@ def create_embeddings() -> None:
         print(f"  Embeddable rows        : {len(df)}")
 
         df.to_pickle(out_path)
-        print(f"  Saved → {out_path}")
+        # print(f"  Saved → {out_path}")
 
     print("\nDone. Next step: python src/compress_embeddings_pca.py  (simulated Tc)")
 
 
 if __name__ == "__main__":
     log_path = PROJECT_ROOT / "logs" / "create_embeddings.txt"
-    print(f"Output logged to: {log_path}")
+    # print(f"Output logged to: {log_path}")
     create_embeddings()
-    print(f"Done. Results in: {OUTPUT_DIR}")
+    # print(f"Done. Results in: {OUTPUT_DIR}")
