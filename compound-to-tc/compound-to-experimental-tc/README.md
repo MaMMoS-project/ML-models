@@ -324,7 +324,6 @@ and computes & appends the 7 features automatically — no extra arguments. `--b
 resolve to these `_refeats` files when they are the ones on disk (exact embedding-only
 name first, `_refeats` as fallback).
 
-A SLURM helper is provided: `run_1node-predict.sh` (runs `--compounds-file … --best`).
 
 ### Validate against a reference set (`src/validate_reference_data.py`)
 
