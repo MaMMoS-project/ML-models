@@ -361,18 +361,13 @@ MAE and RMSE in Kelvin lower is better.
 
 ### Best model per dataset (ensemble mean ± std)
 
-# TODO: update table below !
+| Dataset | Model        | Embedding |                R² |    MAE (K) |   RMSE (K) |
+| ------- | ------------ | --------- | ----------------: | ---------: | ---------: |
+| RE      | **LightGBM** | raw_200D  | **0.930 ± 0.011** | **40.045** | **71.182** |
+| All     | **LightGBM** | raw_200D  | **0.859 ± 0.011** |  **58.06** | **101.62** |
+| RE-Free | **LightGBM** | raw_200D  | **0.741 ± 0.022** | **79.313** |  **134.1** |
 
-| Dataset | Model | Embedding | R² | MAE (K) | RMSE (K) |
-| ------- | ----- | --------- | -- | ------- | -------- |
-| RE      | **LightGBM** | raw_200D | **0.940 ± 0.006** | 36.5 | 67.3 |
-| All     | **LightGBM** | raw_200D | 0.871 ± 0.009 | 53.6 | 96.7 |
-| RE-Free | **LightGBM** | raw_200D | 0.760 ± 0.014 | 78.1 | 128.7 |
-
-LightGBM (the 4th family) is now the best model on **all three** datasets — on RE-Free it
-is tied with Random Forest (RF raw_200D 0.760 ± 0.012). RE compounds remain considerably
-more predictable (R² ≈ 0.94) than the combined set (≈ 0.87) and RE-free ones (≈ 0.76). The
-full 200-D embedding is the best variant on every dataset.
+LightGBM is now the best-performing model across **all three datasets**, although on RE-Free it is closely matched by Random Forest. RE compounds remain substantially more predictable, achieving an (R^2) of approximately **0.93**, compared with **0.86** for the combined dataset and **0.74** for RE-Free compounds. The **full 200-D embedding** provides the strongest overall performance for LightGBM on all three datasets, indicating that dimensionality reduction generally does not improve predictive accuracy for this model.
 
 ### All — All models × embeddings (ensemble mean ± std, with RE features)
 
@@ -442,30 +437,28 @@ Latest run: 4 families, `re_features: true`, N = 10 members. Sorted by R². (RE 
 are all-zero for RE-free compounds, so they leave LightGBM/Linear unchanged and only
 perturb RF/MLP within noise.)
 
-| Embedding | Model    | R² (mean ± std)     | MAE (K) | RMSE (K) |
-| --------- | -------- | ------------------- | ------- | -------- |
-| raw_200D  | LightGBM | **0.760 ± 0.014**   | 78.1    | 128.7    |
-| raw_200D  | RF       | 0.760 ± 0.012       | 75.5    | 128.8    |
-| pca_64    | LightGBM | 0.758 ± 0.013       | 75.8    | 129.3    |
-| pca_32    | LightGBM | 0.758 ± 0.013       | 76.3    | 129.3    |
-| pca_32    | RF       | 0.753 ± 0.012       | 77.6    | 130.5    |
-| pca_16    | RF       | 0.752 ± 0.010       | 78.3    | 130.8    |
-| pca_64    | RF       | 0.744 ± 0.014       | 79.6    | 133.0    |
-| pca_16    | LightGBM | 0.743 ± 0.008       | 79.8    | 133.2    |
-| pca_8     | RF       | 0.725 ± 0.010       | 83.5    | 137.9    |
-| pca_8     | LightGBM | 0.715 ± 0.007       | 85.9    | 140.4    |
-| pca_32    | MLP      | 0.647 ± 0.016       | 104.9   | 156.1    |
-| raw_200D  | MLP      | 0.630 ± 0.020       | 108.2   | 159.9    |
-| pca_64    | MLP      | 0.617 ± 0.042       | 104.7   | 162.4    |
-| pca_16    | MLP      | 0.608 ± 0.022       | 113.7   | 164.5    |
-| pca_8     | MLP      | 0.528 ± 0.024       | 129.2   | 180.5    |
-| raw_200D  | Linear   | 0.388 ± 0.018       | 157.6   | 205.6    |
-| pca_64    | Linear   | 0.386 ± 0.017       | 157.9   | 206.0    |
-| pca_32    | Linear   | 0.379 ± 0.020       | 158.7   | 207.1    |
-| pca_16    | Linear   | 0.364 ± 0.020       | 161.1   | 209.6    |
-| pca_8     | Linear   | 0.325 ± 0.019       | 167.7   | 215.9    |
+| Embedding | Model      |   R² (mean ± std) |          MAE (K) |        RMSE (K) |
+| --------- | ---------- | ----------------: | ---------------: | --------------: |
+| raw_200D  | **LGBM**   | **0.741 ± 0.022** | **79.313 ± 3.1** | **134.1 ± 4.6** |
+| raw_200D  | **RF**     | **0.738 ± 0.022** |     81.154 ± 3.8 |     134.0 ± 5.8 |
+| pca_32    | **LGBM**   | **0.736 ± 0.024** |       83.7 ± 2.6 |     137.1 ± 3.0 |
+| pca_64    | **LGBM**   | **0.731 ± 0.023** |       83.9 ± 2.6 |     138.2 ± 4.7 |
+| pca_32    | **RF**     | **0.728 ± 0.023** |       83.8 ± 2.8 |     137.6 ± 3.7 |
+| pca_16    | **LGBM**   | **0.722 ± 0.024** |       86.5 ± 2.9 |     137.9 ± 3.2 |
+| pca_16    | **RF**     | **0.724 ± 0.022** |       84.5 ± 3.0 |     138.2 ± 3.9 |
+| pca_64    | **RF**     | **0.718 ± 0.019** |       85.0 ± 2.6 |     139.5 ± 3.0 |
+| pca_8     | **LGBM**   | **0.680 ± 0.030** |       92.9 ± 3.7 |     146.0 ± 6.2 |
+| raw_200D  | **MLP**    | **0.630 ± 0.032** |      109.2 ± 4.4 |     157.6 ± 5.8 |
+| pca_16    | **MLP**    | **0.605 ± 0.021** |      114.5 ± 2.4 |     164.0 ± 4.3 |
+| pca_64    | **MLP**    | **0.539 ± 0.158** |     117.9 ± 11.4 |    171.9 ± 22.5 |
+| pca_8     | **MLP**    | **0.515 ± 0.023** |      130.4 ± 4.0 |     182.5 ± 4.5 |
+| raw_200D  | **Linear** | **0.388 ± 0.018** |      157.2 ± 2.1 |     205.8 ± 1.9 |
+| pca_64    | **Linear** | **0.387 ± 0.018** |      157.0 ± 2.4 |     206.0 ± 3.1 |
+| pca_32    | **Linear** | **0.381 ± 0.018** |      158.6 ± 2.5 |     206.6 ± 3.1 |
+| pca_16    | **Linear** | **0.370 ± 0.020** |      160.6 ± 2.5 |     209.3 ± 2.8 |
+| pca_8     | **Linear** | **0.334 ± 0.018** |      166.3 ± 2.8 |     215.0 ± 3.5 |
 
-On RE-Free, LightGBM and RF are tied at the top (≈ 0.760); the dataset is intrinsically
-harder than RE for every model.
+
+On the RE-Free dataset, LightGBM and Random Forest achieve the strongest performance, with comparable R² values of approximately 0.74. Overall, RE-Free is a more challenging prediction task than RE, resulting in consistently lower performance across all evaluated models.
 
 ---
