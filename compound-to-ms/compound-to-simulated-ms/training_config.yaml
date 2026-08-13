@@ -1,0 +1,39 @@
+# Which model families to train and how many ensemble members to produce.
+#
+# Simple form  (ensemble defaults to 1):
+#   linear: true
+#
+# Extended form:
+#   rf:
+#     enabled: true
+#     ensemble: 5   # train 5 models with different train/test splits
+#
+# Setting a model to false disables it entirely.
+#
+# re_features: append 7 rare-earth physics features (de Gennes factor, S-state
+# fraction, free-ion moment, ...) to the embedding. Zero for RE-free compounds, so
+# safe on every dataset. NOTE: while on, ONNX export is skipped (the input dim
+# changes), so predict_tc cannot serve these models yet — accuracy study only.
+  re_features: true
+  models:
+    # Only the best + 2nd-best model families are trained. Ranking on the latest run
+    # (held-out MAE, best embedding per family) is the SAME top-2 set for every dataset:
+    #   RE      : 1. LGBM (52.2)  2. RF (55.1)    | MLP 75.5, Linear 102.1
+    #   RE-Free : 1. RF   (143.5) 2. LGBM (143.8) | MLP 192.9, Linear 203.4
+    #   All     : 1. LGBM (99.8)  2. RF (101.5)   | MLP 127.2, Linear 162.0
+    # => No RE vs RE-Free conflict: top-2 = {LGBM, RF} for both (only the #1/#2 order
+    #    flips, and we keep both). Linear and MLP are far behind everywhere -> disabled.
+    # (sim_tc_best_by_dataset.csv ranks by R2 and picks RF everywhere; MAE flips #1 to
+    #  LGBM for RE/All — within std. Either way the kept set is {LGBM, RF}.)
+    linear:
+      enabled: false
+      ensemble: 10
+    rf:
+      enabled: true
+      ensemble: 10
+    mlp:
+      enabled: false
+      ensemble: 10
+    lgbm:
+      enabled: true
+      ensemble: 10

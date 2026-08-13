@@ -231,11 +231,17 @@ def train_pytorch_nn(
     train_dataset = TensorDataset(X_train_t, y_train_t)
     train_loader  = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     
+    # Known ~1% simulation error on the (log1p) targets sets a noise floor on the MSE:
+    # a relative error r maps to ~r in log space, so the irreducible MSE is ~r**2. Stop once
+    # the training loss reaches this floor instead of driving it lower and fitting the noise.
+    LABEL_REL_ERR = 0.01
+    loss_floor = LABEL_REL_ERR ** 2
+
     # Training Loop
     for epoch in range(num_epochs):
         model.train()
         running_loss = 0.0
-        
+
         for batch_X, batch_y in train_loader:
             optimizer.zero_grad()
             outputs = model(batch_X)
@@ -243,10 +249,16 @@ def train_pytorch_nn(
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
-        
+
+        avg_loss = running_loss / len(train_loader)
         if verbose and (epoch+1) % 10 == 0:
-            avg_loss = running_loss / len(train_loader)
             print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {avg_loss:.6f}")
+        if avg_loss <= loss_floor:
+            if verbose:
+                print(f"Epoch [{epoch+1}/{num_epochs}]: training loss {avg_loss:.6f} reached the "
+                      f"{LABEL_REL_ERR:.0%} label-noise floor ({loss_floor:.1e}); stopping early "
+                      f"to avoid fitting simulation noise.")
+            break
     
     # Evaluation: Predictions
     model.eval()

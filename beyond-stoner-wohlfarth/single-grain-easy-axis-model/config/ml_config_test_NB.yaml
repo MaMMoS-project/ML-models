@@ -1,7 +1,7 @@
 # ML Pipeline Configuration
 
 data:
-  input_file: "data/single_grain_cube_50nm_aligned.csv" # it is the same as ../data/toy_model_data_3.csv
+  input_file: "../data/single_grain_cube_50nm_aligned.csv" # it is the same as ../data/toy_model_data_3.csv
   results_dir: "results"
   compute_difference: false  # Whether to compute analytical magnetic properties and their differences
 #  results_dir: "results_diff"
@@ -10,13 +10,13 @@ data:
 # preprocessing:
 preprocessing:
   input_columns:
-    - 'Hc (A/m)'
-    - 'Mr (A/m)'
-    - 'BHmax (J/m^3)'
-  output_columns:
     - 'Ms (A/m)'
     - 'A (J/m)'
     - 'K (J/m^3)'
+  output_columns:
+    - 'Hc (A/m)'
+    - 'Mr (A/m)'
+    - 'BHmax (J/m^3)'
   configurations:
 #    NoLogTransformation:
 #      remove_negative: true
@@ -61,13 +61,13 @@ models:
       param_grid:
         n_estimators: [100, 200, 300]
         #max_depth: [10, 20] #, 30, null]
-        max_depth: [10, 20, 30, null]
+        max_depth: [10, 20, null]
         min_samples_split: [2, 5, 10]
-        min_samples_leaf: [1, 2, 4]
+        min_samples_leaf: [1, 2, 4, 8]
         #max_features: [sqrt, log2, null]
   
   neural_network:
-    enabled: false
+    enabled: true
     module: train_nn
     function: train_neural_network
     params:
@@ -79,7 +79,7 @@ models:
         batch_size: 32
   
   linear_regression:
-    enabled: false
+    enabled: true
     module: train_lr
     function: train_linear_regression
     params:
@@ -87,22 +87,22 @@ models:
         fit_intercept: [true, false]
   
   lasso_lars:
-    enabled: false
+    enabled: true
     module: train_lasso
     function: train_lasso_lars
     params:
       alpha: 0.01
-      tol: 1e-4
 
   lasso_lars_cv:
-    enabled: false
+    enabled: true
     module: train_lasso
     function: train_lasso_lars_cv
     params:
-      tol: 1e-4
+      cv: 5
+      max_iter: 500
   
   gaussian_process:
-    enabled: false
+    enabled: true
     module: train_gp
     function: train_gaussian_process
     params:
