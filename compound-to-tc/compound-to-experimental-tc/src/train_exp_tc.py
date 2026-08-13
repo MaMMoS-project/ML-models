@@ -920,10 +920,10 @@ def update_global_summary() -> None:
     print("OVERALL BEST MODEL PER DATASET  (ensemble mean ± std)")
     print("=" * 70)
     print(best_global.to_string(index=False))
-    print(f"\nAll results (aggregated) : {out_csv}")
-    print(f"Best per dataset         : {best_csv}")
-    print(f"Per-dataset tables       : {RESULTS_DIR}/<dataset>_results.csv (per-member)")
-    print(f"                           {RESULTS_DIR}/<dataset>_results_agg.csv (aggregated)")
+    # print(f"\nAll results (aggregated) : {out_csv}")
+    # print(f"Best per dataset         : {best_csv}")
+    # print(f"Per-dataset tables       : {RESULTS_DIR}/<dataset>_results.csv (per-member)")
+    # print(f"                           {RESULTS_DIR}/<dataset>_results_agg.csv (aggregated)")
 
 
 # ---------------------------------------------------------------------------
