@@ -74,7 +74,7 @@ def compress_embeddings_pca() -> None:
         print(f"Dataset : {ds['name']}")
 
         if not in_path.exists():
-            print(f"  Input not found: {in_path}")
+            print(f"  Input file not found.")# : {in_path}")
             print("  Run create_embeddings.py first.")
             continue
 
@@ -97,7 +97,7 @@ def compress_embeddings_pca() -> None:
             print(f"  PCA({n:2d} components): explained variance = {var:.3f}  → '{col}'")
 
         df.to_pickle(out_path)
-        print(f"  Saved → {out_path}")
+        # print(f"  Saved → {out_path}")
 
     print("\nDone. Next step: python src/train_sim_tc.py  (or the per-dataset variants)")
 
