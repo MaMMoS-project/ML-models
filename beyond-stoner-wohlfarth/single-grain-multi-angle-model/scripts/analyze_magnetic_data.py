@@ -28,12 +28,12 @@ def analyze_magnetic_data(data_path=None):
 
     # Read the input file with mammos reader. BUT do NOT (yet)use the entities for simplicity
     if data_path != None:
-        content_minidrive = me.io.entities_from_file(f"{data_path}mumax3_mindrive_cube_all_params.csv")
-        content_relaxdriver = me.io.entities_from_file(f"{data_path}mumax3_relaxdriver_cube_all_params.csv")       
+        content_minidrive = me.from_csv(f"{data_path}mumax3_mindrive_cube_all_params.csv")
+        content_relaxdriver = me.from_csv(f"{data_path}mumax3_relaxdriver_cube_all_params.csv")       
     
     else:
-        content_minidrive = me.io.entities_from_file("./data/mumax3_mindrive_cube_all_params.csv")
-        content_relaxdriver = me.io.entities_from_file("./data/mumax3_relaxdriver_cube_all_params.csv")
+        content_minidrive = me.from_csv("./data/mumax3_mindrive_cube_all_params.csv")
+        content_relaxdriver = me.from_csv("./data/mumax3_relaxdriver_cube_all_params.csv")
         
     # create procesed data dir
     os.makedirs('./data/processed/', exist_ok=True)

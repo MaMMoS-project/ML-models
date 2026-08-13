@@ -68,10 +68,22 @@ def train_gaussian_process(X: np.ndarray, y: np.ndarray, **kwargs) -> Tuple[GPRW
     })
     
     n_restarts = kwargs.get('n_restarts_optimizer', 2)
-    alpha = kwargs.get('alpha', 1e-6)
-    
+
+    # Honor the known ~1% simulation error on the targets as the GP observation noise.
+    # Targets are log1p-transformed, so a relative error r is ~r in log space. Because the
+    # GP standardises the targets internally (normalize_y=True), express that noise in the
+    # normalised space: sigma_norm = r / std(y_target), and use its variance as the GP's
+    # diagonal noise `alpha`. Setting the noise to the *known* label variance (instead of the
+    # previous ~0 default of 1e-6) stops the GP from interpolating the noisy training points
+    # -- which fixes the documented GP over-fitting -- and yields a calibrated variance.
+    LABEL_REL_ERR = float(kwargs.get('label_rel_err', 0.01))
+    y_arr = np.asarray(y, dtype=float)
+    y_std = np.std(y_arr, axis=0) if y_arr.ndim > 1 else np.std(y_arr)
+    alpha_from_noise = float(np.mean((LABEL_REL_ERR / np.maximum(y_std, 1e-12)) ** 2))
+    alpha = float(kwargs.get('alpha', alpha_from_noise))   # explicit `alpha` still overrides
+
     kernel = create_kernel(kernel_config)
-    
+
     model = GPRWrapper(
         kernel=kernel,
         n_restarts_optimizer=n_restarts,
@@ -88,7 +100,8 @@ def train_gaussian_process(X: np.ndarray, y: np.ndarray, **kwargs) -> Tuple[GPRW
     params = {
         'kernel': kernel_config,
         'n_restarts_optimizer': n_restarts,
-        'alpha': alpha
+        'alpha': alpha,
+        'label_rel_err': LABEL_REL_ERR
     }
     
     return model, params

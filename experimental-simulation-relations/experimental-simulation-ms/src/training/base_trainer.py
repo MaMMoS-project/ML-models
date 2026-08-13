@@ -11,7 +11,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
-from sklearn.model_selection import train_test_split
+from sklearn.base import clone
+from sklearn.model_selection import train_test_split, KFold, RepeatedKFold
 from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
 from typing import Tuple, Dict, Optional
 
@@ -84,15 +85,50 @@ def parse_delta_learning() -> bool:
     return args.delta_learning
 
 
+def parse_re_features() -> bool:
+    """Parse --re-features from command line arguments.
+
+    When set, rare-earth physics features (4f free-ion moment, spin projection,
+    de Gennes factor, RE fraction, ...) are appended to X. RE-free rows get
+    all-zero features, so this is safe for any dataset split.
+    """
+    import argparse
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument('--re-features', action='store_true',
+                        help='Append rare-earth 4f physics features to X.')
+    args, _ = parser.parse_known_args()
+    return args.re_features
+
+
+def parse_cv_folds(default: int = 0) -> int:
+    """Parse --cv N from command line arguments.
+
+    N >= 2 reports K-fold cross-validated metrics (mean +/- std over folds) as the
+    headline numbers instead of a single 80/20 split. N = 0 (default) keeps the
+    single-split behaviour. Useful for the small RE split, whose single-split R2
+    swings by +/-0.02-0.04.
+    """
+    import argparse
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument('--cv', type=int, default=default, dest='cv',
+                        help='K-fold CV for reporting (N>=2). 0 = single split (default).')
+    args, _ = parser.parse_known_args()
+    return args.cv if args.cv and args.cv >= 2 else 0
+
+
 class DataLoader:
     """Load and prepare Ms datasets for training."""
 
     def __init__(self, ms_threshold: Optional[float] = 50_000,
-                 delta_learning: bool = False):
+                 delta_learning: bool = False, use_re_features: bool = False,
+                 cv_folds: int = 0):
         project_root = Path(__file__).parent.parent.parent
         self.csv_path = project_root / "data" / "merged_df_python.csv"
         self.ms_threshold = ms_threshold
         self.delta_learning = delta_learning
+        self.use_re_features = use_re_features
+        # If >= 2, trainers report K-fold CV metrics instead of a single split.
+        self.cv_folds = cv_folds
         # Column index of log1p(Ms_sim) within X, recorded by prepare_dataset so
         # reconstruct_log_exp() can add the baseline back when delta_learning is on.
         self.sim_log_index_ = 0
@@ -252,6 +288,25 @@ class DataLoader:
             # log1p(Ms_sim) is the first column
             self.sim_log_index_ = 0
 
+        # Rare-earth physics features are APPENDED last, so sim_log_index_ (set
+        # above) stays valid for delta reconstruction.
+        if self.use_re_features:
+            import sys as _sys
+            _src_dir = str(Path(__file__).parent.parent)  # src/
+            if _src_dir not in _sys.path:
+                _sys.path.insert(0, _src_dir)
+            from re_features import compute_re_features, RE_FEATURE_NAMES
+            comp = (df['composition'] if 'composition' in df.columns
+                    else df.index.to_series())
+            re_mat = np.array([
+                [compute_re_features(c)[k] for k in RE_FEATURE_NAMES]
+                for c in comp.values
+            ])
+            X = np.hstack([X, re_mat])
+            n_active = int((re_mat[:, 0] > 0).sum())  # rows with nonzero RE fraction
+            print(f"  - RE physics features: ON ({len(RE_FEATURE_NAMES)} cols, "
+                  f"{n_active}/{len(df)} rows with RE content)")
+
         return X, y
 
     def reconstruct_log_exp(self, y_values: np.ndarray, X: np.ndarray) -> np.ndarray:
@@ -410,3 +465,76 @@ class ModelEvaluator:
 def split_data(X: np.ndarray, y: np.ndarray, test_size: float = 0.2, random_state: int = 42):
     """Split data into train/test sets."""
     return train_test_split(X, y, test_size=test_size, random_state=random_state)
+
+
+def cross_val_report(model, X: np.ndarray, y: np.ndarray, loader,
+                     n_splits: int = 5, n_repeats: int = 1, random_state: int = 42) -> Dict:
+    """K-fold CV metrics in log1p(Ms_exp) space, delta-aware.
+
+    A fresh clone of `model` (same hyperparameters, unfitted) is trained on each
+    training fold and scored on the held-out fold. Predictions and targets are
+    mapped back through loader.reconstruct_log_exp(), so metrics match the
+    single-split ones and stay comparable whether or not delta-learning is on.
+
+    Used by the sklearn-compatible estimators (Linear, RandomForest, LightGBM).
+    MLP and Symbolic Regression use the callable-based cross_val_report_fn()
+    instead (they are not sklearn-cloneable). All model families support CV.
+
+    Returns mean and std of R2/RMSE/MAE across folds.
+    """
+    if n_repeats > 1:
+        splitter = RepeatedKFold(n_splits=n_splits, n_repeats=n_repeats,
+                                 random_state=random_state)
+    else:
+        splitter = KFold(n_splits=n_splits, shuffle=True, random_state=random_state)
+
+    r2s, rmses, maes = [], [], []
+    for tr, te in splitter.split(X):
+        est = clone(model)
+        est.fit(X[tr], y[tr])
+        y_true = loader.reconstruct_log_exp(y[te], X[te])
+        y_pred = loader.reconstruct_log_exp(est.predict(X[te]), X[te])
+        m = ModelEvaluator.compute_metrics(y_true, y_pred)
+        r2s.append(m['R2']); rmses.append(m['RMSE']); maes.append(m['MAE'])
+
+    r2s, rmses, maes = np.array(r2s), np.array(rmses), np.array(maes)
+    return {
+        'R2': float(r2s.mean()),   'R2_std': float(r2s.std()),
+        'RMSE': float(rmses.mean()), 'RMSE_std': float(rmses.std()),
+        'MAE': float(maes.mean()),  'MAE_std': float(maes.std()),
+        'n_splits': n_splits, 'n_repeats': n_repeats,
+    }
+
+
+def cross_val_report_fn(fit_predict_fn, X: np.ndarray, y: np.ndarray, loader,
+                        n_splits: int = 5, n_repeats: int = 1, random_state: int = 42) -> Dict:
+    """K-fold CV for non-sklearn models (MLP, Symbolic Regression).
+
+    Like cross_val_report, but instead of cloning an estimator it calls
+    fit_predict_fn(X_train, y_train, X_test) -> y_pred_test, where y_pred_test is
+    in the TARGET space (delta if delta-learning is on). Predictions and targets
+    are mapped back through loader.reconstruct_log_exp() so metrics match the
+    single-split / sklearn-CV ones. This lets torch and PySR models be CV'd
+    without an sklearn-compatible clone().
+    """
+    if n_repeats > 1:
+        splitter = RepeatedKFold(n_splits=n_splits, n_repeats=n_repeats,
+                                 random_state=random_state)
+    else:
+        splitter = KFold(n_splits=n_splits, shuffle=True, random_state=random_state)
+
+    r2s, rmses, maes = [], [], []
+    for tr, te in splitter.split(X):
+        y_pred_target = fit_predict_fn(X[tr], y[tr], X[te])
+        y_true = loader.reconstruct_log_exp(y[te], X[te])
+        y_pred = loader.reconstruct_log_exp(np.asarray(y_pred_target), X[te])
+        m = ModelEvaluator.compute_metrics(y_true, y_pred)
+        r2s.append(m['R2']); rmses.append(m['RMSE']); maes.append(m['MAE'])
+
+    r2s, rmses, maes = np.array(r2s), np.array(rmses), np.array(maes)
+    return {
+        'R2': float(r2s.mean()),   'R2_std': float(r2s.std()),
+        'RMSE': float(rmses.mean()), 'RMSE_std': float(rmses.std()),
+        'MAE': float(maes.mean()),  'MAE_std': float(maes.std()),
+        'n_splits': n_splits, 'n_repeats': n_repeats,
+    }

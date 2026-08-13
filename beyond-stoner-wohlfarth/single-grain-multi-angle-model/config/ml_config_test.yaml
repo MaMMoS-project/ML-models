@@ -90,13 +90,13 @@ models:
   lasso:
     enabled: true
     module: train_lasso
-    function: train_lasso
+    function: train_lasso_lars
     params:
       alpha: 0.01
       tol: 1e-4
   
   gaussian_process:
-    enabled: false
+    enabled: true
     module: train_gp
     function: train_gaussian_process
     params:
@@ -121,4 +121,3 @@ evaluation:
     - adj_r2
     - mape
     - gini
-

@@ -52,6 +52,6 @@ def main() -> None:
 
 if __name__ == "__main__":
     log_path = PROJECT_ROOT / "logs" / "train_sim_tc_all.txt"
-    print(f"Output logged to: {log_path}")
+    # print(f"Output logged to: {log_path}")
     main()
-    print(f"Done. Results in: {RESULTS_DIR}")
+    # print(f"Done. Results in: {RESULTS_DIR}")

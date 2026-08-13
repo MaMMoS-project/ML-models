@@ -67,7 +67,7 @@ models:
         #max_features: [sqrt, log2, null]
   
   neural_network:
-    enabled: true
+    enabled: false
     module: train_nn
     function: train_neural_network
     params:
@@ -79,7 +79,7 @@ models:
         batch_size: 32
   
   linear_regression:
-    enabled: true
+    enabled: false
     module: train_lr
     function: train_linear_regression
     params:
@@ -87,7 +87,7 @@ models:
         fit_intercept: [true, false]
   
   lasso_lars:
-    enabled: true
+    enabled: false
     module: train_lasso
     function: train_lasso_lars
     params:
@@ -95,14 +95,14 @@ models:
       tol: 1e-4
 
   lasso_lars_cv:
-    enabled: true
+    enabled: false
     module: train_lasso
     function: train_lasso_lars_cv
     params:
       tol: 1e-4
   
   gaussian_process:
-    enabled: true
+    enabled: false
     module: train_gp
     function: train_gaussian_process
     params:
