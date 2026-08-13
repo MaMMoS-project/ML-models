@@ -1,4 +1,4 @@
-
+python3
 # ML model for systematic errors between simulations and experimental measurements of the Curie temperature
 
 This codebase implements various machine learning models to predict experimental Curie temperatures from simulated values. Additionally, chemical property information is incorporated via an embedding representation. 
@@ -560,6 +560,53 @@ means** (reduced-formula-deduplicated data). `Aug` = augmentation variant for th
 > **RE-Free-Pairs** set is the hardest. Numbers are lower than pre-deduplication because the
 > reduced-formula dedup removed duplicate-spelling train/test leakage — see `dedup_result.txt`.
 > To reproduce the baseline (non-delta) numbers instead, run with the default `training_config.yaml`.
+
+## Pairs - with Embedding
+
+| Dataset       | Model | Embedding |        R² |       RMSE |        MAE |
+| ------------- | ----- | --------- | --------: | ---------: | ---------: |
+| RE-Pairs      | RF    | pca_8     | **0.929** | **49.334** |     23.823 |
+| RE-Pairs      | RIDGE | pca_8     |     0.926 |     50.555 | **22.848** |
+| RE-Pairs      | LASSO | raw_200D  |     0.923 |     51.527 |     26.428 |
+| RE-Pairs      | LASSO | pca_16    |     0.922 |     51.727 |     26.807 |
+| RE-Pairs      | LASSO | pca_32    |     0.922 |     51.727 |     26.807 |
+| RE-Pairs      | LASSO | pca_64    |     0.922 |     51.727 |     26.807 |
+| RE-Pairs      | RF    | raw_200D  |     0.918 |     53.181 | **21.413** |
+| RE-Pairs      | RF    | pca_32    |     0.911 |     55.442 |     23.351 |
+| RE-Pairs      | LGBM  | raw_200D  |     0.910 |     55.702 |     26.361 |
+| RE-Pairs      | RF    | pca_64    |     0.901 |     58.387 |     23.472 |
+| RE-Pairs      | RF    | pca_16    |     0.898 |     59.252 |     23.029 |
+| All-Pairs     | LASSO | pca_8     |     0.907 |     77.031 |     45.072 |
+| All-Pairs     | RIDGE | pca_8     | **0.907** | **77.025** |     44.340 |
+| All-Pairs     | LASSO | pca_16    |     0.907 |     77.031 |     45.072 |
+| All-Pairs     | LASSO | pca_32    |     0.904 |     78.557 |     46.735 |
+| All-Pairs     | RIDGE | pca_64    |     0.899 |     80.486 |     49.818 |
+| All-Pairs     | RF    | pca_64    |     0.897 |     81.136 |     38.663 |
+| All-Pairs     | RF    | pca_32    |     0.897 |     81.436 |     38.378 |
+| All-Pairs     | RF    | pca_8     |     0.896 |     81.498 |     39.872 |
+| All-Pairs     | RF    | pca_16    |     0.893 |     82.648 | **39.377** |
+| All-Pairs     | LGBM  | pca_64    |     0.888 |     84.880 |     44.196 |
+| All-Pairs     | LGBM  | raw_200D  |     0.888 |     84.916 |     45.208 |
+| All-Pairs     | LGBM  | pca_8     |     0.887 |     85.217 |     45.883 |
+| All-Pairs     | RF    | raw_200D  |     0.885 |     85.950 |     42.597 |
+| All-Pairs     | LGBM  | pca_16    |     0.882 |     86.929 |     43.428 |
+| All-Pairs     | LGBM  | pca_32    |     0.878 |     88.486 |     43.720 |
+| RE-Free-Pairs | RIDGE | pca_8     |     0.871 |    110.085 |     78.414 |
+| RE-Free-Pairs | LASSO | raw_200D  |     0.862 |    113.558 |     81.655 |
+| RE-Free-Pairs | LASSO | pca_32    |     0.859 |    115.099 |     80.482 |
+| RE-Free-Pairs | LASSO | pca_64    |     0.856 |    116.096 |     81.771 |
+| RE-Free-Pairs | RIDGE | pca_16    |     0.877 |    107.372 |     76.074 |
+| RE-Free-Pairs | RF    | pca_8     |     0.828 |    127.073 |     72.827 |
+| RE-Free-Pairs | LGBM  | pca_16    |     0.825 |    127.940 |     83.234 |
+| RE-Free-Pairs | LGBM  | raw_200D  |     0.825 |    128.238 |     80.400 |
+| RE-Free-Pairs | RF    | pca_32    |     0.825 |    128.173 |     70.328 |
+| RE-Free-Pairs | RF    | raw_200D  |     0.823 |    128.770 |     73.269 |
+| RE-Free-Pairs | LGBM  | pca_8     |     0.820 |    129.994 |     82.594 |
+| RE-Free-Pairs | RF    | pca_64    |     0.819 |    130.105 |     73.963 |
+| RE-Free-Pairs | RF    | pca_16    |     0.814 |    132.190 |     74.495 |
+| RE-Free-Pairs | LGBM  | pca_32    |     0.813 |    132.475 |     82.410 |
+| RE-Free-Pairs | LGBM  | pca_64    |     0.806 |    134.787 |     84.331 |
+
 
 
 > 🔍 **Note**: The augmented datasets (`All-Augm`, `RE-Augm`, `RE-Free-Augm`) were created by combining **simulated (Tc_sim)** and **experimental (Tc_exp)** data to improve model generalization and performance.
