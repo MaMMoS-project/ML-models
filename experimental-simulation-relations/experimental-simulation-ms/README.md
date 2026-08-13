@@ -1,4 +1,4 @@
-# my_ms
+# ML model for systematic errors between simulations and experimental measurements of the Spontaneous Magnetization
 
 Machine-learning pipeline for correcting DFT-simulated saturation magnetisation (Ms)
 values against experimental measurements. Models learn the systematic error between
