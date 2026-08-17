@@ -15,7 +15,7 @@ matplotlib==3.10.3
 numpy==2.2.6
 pandas==2.2.3
 pymatgen==2025.6.14
-pysr==1.5.9
+pysr==1.5.10
 PyYAML==6.0.2
 scikit-learn==1.7.0
 scipy==1.16.1
