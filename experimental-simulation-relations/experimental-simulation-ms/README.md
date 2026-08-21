@@ -447,20 +447,88 @@ src/
 
 ## Augmented Dataset
 
-| Model_Family       | Model  | Dataset      |    R2 |  RMSE |   MAE |
-| ------------------ | ------ | ------------ | ----: | ----: | ----: |
-| LightGBM           | LGBM   | All-Augm     | 0.792 | 0.395 | 0.227 |
-| MLP                | FCNN   | All-Augm     | 0.792 | 0.395 | 0.223 |
-| Linear             | LASSO  | All-Augm     | 0.792 | 0.395 | 0.226 |
-| SymbolicRegression | PySR   | All-Augm     | 0.791 | 0.396 | 0.226 |
-| RandomForest       | RF     | All-Augm     | 0.778 | 0.408 | 0.239 |
-| MLP                | FCNN   | RE-Augm      | 0.607 | 0.621 | 0.434 |
-| Linear             | LINEAR | RE-Augm      | 0.607 | 0.621 | 0.431 |
-| SymbolicRegression | PySR   | RE-Augm      | 0.606 | 0.621 | 0.434 |
-| LightGBM           | LGBM   | RE-Augm      | 0.605 | 0.622 | 0.431 |
-| RandomForest       | RF     | RE-Augm      | 0.572 | 0.648 | 0.446 |
-| LightGBM           | LGBM   | RE-Free-Augm | 0.872 | 0.296 | 0.162 |
-| MLP                | FCNN   | RE-Free-Augm | 0.872 | 0.296 | 0.161 |
-| Linear             | LINEAR | RE-Free-Augm | 0.872 | 0.296 | 0.161 |
-| SymbolicRegression | PySR   | RE-Free-Augm | 0.871 | 0.296 | 0.159 |
-| RandomForest       | RF     | RE-Free-Augm | 0.856 | 0.314 | 0.186 |
+| Model_Family       | Model    | Dataset          | Embedding    |        R2 |      RMSE |       MAE |
+| ------------------ | -------- | ---------------- | ------------ | --------: | --------: | --------: |
+| **MLP**            | **FCNN** | **All-Augm**     | **pca_16**   | **0.794** | **0.395** | **0.223** |
+| Linear             | RIDGE    | All-Augm         | pca_16       |     0.793 |     0.395 |     0.226 |
+| RandomForest       | RF       | All-Augm         | pca_16       |     0.789 |     0.400 |     0.232 |
+| **MLP**            | **FCNN** | **All-Augm**     | **pca_32**   | **0.794** | **0.395** | **0.223** |
+| Linear             | LASSO    | All-Augm         | pca_32       |     0.793 |     0.395 |     0.226 |
+| RandomForest       | RF       | All-Augm         | pca_32       |     0.788 |     0.400 |     0.233 |
+| **MLP**            | **FCNN** | **All-Augm**     | **pca_64**   | **0.794** | **0.395** | **0.222** |
+| Linear             | RIDGE    | All-Augm         | pca_64       |     0.794 |     0.395 |     0.226 |
+| RandomForest       | RF       | All-Augm         | pca_64       |     0.789 |     0.400 |     0.234 |
+| **MLP**            | **FCNN** | **All-Augm**     | **pca_8**    | **0.793** | **0.395** | **0.225** |
+| Linear             | RIDGE    | All-Augm         | pca_8        |     0.793 |     0.395 |     0.226 |
+| RandomForest       | RF       | All-Augm         | pca_8        |     0.788 |     0.400 |     0.232 |
+| **MLP**            | **FCNN** | **All-Augm**     | **raw_200D** | **0.794** | **0.395** | **0.223** |
+| Linear             | RIDGE    | All-Augm         | raw_200D     |     0.794 |     0.395 |     0.226 |
+| RandomForest       | RF       | All-Augm         | raw_200D     |     0.787 |     0.401 |     0.233 |
+| LightGBM           | LGBM     | All-Augm         | —            |     0.792 |     0.395 |     0.227 |
+| MLP                | FCNN     | All-Augm         | —            |     0.792 |     0.395 |     0.223 |
+| Linear             | LASSO    | All-Augm         | —            |     0.792 |     0.395 |     0.226 |
+| SymbolicRegression | PySR     | All-Augm         | —            |     0.791 |     0.396 |     0.226 |
+| RandomForest       | RF       | All-Augm         | —            |     0.778 |     0.408 |     0.239 |
+| MLP                | FCNN     | RE-Augm          | pca_16       |     0.621 |     0.616 |     0.429 |
+| Linear             | LASSO    | RE-Augm          | pca_16       |     0.621 |     0.616 |     0.428 |
+| RandomForest       | RF       | RE-Augm          | pca_16       |     0.607 |     0.627 |     0.438 |
+| MLP                | FCNN     | RE-Augm          | pca_32       | **0.621** | **0.616** |     0.428 |
+| Linear             | LASSO    | RE-Augm          | pca_32       |     0.621 |     0.616 |     0.428 |
+| RandomForest       | RF       | RE-Augm          | pca_32       |     0.610 |     0.625 |     0.438 |
+| Linear             | RIDGE    | RE-Augm          | pca_64       |     0.621 |     0.616 | **0.427** |
+| MLP                | FCNN     | RE-Augm          | pca_64       |     0.621 |     0.616 |     0.431 |
+| RandomForest       | RF       | RE-Augm          | pca_64       |     0.608 |     0.627 |     0.440 |
+| MLP                | FCNN     | RE-Augm          | pca_8        |     0.621 |     0.616 |     0.432 |
+| Linear             | RIDGE    | RE-Augm          | pca_8        |     0.621 |     0.616 |     0.428 |
+| RandomForest       | RF       | RE-Augm          | pca_8        |     0.605 |     0.629 |     0.437 |
+| Linear             | RIDGE    | RE-Augm          | raw_200D     | **0.621** | **0.616** | **0.427** |
+| MLP                | FCNN     | RE-Augm          | raw_200D     |     0.621 |     0.616 |     0.430 |
+| RandomForest       | RF       | RE-Augm          | raw_200D     |     0.605 |     0.629 |     0.440 |
+| MLP                | FCNN     | RE-Augm          | —            |     0.607 |     0.621 |     0.434 |
+| Linear             | LINEAR   | RE-Augm          | —            |     0.607 |     0.621 |     0.431 |
+| SymbolicRegression | PySR     | RE-Augm          | —            |     0.606 |     0.621 |     0.434 |
+| LightGBM           | LGBM     | RE-Augm          | —            |     0.605 |     0.622 |     0.431 |
+| RandomForest       | RF       | RE-Augm          | —            |     0.572 |     0.648 |     0.446 |
+| **MLP**            | **FCNN** | **RE-Free-Augm** | **pca_16**   | **0.862** | **0.308** |     0.168 |
+| Linear             | RIDGE    | RE-Free-Augm     | pca_16       |     0.862 |     0.308 | **0.166** |
+| RandomForest       | RF       | RE-Free-Augm     | pca_16       |     0.858 |     0.312 |     0.174 |
+| **MLP**            | **FCNN** | **RE-Free-Augm** | **pca_32**   | **0.862** | **0.308** |     0.169 |
+| Linear             | RIDGE    | RE-Free-Augm     | pca_32       |     0.862 |     0.308 | **0.166** |
+| RandomForest       | RF       | RE-Free-Augm     | pca_32       |     0.859 |     0.312 |     0.174 |
+| **MLP**            | **FCNN** | **RE-Free-Augm** | **pca_64**   | **0.862** | **0.308** |     0.171 |
+| Linear             | RIDGE    | RE-Free-Augm     | pca_64       |     0.862 |     0.308 | **0.166** |
+| RandomForest       | RF       | RE-Free-Augm     | pca_64       |     0.858 |     0.312 |     0.175 |
+| **MLP**            | **FCNN** | **RE-Free-Augm** | **pca_8**    | **0.862** | **0.308** |     0.168 |
+| Linear             | LASSO    | RE-Free-Augm     | pca_8        |     0.862 |     0.308 | **0.166** |
+| RandomForest       | RF       | RE-Free-Augm     | pca_8        |     0.858 |     0.312 |     0.174 |
+| **MLP**            | **FCNN** | **RE-Free-Augm** | **raw_200D** | **0.862** | **0.308** |     0.169 |
+| Linear             | RIDGE    | RE-Free-Augm     | raw_200D     |     0.862 |     0.308 | **0.166** |
+| RandomForest       | RF       | RE-Free-Augm     | raw_200D     |     0.858 |     0.312 |     0.176 |
+| LightGBM           | LGBM     | RE-Free-Augm     | —            |     0.872 |     0.296 |     0.162 |
+| **MLP**            | **FCNN** | **RE-Free-Augm** | **—**        | **0.872** | **0.296** | **0.161** |
+| Linear             | LINEAR   | RE-Free-Augm     | —            |     0.872 |     0.296 |     0.161 |
+| SymbolicRegression | PySR     | RE-Free-Augm     | —            |     0.871 |     0.296 |     0.159 |
+| RandomForest       | RF       | RE-Free-Augm     | —            |     0.856 |     0.314 |     0.186 |
+
+## Best Model per Dataset
+
+| Dataset           | Category                     | Model_Family       | Model    | Embedding |        R² |      RMSE |       MAE |
+| ----------------- | ---------------------------- | ------------------ | -------- | --------- | --------: | --------: | --------: |
+| **All-Pairs**     | Best with embedding          | **LightGBM**       | **LGBM** | pca_64    | **0.868** | **0.305** |     0.192 |
+|                   | Best without embedding       | **MLP**            | **FCNN** | —         | **0.782** | **0.393** |     0.235 |
+|                   | Symbolic Regression baseline | SymbolicRegression | PySR     | —         |     0.782 |     0.393 |     0.236 |
+| **RE-Free-Pairs** | Best with embedding          | **LightGBM**       | **LGBM** | raw_200D  | **0.902** | **0.257** |     0.158 |
+|                   | Best without embedding       | **LightGBM**       | **LGBM** | —         |     0.874 |     0.291 |     0.178 |
+|                   | Symbolic Regression baseline | SymbolicRegression | PySR     | —         |     0.872 |     0.294 |     0.169 |
+| **RE-Pairs**      | Best with embedding          | **LightGBM**       | **LGBM** | raw_200D  | **0.774** | **0.405** | **0.272** |
+|                   | Best without embedding       | **LightGBM**       | **LGBM** | —         |     0.486 |     0.610 |     0.440 |
+|                   | Symbolic Regression baseline | SymbolicRegression | PySR     | —         |     0.411 |     0.653 |     0.460 |
+| **All-Augm**      | Best with embedding          | **MLP**            | **FCNN** | pca_32    | **0.794** | **0.395** |     0.223 |
+|                   | Best without embedding       | **MLP**            | **FCNN** | —         |     0.792 |     0.395 | **0.223** |
+|                   | Symbolic Regression baseline | SymbolicRegression | PySR     | —         |     0.791 |     0.396 |     0.226 |
+| **RE-Augm**       | Best with embedding          | **MLP**            | **FCNN** | pca_32    | **0.621** | **0.616** |     0.428 |
+|                   | Best without embedding       | **MLP**            | **FCNN** | —         |     0.607 |     0.621 |     0.434 |
+|                   | Symbolic Regression baseline | SymbolicRegression | PySR     | —         |     0.606 |     0.621 |     0.434 |
+| **RE-Free-Augm**  | Best with embedding          | **MLP**            | **FCNN** | pca_16    | **0.862** | **0.308** |     0.168 |
+|                   | Best without embedding       | **MLP**            | **FCNN** | —         |     0.872 |     0.296 |     0.161 |
+|                   | Symbolic Regression baseline | SymbolicRegression | PySR     | —         |     0.871 |     0.296 | **0.159** |
