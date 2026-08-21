@@ -97,7 +97,7 @@ def compress_embeddings_pca() -> None:
             print(f"  PCA({n:2d} components): explained variance = {var:.3f}  → '{col}'")
 
         df.to_pickle(out_path)
-        print(f"  Saved → {out_path}")
+        # print(f"  Saved → {out_path}")
 
     print("\nDone. Next step: python src/train_exp_tc.py")
 
