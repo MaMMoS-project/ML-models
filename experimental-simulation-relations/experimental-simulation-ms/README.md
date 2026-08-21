@@ -445,3 +445,22 @@ src/
 | MLP                | FCNN   | RE-Pairs      | –         |     0.430 |     0.642 |     0.463 |
 | SymbolicRegression | PySR   | RE-Pairs      | –         |     0.411 |     0.653 |     0.460 |
 
+## Augmented Dataset
+
+| Model_Family       | Model  | Dataset      |    R2 |  RMSE |   MAE |
+| ------------------ | ------ | ------------ | ----: | ----: | ----: |
+| LightGBM           | LGBM   | All-Augm     | 0.792 | 0.395 | 0.227 |
+| MLP                | FCNN   | All-Augm     | 0.792 | 0.395 | 0.223 |
+| Linear             | LASSO  | All-Augm     | 0.792 | 0.395 | 0.226 |
+| SymbolicRegression | PySR   | All-Augm     | 0.791 | 0.396 | 0.226 |
+| RandomForest       | RF     | All-Augm     | 0.778 | 0.408 | 0.239 |
+| MLP                | FCNN   | RE-Augm      | 0.607 | 0.621 | 0.434 |
+| Linear             | LINEAR | RE-Augm      | 0.607 | 0.621 | 0.431 |
+| SymbolicRegression | PySR   | RE-Augm      | 0.606 | 0.621 | 0.434 |
+| LightGBM           | LGBM   | RE-Augm      | 0.605 | 0.622 | 0.431 |
+| RandomForest       | RF     | RE-Augm      | 0.572 | 0.648 | 0.446 |
+| LightGBM           | LGBM   | RE-Free-Augm | 0.872 | 0.296 | 0.162 |
+| MLP                | FCNN   | RE-Free-Augm | 0.872 | 0.296 | 0.161 |
+| Linear             | LINEAR | RE-Free-Augm | 0.872 | 0.296 | 0.161 |
+| SymbolicRegression | PySR   | RE-Free-Augm | 0.871 | 0.296 | 0.159 |
+| RandomForest       | RF     | RE-Free-Augm | 0.856 | 0.314 | 0.186 |
