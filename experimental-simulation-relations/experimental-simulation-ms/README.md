@@ -369,23 +369,82 @@ src/
 
 (best models and symbolic regression baseline shown)
 
-| Dataset         | Model              | Embedding   | R²    | RMSE    |
-|----------------|---------------------|-------------|-------|---------|
-| All-Pairs      | **MLP (FCNN)**      | -           | 0.78  | 0.393   |
-| All-Pairs      | Linear Regression   | raw_200D    | 0.835 | 0.342   |
-| All-Pairs      | Symbolic Regression | -           | 0.782 | 0.393   |
-| All-Augm       | MLP (FCNN)          | -           | 0.791 | 0.399   |
-| All-Augm       | **MLP (FCNN)**      | PCA32       | 0.794 | 0.395   |
-| All-Augm       | Symbolic Regression | -           | 0.791 | 0.399   |
-| RE-Pairs       | Random Forest       |             | 0.467 | 0.621   |
-| RE-Pairs       | Ridge Regression    | raw_200D    | 0.747 | 0.427   |
-| RE-Pairs       | Symbolic Regression | -           | 0.411 | 0.653   |
-| RE-Augm        | MLP (FCNN)          | -           | 0.612 | 0.624   |
-| RE-Augm        | **MLP (FCNN)**      | PCA32       | 0.621 | 0.616   |
-| RE-Augm        | Symbolic Regression | -           | 0.612 | 0.624   |
-| RE-Free-Pairs  | Lasso               | -           | 0.873 | 0.293   |
-| RE-Free-Pairs  | Random Forest       | raw_200D    | 0.897 | 0.264   |
-| RE-Free-Pairs  | Symbolic Regression | -           | 0.872 | 0.295   |
-| RE-Free-Augm   | MLP (FCNN)          | -           | 0.869 | 0.300   |
-| RE-Free-Augm   | **MLP (FCNN)**      | PCA16       | 0.862 | 0.308   |
-| RE-Free-Augm   | Symbolic Regression | -           | 0.869 | 0.301   |
+## Pairs-Dataset
+
+| Model Family       | Model    | Dataset           | Embedding    |        R² |      RMSE |       MAE |
+| ------------------ | -------- | ----------------- | ------------ | --------: | --------: | --------: |
+| MLP                | FCNN     | All-Pairs         | –            |     0.782 |     0.393 |     0.235 |
+| Linear             | LINEAR   | All-Pairs         | –            |     0.782 |     0.393 |     0.239 |
+| SymbolicRegression | PySR     | All-Pairs         | –            |     0.782 |     0.393 |     0.236 |
+| LightGBM           | LGBM     | All-Pairs         | –            |     0.781 |     0.394 |     0.233 |
+| RandomForest       | RF       | All-Pairs         | –            |     0.744 |     0.426 |     0.257 |
+| LightGBM           | LGBM     | All-Pairs         | pca_8        |     0.822 |     0.355 |     0.216 |
+| MLP                | FCNN     | All-Pairs         | pca_8        |     0.807 |     0.370 |     0.218 |
+| RandomForest       | RF       | All-Pairs         | pca_8        |     0.807 |     0.370 |     0.212 |
+| Linear             | RIDGE    | All-Pairs         | pca_8        |     0.799 |     0.377 |     0.227 |
+| LightGBM           | LGBM     | All-Pairs         | pca_16       |     0.830 |     0.347 |     0.210 |
+| RandomForest       | RF       | All-Pairs         | pca_16       |     0.809 |     0.368 |     0.209 |
+| MLP                | FCNN     | All-Pairs         | pca_16       |     0.808 |     0.369 |     0.216 |
+| Linear             | RIDGE    | All-Pairs         | pca_16       |     0.804 |     0.372 |     0.228 |
+| LightGBM           | LGBM     | All-Pairs         | pca_32       |     0.864 |     0.311 |     0.193 |
+| RandomForest       | RF       | All-Pairs         | pca_32       |     0.825 |     0.353 |     0.203 |
+| Linear             | LASSO    | All-Pairs         | pca_32       |     0.821 |     0.357 |     0.229 |
+| MLP                | FCNN     | All-Pairs         | pca_32       |     0.811 |     0.367 |     0.211 |
+| LightGBM           | LGBM     | All-Pairs         | pca_64       | **0.868** | **0.305** |     0.192 |
+| Linear             | LASSO    | All-Pairs         | pca_64       |     0.833 |     0.344 |     0.207 |
+| RandomForest       | RF       | All-Pairs         | pca_64       |     0.826 |     0.351 |     0.203 |
+| MLP                | FCNN     | All-Pairs         | pca_64       |     0.825 |     0.352 |     0.197 |
+| LightGBM           | LGBM     | All-Pairs         | raw_200D     |     0.868 |     0.306 | **0.187** |
+| Linear             | LASSO    | All-Pairs         | raw_200D     |     0.835 |     0.342 |     0.205 |
+| MLP                | FCNN     | All-Pairs         | raw_200D     |     0.831 |     0.346 |     0.213 |
+| RandomForest       | RF       | All-Pairs         | raw_200D     |     0.823 |     0.354 |     0.205 |
+| LightGBM           | LGBM     | RE-Free-Pairs     | –            |     0.874 |     0.291 |     0.178 |
+| Linear             | LASSO    | RE-Free-Pairs     | –            |     0.873 |     0.293 |     0.175 |
+| MLP                | FCNN     | RE-Free-Pairs     | –            |     0.872 |     0.293 |     0.175 |
+| SymbolicRegression | PySR     | RE-Free-Pairs     | –            |     0.872 |     0.294 |     0.169 |
+| RandomForest       | RF       | RE-Free-Pairs     | –            |     0.855 |     0.313 |     0.198 |
+| LightGBM           | LGBM     | RE-Free-Pairs     | pca_8        |     0.890 |     0.272 |     0.170 |
+| RandomForest       | RF       | RE-Free-Pairs     | pca_8        |     0.887 |     0.276 |     0.160 |
+| Linear             | LASSO    | RE-Free-Pairs     | pca_8        |     0.886 |     0.277 |     0.164 |
+| MLP                | FCNN     | RE-Free-Pairs     | pca_8        |     0.879 |     0.286 | **0.155** |
+| LightGBM           | LGBM     | RE-Free-Pairs     | pca_16       |     0.893 |     0.269 |     0.165 |
+| RandomForest       | RF       | RE-Free-Pairs     | pca_16       |     0.889 |     0.273 |     0.158 |
+| Linear             | LASSO    | RE-Free-Pairs     | pca_16       |     0.887 |     0.276 |     0.165 |
+| MLP                | FCNN     | RE-Free-Pairs     | pca_16       |     0.887 |     0.276 |     0.162 |
+| LightGBM           | LGBM     | RE-Free-Pairs     | pca_32       |     0.896 |     0.265 |     0.168 |
+| RandomForest       | RF       | RE-Free-Pairs     | pca_32       |     0.892 |     0.270 |     0.157 |
+| Linear             | RIDGE    | RE-Free-Pairs     | pca_32       |     0.891 |     0.272 |     0.165 |
+| MLP                | FCNN     | RE-Free-Pairs     | pca_32       |     0.890 |     0.273 |     0.163 |
+| LightGBM           | LGBM     | RE-Free-Pairs     | pca_64       |     0.898 |     0.262 |     0.167 |
+| Linear             | RIDGE    | RE-Free-Pairs     | pca_64       |     0.891 |     0.271 |     0.165 |
+| RandomForest       | RF       | RE-Free-Pairs     | pca_64       |     0.889 |     0.274 |     0.161 |
+| MLP                | FCNN     | RE-Free-Pairs     | pca_64       |     0.884 |     0.280 |     0.158 |
+| **LightGBM**       | **LGBM** | **RE-Free-Pairs** | **raw_200D** | **0.902** | **0.257** |     0.158 |
+| RandomForest       | RF       | RE-Free-Pairs     | raw_200D     |     0.897 |     0.264 |     0.155 |
+| MLP                | FCNN     | RE-Free-Pairs     | raw_200D     |     0.892 |     0.270 |     0.170 |
+| Linear             | RIDGE    | RE-Free-Pairs     | raw_200D     |     0.891 |     0.271 |     0.165 |
+| LightGBM           | LGBM     | RE-Pairs          | –            |     0.486 |     0.610 |     0.440 |
+| RandomForest       | RF       | RE-Pairs          | –            |     0.467 |     0.621 |     0.444 |
+| Linear             | RIDGE    | RE-Pairs          | –            |     0.467 |     0.621 |     0.452 |
+| MLP                | FCNN     | RE-Pairs          | –            |     0.430 |     0.642 |     0.463 |
+| SymbolicRegression | PySR     | RE-Pairs          | –            |     0.411 |     0.653 |     0.460 |
+| LightGBM           | LGBM     | RE-Pairs          | pca_8        |     0.585 |     0.548 |     0.367 |
+| RandomForest       | RF       | RE-Pairs          | pca_8        |     0.585 |     0.548 |     0.369 |
+| Linear             | RIDGE    | RE-Pairs          | pca_8        |     0.490 |     0.607 |     0.435 |
+| MLP                | FCNN     | RE-Pairs          | pca_8        |     0.484 |     0.611 |     0.441 |
+| LightGBM           | LGBM     | RE-Pairs          | pca_16       |     0.698 |     0.467 |     0.296 |
+| RandomForest       | RF       | RE-Pairs          | pca_16       |     0.689 |     0.474 |     0.303 |
+| MLP                | FCNN     | RE-Pairs          | pca_16       |     0.650 |     0.503 |     0.339 |
+| Linear             | RIDGE    | RE-Pairs          | pca_16       |     0.591 |     0.544 |     0.410 |
+| RandomForest       | RF       | RE-Pairs          | pca_32       |     0.733 |     0.440 |     0.284 |
+| LightGBM           | LGBM     | RE-Pairs          | pca_32       |     0.724 |     0.447 |     0.301 |
+| Linear             | LASSO    | RE-Pairs          | pca_32       |     0.676 |     0.484 |     0.366 |
+| MLP                | FCNN     | RE-Pairs          | pca_32       |     0.674 |     0.486 |     0.358 |
+| LightGBM           | LGBM     | RE-Pairs          | pca_64       |     0.748 |     0.427 |     0.277 |
+| Linear             | LASSO    | RE-Pairs          | pca_64       |     0.747 |     0.428 |     0.317 |
+| MLP                | FCNN     | RE-Pairs          | pca_64       |     0.718 |     0.452 |     0.320 |
+| RandomForest       | RF       | RE-Pairs          | pca_64       |     0.694 |     0.470 |     0.300 |
+| **LightGBM**       | **LGBM** | **RE-Pairs**      | **raw_200D** | **0.774** | **0.405** | **0.272** |
+| MLP                | FCNN     | RE-Pairs          | raw_200D     |     0.751 |     0.424 |     0.308 |
+| Linear             | RIDGE    | RE-Pairs          | raw_200D     |     0.748 |     0.427 |     0.317 |
+| RandomForest       | RF       | RE-Pairs          | raw_200D     |     0.685 |     0.477 |     0.308 |
