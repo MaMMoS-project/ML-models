@@ -561,66 +561,178 @@ means** (reduced-formula-deduplicated data). `Aug` = augmentation variant for th
 > reduced-formula dedup removed duplicate-spelling train/test leakage — see `dedup_result.txt`.
 > To reproduce the baseline (non-delta) numbers instead, run with the default `training_config.yaml`.
 
-## Pairs - with Embedding
+## Pairs Dataset
 
-| Dataset       | Model | Embedding |        R² |       RMSE |        MAE |
-| ------------- | ----- | --------- | --------: | ---------: | ---------: |
-| RE-Pairs      | RF    | pca_8     | **0.929** | **49.334** |     23.823 |
-| RE-Pairs      | RIDGE | pca_8     |     0.926 |     50.555 | **22.848** |
-| RE-Pairs      | LASSO | raw_200D  |     0.923 |     51.527 |     26.428 |
-| RE-Pairs      | LASSO | pca_16    |     0.922 |     51.727 |     26.807 |
-| RE-Pairs      | LASSO | pca_32    |     0.922 |     51.727 |     26.807 |
-| RE-Pairs      | LASSO | pca_64    |     0.922 |     51.727 |     26.807 |
-| RE-Pairs      | RF    | raw_200D  |     0.918 |     53.181 | **21.413** |
-| RE-Pairs      | RF    | pca_32    |     0.911 |     55.442 |     23.351 |
-| RE-Pairs      | LGBM  | raw_200D  |     0.910 |     55.702 |     26.361 |
-| RE-Pairs      | RF    | pca_64    |     0.901 |     58.387 |     23.472 |
-| RE-Pairs      | RF    | pca_16    |     0.898 |     59.252 |     23.029 |
-| All-Pairs     | LASSO | pca_8     |     0.907 |     77.031 |     45.072 |
-| All-Pairs     | RIDGE | pca_8     | **0.907** | **77.025** |     44.340 |
-| All-Pairs     | LASSO | pca_16    |     0.907 |     77.031 |     45.072 |
-| All-Pairs     | LASSO | pca_32    |     0.904 |     78.557 |     46.735 |
-| All-Pairs     | RIDGE | pca_64    |     0.899 |     80.486 |     49.818 |
-| All-Pairs     | RF    | pca_64    |     0.897 |     81.136 |     38.663 |
-| All-Pairs     | RF    | pca_32    |     0.897 |     81.436 |     38.378 |
-| All-Pairs     | RF    | pca_8     |     0.896 |     81.498 |     39.872 |
-| All-Pairs     | RF    | pca_16    |     0.893 |     82.648 | **39.377** |
-| All-Pairs     | LGBM  | pca_64    |     0.888 |     84.880 |     44.196 |
-| All-Pairs     | LGBM  | raw_200D  |     0.888 |     84.916 |     45.208 |
-| All-Pairs     | LGBM  | pca_8     |     0.887 |     85.217 |     45.883 |
-| All-Pairs     | RF    | raw_200D  |     0.885 |     85.950 |     42.597 |
-| All-Pairs     | LGBM  | pca_16    |     0.882 |     86.929 |     43.428 |
-| All-Pairs     | LGBM  | pca_32    |     0.878 |     88.486 |     43.720 |
-| RE-Free-Pairs | RIDGE | pca_8     |     0.871 |    110.085 |     78.414 |
-| RE-Free-Pairs | LASSO | raw_200D  |     0.862 |    113.558 |     81.655 |
-| RE-Free-Pairs | LASSO | pca_32    |     0.859 |    115.099 |     80.482 |
-| RE-Free-Pairs | LASSO | pca_64    |     0.856 |    116.096 |     81.771 |
-| RE-Free-Pairs | RIDGE | pca_16    |     0.877 |    107.372 |     76.074 |
-| RE-Free-Pairs | RF    | pca_8     |     0.828 |    127.073 |     72.827 |
-| RE-Free-Pairs | LGBM  | pca_16    |     0.825 |    127.940 |     83.234 |
-| RE-Free-Pairs | LGBM  | raw_200D  |     0.825 |    128.238 |     80.400 |
-| RE-Free-Pairs | RF    | pca_32    |     0.825 |    128.173 |     70.328 |
-| RE-Free-Pairs | RF    | raw_200D  |     0.823 |    128.770 |     73.269 |
-| RE-Free-Pairs | LGBM  | pca_8     |     0.820 |    129.994 |     82.594 |
-| RE-Free-Pairs | RF    | pca_64    |     0.819 |    130.105 |     73.963 |
-| RE-Free-Pairs | RF    | pca_16    |     0.814 |    132.190 |     74.495 |
-| RE-Free-Pairs | LGBM  | pca_32    |     0.813 |    132.475 |     82.410 |
-| RE-Free-Pairs | LGBM  | pca_64    |     0.806 |    134.787 |     84.331 |
+| Model Family           | Model    | Dataset           |        R² |        RMSE |        MAE |
+| ---------------------- | -------- | ----------------- | --------: | ----------: | ---------: |
+| **MLP**                | **FCNN** | **All-Pairs**     | **0.903** |  **80.329** | **39.713** |
+| Linear                 | LINEAR   | All-Pairs         |     0.900 |      81.421 |     42.591 |
+| SymbolicRegression     | PySR     | All-Pairs         |     0.899 |      82.129 |     40.881 |
+| RandomForest           | RF       | All-Pairs         |     0.868 |      93.660 |     45.136 |
+| LightGBM               | LGBM     | All-Pairs         |     0.868 |      93.678 |     43.685 |
+| **SymbolicRegression** | **PySR** | **RE-Pairs**      | **0.942** |  **42.234** | **17.870** |
+| Linear                 | LINEAR   | RE-Pairs          |     0.941 |      42.574 |     20.014 |
+| LightGBM               | LGBM     | RE-Pairs          |     0.941 |      42.647 |     19.958 |
+| RandomForest           | RF       | RE-Pairs          |     0.940 |      42.683 |     19.719 |
+| MLP                    | FCNN     | RE-Pairs          |     0.940 |      42.719 |     22.435 |
+| **MLP**                | **FCNN** | **RE-Free-Pairs** | **0.695** | **136.134** | **78.405** |
+| Linear                 | LASSO    | RE-Free-Pairs     |     0.687 |     137.843 |     79.129 |
+| LightGBM               | LGBM     | RE-Free-Pairs     |     0.684 |     138.545 |     84.291 |
+| RandomForest           | RF       | RE-Free-Pairs     |     0.682 |     138.968 |     83.949 |
+| SymbolicRegression     | PySR     | RE-Free-Pairs     |     0.682 |     139.021 |     78.484 |
 
+
+## Pairs Dataset - with Embedding
+
+| Model Family | Model     | Dataset           | Embedding |         R² |        RMSE |         MAE |
+| ------------ | --------- | ----------------- | --------- | ---------: | ----------: | ----------: |
+| **MLP**      | **FCNN**  | **All-Pairs**     | pca_8     |  **0.910** |  **75.820** |  **41.558** |
+| Linear       | RIDGE     | All-Pairs         | pca_16    |      0.908 |      76.728 |      44.233 |
+| Linear       | RIDGE     | All-Pairs         | pca_8     |      0.907 |      77.025 |      44.340 |
+| Linear       | LASSO     | All-Pairs         | pca_16    |      0.907 |      77.034 |      45.078 |
+| Linear       | LASSO     | All-Pairs         | pca_32    |      0.904 |      78.561 |      46.745 |
+| Linear       | RIDGE     | All-Pairs         | raw_200D  |      0.900 |      79.902 |      48.794 |
+| Linear       | RIDGE     | All-Pairs         | pca_64    |      0.899 |      80.486 |      49.818 |
+| MLP          | FCNN      | All-Pairs         | raw_200D  |      0.898 |      80.882 |      51.269 |
+| RandomForest | RF        | All-Pairs         | pca_32    |      0.897 |      81.436 |      38.378 |
+| RandomForest | RF        | All-Pairs         | pca_8     |      0.896 |      81.498 |      39.872 |
+| RandomForest | RF        | All-Pairs         | pca_64    |      0.897 |      81.136 |      38.663 |
+| RandomForest | RF        | All-Pairs         | pca_16    |      0.893 |      82.648 |      39.377 |
+| LightGBM     | LGBM      | All-Pairs         | pca_64    |      0.888 |      84.880 |      44.196 |
+| LightGBM     | LGBM      | All-Pairs         | raw_200D  |      0.888 |      84.916 |      45.208 |
+| LightGBM     | LGBM      | All-Pairs         | pca_8     |      0.887 |      85.217 |      45.883 |
+| LightGBM     | LGBM      | All-Pairs         | pca_16    |      0.882 |      86.929 |      43.428 |
+| LightGBM     | LGBM      | All-Pairs         | pca_32    |      0.878 |      88.486 |      43.720 |
+| **Linear**   | **LASSO** | **RE-Pairs**      | pca_8     |  **0.930** |  **49.226** |      27.318 |
+| RandomForest | RF        | RE-Pairs          | pca_8     |      0.929 |      49.334 |      23.823 |
+| Linear       | RIDGE     | RE-Pairs          | pca_8     |      0.926 |      50.555 |  **22.848** |
+| Linear       | LASSO     | RE-Pairs          | raw_200D  |      0.923 |      51.529 |      26.436 |
+| Linear       | LASSO     | RE-Pairs          | pca_16    |      0.922 |      51.727 |      26.807 |
+| Linear       | LASSO     | RE-Pairs          | pca_32    |      0.922 |      51.727 |      26.807 |
+| Linear       | LASSO     | RE-Pairs          | pca_64    |      0.922 |      51.727 |      26.807 |
+| RandomForest | RF        | RE-Pairs          | raw_200D  |      0.918 |      53.181 |  **21.413** |
+| RandomForest | RF        | RE-Pairs          | pca_32    |      0.911 |      55.442 |      23.351 |
+| LightGBM     | LGBM      | RE-Pairs          | raw_200D  |      0.910 |      55.702 |      26.361 |
+| MLP          | FCNN      | RE-Pairs          | pca_16    |      0.908 |      56.201 |      31.016 |
+| RandomForest | RF        | RE-Pairs          | pca_64    |      0.901 |      58.387 |      23.472 |
+| RandomForest | RF        | RE-Pairs          | pca_16    |      0.898 |      59.252 |      23.029 |
+| MLP          | FCNN      | RE-Pairs          | pca_32    |      0.888 |      62.174 |      35.820 |
+| LightGBM     | LGBM      | RE-Pairs          | pca_8     |      0.881 |      64.056 |      26.465 |
+| LightGBM     | LGBM      | RE-Pairs          | pca_16    |      0.880 |      64.301 |      26.109 |
+| LightGBM     | LGBM      | RE-Pairs          | pca_32    |      0.879 |      64.648 |      25.940 |
+| LightGBM     | LGBM      | RE-Pairs          | pca_64    |      0.877 |      65.037 |      26.518 |
+| MLP          | FCNN      | RE-Pairs          | raw_200D  |      0.849 |      72.066 |      38.395 |
+| MLP          | FCNN      | RE-Pairs          | pca_64    |      0.835 |      75.428 |      43.306 |
+| **Linear**   | **RIDGE** | **RE-Free-Pairs** | pca_16    |  **0.877** | **107.372** |      76.074 |
+| Linear       | RIDGE     | RE-Free-Pairs     | pca_8     |      0.871 |     110.085 |      78.414 |
+| Linear       | LASSO     | RE-Free-Pairs     | raw_200D  |      0.862 |     113.562 |      81.659 |
+| MLP          | FCNN      | RE-Free-Pairs     | pca_8     |      0.863 |     113.384 |      81.208 |
+| Linear       | LASSO     | RE-Free-Pairs     | pca_32    |      0.859 |     115.096 |      80.480 |
+| Linear       | LASSO     | RE-Free-Pairs     | pca_64    |      0.856 |     116.096 |      81.771 |
+| MLP          | FCNN      | RE-Free-Pairs     | raw_200D  |      0.850 |     118.423 |      83.802 |
+| MLP          | FCNN      | RE-Free-Pairs     | pca_16    |      0.851 |     118.037 |      87.514 |
+| MLP          | FCNN      | RE-Free-Pairs     | pca_32    |      0.841 |     122.186 |      86.673 |
+| LightGBM     | LGBM      | RE-Free-Pairs     | pca_16    |      0.825 |     127.940 |      83.234 |
+| LightGBM     | LGBM      | RE-Free-Pairs     | pca_32    |      0.813 |     132.475 |      82.410 |
+| RandomForest | RF        | RE-Free-Pairs     | pca_32    |      0.825 |     128.173 |      70.328 |
+| RandomForest | RF        | RE-Free-Pairs     | pca_8     |      0.828 |     127.073 |      72.827 |
+| RandomForest | RF        | RE-Free-Pairs     | raw_200D  |      0.823 |     128.770 |      73.269 |
+| RandomForest | RF        | RE-Free-Pairs     | pca_64    |      0.819 |     130.105 |      73.963 |
+| RandomForest | RF        | RE-Free-Pairs     | pca_16    |      0.814 |     132.190 |      74.495 |
+| LightGBM     | LGBM      | RE-Free-Pairs     | raw_200D  |      0.825 |     128.238 |      80.400 |
+| LightGBM     | LGBM      | RE-Free-Pairs     | pca_8     |      0.820 |     129.994 |      82.594 |
+| LightGBM     | LGBM      | RE-Free-Pairs     | pca_64    |      0.806 |     134.787 |      84.331 |
+| MLP          | FCNN      | RE-Free-Pairs     | pca_64    |     -0.11  |     322.646 |     148.864 |
+
+
+# Augmented Dataset
+
+| Augmentation                         | Dataset      | Model    | R2        |        RMSE |        MAE |
+| ------------------------------------ | ------------ | -------- | --------- | ----------: | ---------: |
+| Combined (Tc_exp + Tc_sim) augmented | All-Augm     | **FCNN** | **0.896** |  **89.022** | **40.373** |
+| Combined (Tc_exp + Tc_sim) augmented | All-Augm     | RIDGE    | 0.893     |      90.197 |     43.376 |
+| Combined (Tc_exp + Tc_sim) augmented | All-Augm     | PySR     | 0.892     |      90.969 |     43.692 |
+| Combined (Tc_exp + Tc_sim) augmented | All-Augm     | LGBM     | 0.890     |      91.709 |     41.443 |
+| Combined (Tc_exp + Tc_sim) augmented | All-Augm     | RF       | 0.885     |      93.684 |     44.388 |
+| Combined (Tc_exp + Tc_sim) augmented | RE-Augm      | **FCNN** | **0.964** |  **52.442** | **16.742** |
+| Combined (Tc_exp + Tc_sim) augmented | RE-Augm      | LGBM     | 0.962     |      54.001 |     17.458 |
+| Combined (Tc_exp + Tc_sim) augmented | RE-Augm      | RF       | 0.958     |      56.833 |     18.999 |
+| Combined (Tc_exp + Tc_sim) augmented | RE-Augm      | PySR     | 0.955     |      58.709 |     17.950 |
+| Combined (Tc_exp + Tc_sim) augmented | RE-Augm      | LASSO    | 0.953     |      60.478 |     18.224 |
+| Combined (Tc_exp + Tc_sim) augmented | RE-Free-Augm | **FCNN** | **0.821** | **117.924** |     72.514 |
+| Combined (Tc_exp + Tc_sim) augmented | RE-Free-Augm | LASSO    | 0.819     |     118.521 |     73.650 |
+| Combined (Tc_exp + Tc_sim) augmented | RE-Free-Augm | LGBM     | 0.818     |     118.859 |     73.277 |
+| Combined (Tc_exp + Tc_sim) augmented | RE-Free-Augm | PySR     | 0.814     |     120.135 | **72.431** |
+| Combined (Tc_exp + Tc_sim) augmented | RE-Free-Augm | RF       | 0.805     |     123.122 |     75.104 |
+
+
+# Augmented Dataset with Embedding
+
+| Augmentation     | Dataset                        | Embedding  | Model    |        R² |       RMSE |        MAE |
+| ---------------- | ------------------------------ | ---------- | -------- | --------: | ---------: | ---------: |
+| **RE-Augm**      | **Combined (Tc_exp + Tc_sim)** | **pca_64** | **LGBM** | **0.979** | **39.718** | **17.572** |
+| RE-Augm          | Combined (Tc_exp + Tc_sim)     | pca_32     | LGBM     |     0.979 |     39.759 |     18.636 |
+| RE-Augm          | Combined (Tc_exp + Tc_sim)     | pca_8      | LGBM     |     0.979 |     39.921 |     17.234 |
+| RE-Augm          | Combined (Tc_exp + Tc_sim)     | pca_16     | LGBM     |     0.978 |     40.376 |     19.051 |
+| RE-Augm          | Combined (Tc_exp + Tc_sim)     | pca_8      | RF       |     0.977 |     41.056 |     16.043 |
+| RE-Augm          | Combined (Tc_exp + Tc_sim)     | raw_200D   | LGBM     |     0.977 |     41.398 |     18.329 |
+| RE-Augm          | Combined (Tc_exp + Tc_sim)     | pca_64     | RF       |     0.975 |     42.900 |     16.179 |
+| RE-Augm          | Combined (Tc_exp + Tc_sim)     | pca_32     | RF       |     0.975 |     42.928 |     16.107 |
+| RE-Augm          | Combined (Tc_exp + Tc_sim)     | pca_16     | RF       |     0.975 |     42.939 |     16.311 |
+| RE-Augm          | Combined (Tc_exp + Tc_sim)     | pca_64     | FCNN     |     0.972 |     46.083 |     20.879 |
+| RE-Augm          | Combined (Tc_exp + Tc_sim)     | pca_16     | FCNN     |     0.972 |     46.041 |     20.025 |
+| RE-Augm          | Combined (Tc_exp + Tc_sim)     | pca_8      | FCNN     |     0.972 |     45.664 |     19.577 |
+| RE-Augm          | Combined (Tc_exp + Tc_sim)     | raw_200D   | RF       |     0.971 |     46.327 |     16.575 |
+| RE-Augm          | Combined (Tc_exp + Tc_sim)     | raw_200D   | FCNN     |     0.971 |     46.467 |     21.755 |
+| RE-Augm          | Combined (Tc_exp + Tc_sim)     | pca_32     | FCNN     |     0.969 |     47.854 |     20.833 |
+| RE-Augm          | Combined (Tc_exp + Tc_sim)     | raw_200D   | RIDGE    |     0.964 |     52.255 |     20.996 |
+| RE-Augm          | Combined (Tc_exp + Tc_sim)     | pca_64     | LASSO    |     0.963 |     52.354 |     19.490 |
+| RE-Augm          | Combined (Tc_exp + Tc_sim)     | pca_16     | LASSO    |     0.963 |     52.393 |     20.165 |
+| RE-Augm          | Combined (Tc_exp + Tc_sim)     | pca_8      | LASSO    |     0.963 |     52.417 |     20.059 |
+| RE-Augm          | Combined (Tc_exp + Tc_sim)     | pca_32     | LASSO    |     0.963 |     52.425 |     20.250 |
+| **All-Augm**     | **Combined (Tc_exp + Tc_sim)** | **pca_32** | **LGBM** | **0.938** | **67.641** | **35.920** |
+| All-Augm         | Combined (Tc_exp + Tc_sim)     | pca_16     | LGBM     |     0.938 |     67.760 |     35.660 |
+| All-Augm         | Combined (Tc_exp + Tc_sim)     | pca_64     | LGBM     |     0.936 |     69.051 |     35.903 |
+| All-Augm         | Combined (Tc_exp + Tc_sim)     | pca_8      | LGBM     |     0.934 |     69.662 |     37.385 |
+| All-Augm         | Combined (Tc_exp + Tc_sim)     | raw_200D   | LGBM     |     0.932 |     70.779 |     35.607 |
+| All-Augm         | Combined (Tc_exp + Tc_sim)     | pca_32     | FCNN     |     0.929 |     72.672 |     37.351 |
+| All-Augm         | Combined (Tc_exp + Tc_sim)     | pca_16     | FCNN     |     0.928 |     72.861 |     37.207 |
+| All-Augm         | Combined (Tc_exp + Tc_sim)     | raw_200D   | FCNN     |     0.928 |     73.003 |     38.633 |
+| All-Augm         | Combined (Tc_exp + Tc_sim)     | raw_200D   | RF       |     0.927 |     73.644 |     34.844 |
+| All-Augm         | Combined (Tc_exp + Tc_sim)     | pca_16     | RF       |     0.926 |     73.836 |     34.575 |
+| All-Augm         | Combined (Tc_exp + Tc_sim)     | pca_32     | RF       |     0.926 |     74.110 |     34.759 |
+| All-Augm         | Combined (Tc_exp + Tc_sim)     | pca_8      | FCNN     |     0.926 |     73.790 |     36.412 |
+| All-Augm         | Combined (Tc_exp + Tc_sim)     | pca_8      | RF       |     0.925 |     74.288 |     34.949 |
+| All-Augm         | Combined (Tc_exp + Tc_sim)     | pca_64     | RF       |     0.923 |     75.231 |     35.193 |
+| All-Augm         | Combined (Tc_exp + Tc_sim)     | pca_64     | FCNN     |     0.922 |     75.780 |     40.701 |
+| All-Augm         | Combined (Tc_exp + Tc_sim)     | pca_16     | RIDGE    |     0.911 |     80.971 |     43.161 |
+| All-Augm         | Combined (Tc_exp + Tc_sim)     | pca_64     | LASSO    |     0.911 |     80.944 |     43.745 |
+| All-Augm         | Combined (Tc_exp + Tc_sim)     | pca_32     | LASSO    |     0.911 |     81.098 |     43.457 |
+| All-Augm         | Combined (Tc_exp + Tc_sim)     | raw_200D   | LASSO    |     0.911 |     81.019 |     43.262 |
+| All-Augm         | Combined (Tc_exp + Tc_sim)     | pca_8      | LASSO    |     0.911 |     81.105 |     43.265 |
+| **RE-Free-Augm** | **Combined (Tc_exp + Tc_sim)** | **pca_16** | **FCNN** | **0.884** | **93.006** | **58.874** |
+| RE-Free-Augm     | Combined (Tc_exp + Tc_sim)     | pca_32     | FCNN     |     0.878 |     95.061 |     58.006 |
+| RE-Free-Augm     | Combined (Tc_exp + Tc_sim)     | pca_8      | FCNN     |     0.867 |     99.472 |     60.303 |
+| RE-Free-Augm     | Combined (Tc_exp + Tc_sim)     | pca_32     | LGBM     |     0.866 |     99.641 |     56.028 |
+| RE-Free-Augm     | Combined (Tc_exp + Tc_sim)     | pca_64     | LGBM     |     0.863 |    100.765 |     56.503 |
+| RE-Free-Augm     | Combined (Tc_exp + Tc_sim)     | raw_200D   | LGBM     |     0.862 |    101.356 |     54.680 |
+| RE-Free-Augm     | Combined (Tc_exp + Tc_sim)     | pca_8      | RF       |     0.861 |    101.598 |     55.137 |
+| RE-Free-Augm     | Combined (Tc_exp + Tc_sim)     | raw_200D   | FCNN     |     0.860 |    102.014 |     66.543 |
+| RE-Free-Augm     | Combined (Tc_exp + Tc_sim)     | pca_16     | RF       |     0.859 |    102.178 |     55.830 |
+| RE-Free-Augm     | Combined (Tc_exp + Tc_sim)     | raw_200D   | RF       |     0.858 |    102.565 |     53.729 |
+| RE-Free-Augm     | Combined (Tc_exp + Tc_sim)     | pca_32     | RF       |     0.858 |    102.738 |     54.853 |
+| RE-Free-Augm     | Combined (Tc_exp + Tc_sim)     | pca_8      | LGBM     |     0.857 |    103.177 |     57.977 |
+| RE-Free-Augm     | Combined (Tc_exp + Tc_sim)     | pca_64     | RF       |     0.856 |    103.423 |     55.177 |
+| RE-Free-Augm     | Combined (Tc_exp + Tc_sim)     | raw_200D   | LASSO    |     0.855 |    103.773 |     67.320 |
+| RE-Free-Augm     | Combined (Tc_exp + Tc_sim)     | pca_32     | LASSO    |     0.855 |    103.785 |     66.931 |
+| RE-Free-Augm     | Combined (Tc_exp + Tc_sim)     | pca_16     | LASSO    |     0.854 |    104.186 |     67.140 |
+| RE-Free-Augm     | Combined (Tc_exp + Tc_sim)     | pca_64     | FCNN     |     0.854 |    104.324 |     63.973 |
+| RE-Free-Augm     | Combined (Tc_exp + Tc_sim)     | pca_8      | LASSO    |     0.852 |    104.759 |     67.359 |
+| RE-Free-Augm     | Combined (Tc_exp + Tc_sim)     | pca_64     | LASSO    |     0.852 |    104.960 |     67.934 |
 
 
 > 🔍 **Note**: The augmented datasets (`All-Augm`, `RE-Augm`, `RE-Free-Augm`) were created by combining **simulated (Tc_sim)** and **experimental (Tc_exp)** data to improve model generalization and performance.
 
 ### 📊 Summary of Results
 
-Data augmentation substantially improves performance on every split — the augmented datasets
-reach R² ≈ 0.94–0.98 versus 0.78–0.88 for the raw pairs. **LightGBM is the strongest family**,
-giving the best model on five of the six datasets; Linear wins the small RE-Pairs set. Low-
-dimensional PCA embeddings (`pca_8`/`pca_16`) are frequently best — especially on the RE and
-pairs datasets — while the raw 200-D descriptor wins on the augmented All / RE-Free sets. The RE
-datasets are predicted most accurately (RE-Augm R² ≈ 0.98) and the small **RE-Free-Pairs** set is
-the hardest, which supports evaluating RE and RE-free separately. Symbolic Regression and MLP are
-competitive but disabled in the shipped fast-trio config (§4.0); enable them for a full five-family
-comparison. All numbers above are 5-fold CV means on reduced-formula-deduplicated data under the
-delta-learning config — see `dedup_result.txt` for why they are lower, but more honest, than the
-pre-deduplication values.
+**Data augmentation substantially improves predictive performance across all datasets.** For the combined (T_c^{exp}+T_c^{sim}) data, augmentation raises the best R² from **0.910** for the embedded All-Pairs setting to **0.979** with RE-Augm, while RE-Free-Augm reaches **0.884**. A similar pattern is observed for the individual pair datasets: RE-Pairs achieves R² ≈ **0.94** without augmentation and up to **0.93** with the tested embeddings, whereas RE-Free-Pairs is considerably more challenging, improving from R² ≈ **0.70** to **0.88** with embedding. The **best-performing model family depends on the dataset**: FCNN performs best on All-Pairs (R² = 0.910) and RE-Free-Pairs (R² = 0.877), Symbolic Regression gives the best result on the unembedded RE-Pairs dataset (R² = 0.942), and LightGBM achieves the strongest performance on the augmented combined RE dataset (R² = 0.979). Embedding generally provides a substantial improvement for the pair datasets, particularly RE-Free-Pairs, where PCA-16 with Ridge increases R² from **0.695 to 0.877**. For the combined augmented data, PCA embeddings are also highly effective: **PCA-64 + LightGBM** gives the best RE-Augm result (R² = 0.979), **PCA-32 + LightGBM** the best All-Augm result (R² = 0.938), and **PCA-16 + FCNN** the best RE-Free-Augm result (R² = 0.884). Overall, the results show that **RE-containing datasets are substantially easier to predict than their RE-free counterparts**, while augmentation and dimensionality reduction can both provide major gains. The small **RE-Free-Pairs** set is the hardest, which supports evaluating RE and RE-free separately. Symbolic Regression and MLP are competitive but disabled in the shipped fast-trio config (§4.0); enable them for a full five-family comparison. All numbers above are 5-fold CV means on reduced-formula-deduplicated data under the delta-learning config — see `dedup_result.txt` for why they are lower, but more honest, than the pre-deduplication values.
