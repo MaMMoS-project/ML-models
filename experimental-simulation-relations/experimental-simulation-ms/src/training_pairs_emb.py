@@ -43,10 +43,14 @@ def training_pairs_emb():
     from linear_models import LinearModelsTrainer
     from random_forest import RandomForestTrainer
     from fcnn_mlp import FCNNTrainer
-    from base_trainer import SIM_COL, EXP_COL, parse_ms_threshold, parse_delta_learning
+    from lightgbm_trainer import LightGBMTrainer, LIGHTGBM_AVAILABLE
+    from base_trainer import (SIM_COL, EXP_COL, parse_ms_threshold,
+                              parse_delta_learning, parse_re_features, parse_cv_folds)
 
     ms_threshold = parse_ms_threshold()
     delta_learning = parse_delta_learning()
+    use_re_features = parse_re_features()
+    cv_folds = parse_cv_folds()
 
     print("=" * 80)
     print("PAIRS DATA TRAINING WITH EMBEDDINGS")
@@ -167,6 +171,8 @@ def training_pairs_emb():
                 )
                 lin_trainer.loader.load_pairs_data = make_loader_patch(df_data)
                 lin_trainer.loader.delta_learning = delta_learning
+                lin_trainer.loader.use_re_features = use_re_features
+                lin_trainer.loader.cv_folds = cv_folds
                 lin_results = lin_trainer.train_and_evaluate(
                     dataset_name=dataset_name,
                     dataset_type=dataset_type,
@@ -194,6 +200,8 @@ def training_pairs_emb():
                 )
                 rf_trainer.loader.load_pairs_data = make_loader_patch(df_data)
                 rf_trainer.loader.delta_learning = delta_learning
+                rf_trainer.loader.use_re_features = use_re_features
+                rf_trainer.loader.cv_folds = cv_folds
                 rf_metrics = rf_trainer.train_and_evaluate(
                     dataset_name=dataset_name,
                     dataset_type=dataset_type,
@@ -211,6 +219,33 @@ def training_pairs_emb():
             except Exception as e:
                 print(f"Error running Random Forest: {e}")
 
+            # 2b. LightGBM
+            if LIGHTGBM_AVAILABLE:
+                try:
+                    gbm_trainer = LightGBMTrainer(
+                        output_dir=str(results_dir / "pairs_emb_lightgbm")
+                    )
+                    gbm_trainer.loader.load_pairs_data = make_loader_patch(df_data)
+                    gbm_trainer.loader.delta_learning = delta_learning
+                    gbm_trainer.loader.use_re_features = use_re_features
+                    gbm_trainer.loader.cv_folds = cv_folds
+                    gbm_metrics = gbm_trainer.train_and_evaluate(
+                        dataset_name=dataset_name,
+                        dataset_type=dataset_type,
+                        is_augmented=is_augmented,
+                        use_embedding=True,
+                        embedding_type=embedding_type,
+                    )
+                    dataset_emb_results.append({
+                        "Model_Family": "LightGBM", "Model": "LGBM",
+                        "Dataset": dataset_name, "Embedding": emb_name,
+                        "R2": gbm_metrics["R2"], "RMSE": gbm_metrics["RMSE"],
+                        "MAE": gbm_metrics["MAE"],
+                    })
+                    print(f"  LightGBM - R²: {gbm_metrics['R2']:.4f}")
+                except Exception as e:
+                    print(f"Error running LightGBM: {e}")
+
             # 3. FCNN/MLP
             try:
                 mlp_trainer = FCNNTrainer(
@@ -218,6 +253,8 @@ def training_pairs_emb():
                 )
                 mlp_trainer.loader.load_pairs_data = make_loader_patch(df_data)
                 mlp_trainer.loader.delta_learning = delta_learning
+                mlp_trainer.loader.use_re_features = use_re_features
+                mlp_trainer.loader.cv_folds = cv_folds
                 mlp_metrics = mlp_trainer.train_and_evaluate(
                     dataset_name=dataset_name,
                     dataset_type=dataset_type,
