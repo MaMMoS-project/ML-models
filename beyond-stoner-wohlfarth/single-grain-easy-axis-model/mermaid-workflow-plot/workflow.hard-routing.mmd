@@ -8,7 +8,7 @@ flowchart TB
 
     X("Rejected Samples (NaN values)")
 
-    C("Magnet Type Classifier<br/>outputs p = P(hard)")
+    C("Magnet Type<br/>Classifier")
 
     A --> V
 
@@ -17,30 +17,20 @@ flowchart TB
 
     B --> C
 
-    %% both regressors always run on a valid sample (no 0/1 routing)
-    subgraph HM["Hard model"]
+    C --> H("Hard Magnet")
+    C --> S("Soft Magnet")
+
+    subgraph HM["Hard Magnet"]
         direction TB
-        R1("Hard Surrogate Model")
-        R1 --> P1("y_hard")
+        H --> R1("Surrogate Model")
+        R1 --> P1("Extrinsic Properties")
     end
 
-    subgraph SM["Soft model"]
+    subgraph SM["Soft Magnet"]
         direction TB
-        R2("Soft Surrogate Model")
-        R2 --> P2("y_soft")
+        S --> R2("Surrogate Model")
+        R2 --> P2("Extrinsic Properties")
     end
-
-    B --> R1
-    B --> R2
-
-    %% soft routing: blend the two outputs by the classifier probability p
-    Z("Soft routing / blend<br/>y = (1 - p) * y_soft + p * y_hard")
-
-    C -.->|"p"| Z
-    P1 -->|"weight p"| Z
-    P2 -->|"weight 1 - p"| Z
-
-    Z --> OUT("Extrinsic Properties<br/>Hc, Mr, (BH)max")
 
     %% styling
 
@@ -50,14 +40,12 @@ flowchart TB
     classDef valid fill:#A5D6A7,stroke:#1B5E20,stroke-width:1.5px;
     classDef clf fill:#FFE082,stroke:#F57F17,stroke-width:1.5px;
     classDef model fill:#E3F2FD,stroke:#1565C0,stroke-width:1.5px;
-    classDef blend fill:#D1C4E9,stroke:#4527A0,stroke-width:1.5px;
 
     class A input;
     class V screen;
     class B valid;
     class X reject;
     class C clf;
+    class H,S clf;
     class R1,R2 model;
     class P1,P2 model;
-    class Z blend;
-    class OUT model;

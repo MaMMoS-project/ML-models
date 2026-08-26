@@ -9,7 +9,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import GridSearchCV, train_test_split
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, classification_report
+from sklearn.metrics import accuracy_score, balanced_accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, classification_report
 
 from src.utils.clustering_hardsoft import threshold_clustering
 from src.models.scalers import scale_data
@@ -17,6 +17,23 @@ from src.models.scalers import scale_data
 from skl2onnx import convert_sklearn
 from skl2onnx.common.data_types import FloatTensorType
 SKLEARN_ONNX_AVAILABLE = True
+
+
+MU_0 = 4.0e-7 * np.pi   # vacuum permeability (H/m)
+
+
+def add_physics_features(df, Ms_col='Ms (A/m)', K_col='K (J/m^3)', out_col='log_Q'):
+    """Add the (log) quality factor  log_Q = log( 2 K1 / (mu0 Ms^2) )  as a feature.
+
+    Q = 2 K1 / (mu0 Ms^2) is the physical hard/soft discriminant (hard <=> Q >~ 1). It spans
+    several decades, so it is used log-transformed. Returns a copy of df with `out_col` added.
+    """
+    df = df.copy()
+    Ms = df[Ms_col].to_numpy(dtype=float)
+    K1 = df[K_col].to_numpy(dtype=float)
+    Q = 2.0 * K1 / (MU_0 * np.square(Ms))
+    df[out_col] = np.log(np.clip(Q, 1e-300, None))
+    return df
 
 
 def _save_pipeline_onnx(pipeline, input_cols, save_path, filename):
@@ -52,15 +69,19 @@ def _save_pipeline_onnx(pipeline, input_cols, save_path, filename):
 
 def train_and_tune(X_train, y_train):
     """Performs Grid Search for hyperparameter tuning."""
-    model = RandomForestClassifier(random_state=24)
+    # Soft is a ~12 % minority class: weight the base forest to balance the classes so it
+    # stops over-calling the majority "hard" class (the source of the soft->hard misroutes).
+    model = RandomForestClassifier(random_state=24, class_weight='balanced')
 
     param_grid = {
              'estimator__max_depth': [2, 4, 6, 8, 10, 12, 14],
     }
-    
+
     calibrated_forest = CalibratedClassifierCV(model)
-  
-    grid_search = GridSearchCV(calibrated_forest, param_grid, cv=3, verbose=0, n_jobs=-1)
+
+    # Select on balanced accuracy, not raw accuracy (which the majority hard class dominates).
+    grid_search = GridSearchCV(calibrated_forest, param_grid, cv=3,
+                               scoring='balanced_accuracy', verbose=0, n_jobs=-1)
     grid_search.fit(X_train, y_train)
 
     return grid_search.best_estimator_, grid_search.best_params_
@@ -93,6 +114,12 @@ def supervised_hardsoft_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)',
 
     ## only work on valid points, i.e. drop points if somewhere NaN
     #df = df.dropna()
+
+    # Add the physics discriminant Q (log-transformed) and ensure it is used as a feature.
+    df = add_physics_features(df, Ms_col=Ms_col)
+    input_cols = list(input_cols)
+    if 'log_Q' not in input_cols:
+        input_cols.append('log_Q')
 
     # First get threshold clustering labels
     df_threshold = threshold_clustering(df, Ms_col=Ms_col, Mr_col=Mr_col, save_path=save_path)
@@ -128,6 +155,7 @@ def supervised_hardsoft_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)',
     # Calculate metrics on test set
     print("\nModel Performance on Test Set:")
     print(f"Accuracy: {accuracy_score(y_test, y_test_pred):.4f}")
+    print(f"Balanced accuracy: {balanced_accuracy_score(y_test, y_test_pred):.4f}")
     print(f"Precision: {precision_score(y_test, y_test_pred, zero_division=0):.4f}")
     print(f"Recall: {recall_score(y_test, y_test_pred):.4f}")
     print(f"F1 Score: {f1_score(y_test, y_test_pred):.4f}")
@@ -277,7 +305,9 @@ def apply_supervised_clustering(df, model_path=None,
     except Exception as e:
         raise Exception(f"Error loading pipeline from {model_path}: {str(e)}")
 
-    # 3) Prepare raw inputs in the SAME order as training
+    # 3) Prepare raw inputs in the SAME order as training. Add the physics feature log_Q so a
+    #    Q-augmented classifier finds it (harmless for an older 3-feature pipeline).
+    df = add_physics_features(df)
     missing = [c for c in feature_cols if c not in df.columns]
     if missing:
         raise ValueError(f"Missing required feature columns in input df: {missing}")
@@ -382,6 +412,7 @@ def supervised_valid_points_clustering(df, Ms_col='Ms (A/m)', Mr_col='Mr (A/m)',
     # Calculate metrics on test set
     print("\nModel Performance on Test Set:")
     print(f"Accuracy: {accuracy_score(y_test, y_test_pred):.4f}")
+    print(f"Balanced accuracy: {balanced_accuracy_score(y_test, y_test_pred):.4f}")
     print(f"Precision: {precision_score(y_test, y_test_pred, zero_division=0):.4f}")
     print(f"Recall: {recall_score(y_test, y_test_pred):.4f}")
     print(f"F1 Score: {f1_score(y_test, y_test_pred):.4f}")

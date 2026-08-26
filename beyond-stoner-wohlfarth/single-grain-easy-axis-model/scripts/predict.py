@@ -1,3 +1,4 @@
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -11,6 +12,92 @@ MODELS = {
     "soft": BASE_DIR / "../results/models/LogTransformation_cluster0/random_forest.onnx",
     "hard": BASE_DIR / "../results/models/LogTransformation_cluster1/random_forest.onnx",
 }
+
+# Training data the models were fitted on (same file as the training config's input_file).
+# Used to warn when a prediction request lies outside the training volume (extrapolation).
+TRAINING_DATA = BASE_DIR / "../data/single_grain_cube_50nm_aligned.csv"
+
+# Fallback (min, max) design ranges for [Ms (A/m), A (J/m), K (J/m^3)], used only if the
+# training CSV cannot be read. Regenerate these if the training data changes.
+_FALLBACK_BOUNDS = {"Ms": (7.96e4, 3.97e6), "A": (1.0e-13, 1.0e-11), "K": (1.0e4, 9.93e6)}
+_BOUNDS_CACHE = None
+
+# Vacuum permeability, for the physics feature Q = 2 K1 / (mu0 Ms^2) used by the hard/soft
+# classifier when it is trained with the Q-augmented feature set.
+MU_0 = 4.0e-7 * np.pi
+
+# Known ~1% simulation error on the target values (Hc, Mr, BHmax). It is reported as an
+# irreducible aleatoric band (<target>_lo / <target>_hi) around every prediction, independent
+# of which model class produced the ONNX. Combine in quadrature with any model (epistemic)
+# uncertainty if that is added later.
+LABEL_REL_ERR = 0.01
+
+
+def _add_uncertainty_band(result, targets):
+    """Attach <t>_lo / <t>_hi = prediction * (1 -/+ LABEL_REL_ERR) for each target."""
+    for t in targets:
+        v = result.get(t)
+        result[f"{t}_lo"] = None if v is None else v * (1.0 - LABEL_REL_ERR)
+        result[f"{t}_hi"] = None if v is None else v * (1.0 + LABEL_REL_ERR)
+    return result
+
+
+def _training_bounds():
+    """Per-feature (min, max) of Ms, A, K over the training data (cached).
+
+    Reads the min/max directly from the training CSV so the bounds stay correct if the
+    data is regenerated; falls back to the documented design ranges if it cannot be read.
+    """
+    global _BOUNDS_CACHE
+    if _BOUNDS_CACHE is not None:
+        return _BOUNDS_CACHE
+    try:
+        import pandas as pd
+        lines = open(TRAINING_DATA).readlines()
+        hdr = next(i for i, l in enumerate(lines) if l.startswith("Ms,"))
+        df = pd.read_csv(TRAINING_DATA, skiprows=hdr)
+        _BOUNDS_CACHE = {
+            "Ms": (float(df["Ms"].min()), float(df["Ms"].max())),
+            "A": (float(df["A"].min()), float(df["A"].max())),
+            "K": (float(df["K1"].min()), float(df["K1"].max())),
+        }
+    except Exception as exc:
+        warnings.warn(f"Could not read the training volume from {TRAINING_DATA} ({exc}); "
+                      f"using fallback design ranges.")
+        _BOUNDS_CACHE = dict(_FALLBACK_BOUNDS)
+    return _BOUNDS_CACHE
+
+
+def check_in_training_volume(Ms, A, K, warn=True):
+    """Check whether each (Ms, A, K) input lies inside the training volume.
+
+    Returns a boolean (array) that is True where all three inputs are within the training
+    data's min/max box. Does NOT block prediction — when ``warn`` is True it emits a
+    warning for the out-of-volume inputs, whose predictions are extrapolations and may be
+    unreliable.
+    """
+    X, original_shape, is_scalar = _prepare_inputs(Ms, A, K)
+    bounds = _training_bounds()
+    in_range = np.ones(X.shape[0], dtype=bool)
+    per_feat_out = {}
+    for j, name in enumerate(("Ms", "A", "K")):
+        lo, hi = bounds[name]
+        out = (X[:, j] < lo) | (X[:, j] > hi)
+        in_range &= ~out
+        if out.any():
+            per_feat_out[name] = int(out.sum())
+    n_out = int((~in_range).sum())
+    if warn and n_out:
+        detail = ", ".join(f"{k}={v}" for k, v in per_feat_out.items())
+        warnings.warn(
+            f"{n_out} of {X.shape[0]} input(s) fall OUTSIDE the training volume "
+            f"(out-of-range counts per feature: {detail}). These predictions are "
+            f"extrapolations beyond the fitted data and may be unreliable.",
+            stacklevel=2,
+        )
+    if is_scalar:
+        return bool(in_range.item())
+    return in_range.reshape(original_shape)
 
 _SESSION_OPTIONS = ort.SessionOptions()
 _SESSION_OPTIONS.log_severity_level = 3
@@ -47,23 +134,60 @@ def validate_input(Ms, A, K):
         return labels.item()
     return labels.reshape(original_shape)
 
-def classify_magnetic_material(Ms, A, K):
-    """Classify material as 'soft' or 'hard'."""
-    X, original_shape, is_scalar = _prepare_inputs(Ms, A, K)
+def _run_hardsoft_classifier(X):
+    """Run the hard/soft classifier on (N, 3) [Ms, A, K1]. Returns (label[N] int, p_hard[N]).
 
+    The classifier may use the physics feature log_Q = log(2 K1/(mu0 Ms^2)) in addition to
+    (Ms, A, K1); it is appended only when the deployed ONNX expects 4 inputs, so this works with
+    both the original 3-feature and the Q-augmented 4-feature classifier. p_hard is the
+    calibrated probability of the hard class (used for soft/probabilistic routing).
+    """
     session = ort.InferenceSession(str(HARDSOFT_CLASSIFIER_MODEL), _SESSION_OPTIONS)
-    results = session.run(None, {session.get_inputs()[0].name: X})[0]
+    try:
+        n_feat = int(session.get_inputs()[0].shape[1])
+    except (TypeError, ValueError, IndexError):
+        n_feat = X.shape[1]
+    Xc = X
+    if n_feat == 4:
+        logQ = np.log(2.0 * X[:, 2] / (MU_0 * np.square(X[:, 0])))
+        Xc = np.column_stack([X, logQ]).astype(np.float32)
+    out = session.run(None, {session.get_inputs()[0].name: Xc})
+    labels = np.asarray(out[0]).ravel().astype(int)
+    # second output is the [N,2] probability array (col 1 = hard); fall back to the label if absent
+    p_hard = np.asarray(out[1])[:, 1] if len(out) > 1 else labels.astype(float)
+    return labels, p_hard
 
-    labels = np.where(results == 0, "soft", "hard")
 
+def _run_regressor(cls, X_log):
+    """Run the per-class random-forest regressor (returns log1p-space [N,3] predictions)."""
+    session = ort.InferenceSession(str(MODELS[cls]), _SESSION_OPTIONS)
+    return session.run(None, {session.get_inputs()[0].name: X_log})[0]
+
+
+def classify_magnetic_material(Ms, A, K):
+    """Classify material as 'soft' or 'hard' (the classifier's 0/1 decision)."""
+    X, original_shape, is_scalar = _prepare_inputs(Ms, A, K)
+    labels, _ = _run_hardsoft_classifier(X)
+    out = np.where(labels == 0, "soft", "hard")
     if is_scalar:
-        return labels.item()
-    return labels.reshape(original_shape)
+        return out.item()
+    return out.reshape(original_shape)
 
 
-def calculate_extrinsic_properties(Ms, A, K):
+def calculate_extrinsic_properties(Ms, A, K, soft_routing=True):
+    """Predict Hc, Mr and (BH)max from the intrinsic properties (Ms, A, K1).
+
+    With ``soft_routing=True`` (default) BOTH regime-specific regressors are evaluated and
+    blended by the classifier's calibrated probability p_hard:
+        y = (1 - p_hard) * y_soft + p_hard * y_hard      (in the original / expm1 space)
+    This removes the discontinuous mis-routing error near the soft/hard boundary and smooths the
+    transition. With ``soft_routing=False`` the legacy hard 0/1 routing is used. The returned
+    dict also contains ``p_hard`` (classifier probability of the hard class).
+    """
     X, original_shape, is_scalar = _prepare_inputs(Ms, A, K)
 
+    # Warn (but do not block) if the request lies outside the training volume.
+    check_in_training_volume(Ms, A, K, warn=True)
 
     # 0. Determine whether input is valid
     print("Validating the input..\n")
@@ -71,48 +195,52 @@ def calculate_extrinsic_properties(Ms, A, K):
 
     if (valid_input == "valid"):
       print("Input is valid. Starting predicitions...\n")
-      # 1. Determine class
-      mat_class = classify_magnetic_material(Ms, A, K)
-      classes = np.atleast_1d(mat_class).ravel()
+      # 1. Classifier probability of the hard class (calibrated)
+      _, p_hard = _run_hardsoft_classifier(X)
+      classes = np.where(p_hard >= 0.5, "hard", "soft")
 
       # 2. Preprocess
       X_log = np.log1p(X)
 
-      # 3. Predict using the correct model for each class
-      y_log = np.empty((X_log.shape[0], 3), dtype=np.float32)
-
-      for cls in ["soft", "hard"]:
-          mask = classes == cls
-          if np.any(mask):
-              session = ort.InferenceSession(str(MODELS[cls]), _SESSION_OPTIONS)
-              X_subset = X_log[mask]
-              y_log[mask] = session.run(None, {session.get_inputs()[0].name: X_subset})[0]
-
-      # 4. Postprocess
-      y = np.expm1(y_log)
+      # 3. Predict: blend both regressors by p_hard (soft routing) or route 0/1 (hard routing)
+      if soft_routing:
+          y_soft = np.expm1(_run_regressor("soft", X_log))
+          y_hard = np.expm1(_run_regressor("hard", X_log))
+          w = p_hard[:, None]
+          y = (1.0 - w) * y_soft + w * y_hard
+      else:
+          y_log = np.empty((X_log.shape[0], 3), dtype=np.float32)
+          for cls in ("soft", "hard"):
+              mask = classes == cls
+              if np.any(mask):
+                  y_log[mask] = _run_regressor(cls, X_log[mask])
+          y = np.expm1(y_log)
 
       if is_scalar:
-          return {
+          return _add_uncertainty_band({
               "Hc": y[0, 0],
               "Mr": y[0, 1],
               "BHmax": y[0, 2],
-              "class": mat_class,
-          }
+              "class": classes[0],
+              "p_hard": float(p_hard[0]),
+          }, ("Hc", "Mr", "BHmax"))
 
-      return {
+      return _add_uncertainty_band({
           "Hc": y[:, 0].reshape(original_shape),
           "Mr": y[:, 1].reshape(original_shape),
           "BHmax": y[:, 2].reshape(original_shape),
-          "class": np.asarray(mat_class).reshape(original_shape),
-      }
+          "class": np.asarray(classes).reshape(original_shape),
+          "p_hard": np.asarray(p_hard).reshape(original_shape),
+      }, ("Hc", "Mr", "BHmax"))
     else:
       print("The input does not produce valid results. Returning None\n")
-      return {
+      return _add_uncertainty_band({
           "Hc": None,
           "Mr": None,
           "BHmax": None,
           "class": None,
-      }
+          "p_hard": None,
+      }, ("Hc", "Mr", "BHmax"))
 
 
 

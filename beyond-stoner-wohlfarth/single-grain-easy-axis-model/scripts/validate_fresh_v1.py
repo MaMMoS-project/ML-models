@@ -49,22 +49,31 @@ def load_mammos_csv(path):
     return pd.read_csv(path, skiprows=hdr)
 
 
-def predict_batch(Ms, A, K):
+def predict_batch(Ms, A, K, soft_routing=True):
     """Vectorised form of load_onnx_models.calculate_extrinsic_properties.
-    Returns pred[N,3] (Hc, Mr, BHmax; NaN where invalid), valid_mask[N], classes[N]."""
+    Returns pred[N,3] (Hc, Mr, BHmax; NaN where invalid), valid_mask[N], classes[N].
+
+    soft_routing=True blends both regressors by the classifier probability p_hard
+    (y = (1-p_hard)*y_soft + p_hard*y_hard); soft_routing=False uses the hard 0/1 decision."""
     Ms, A, K = (np.asarray(v, float) for v in (Ms, A, K))
     X = np.column_stack([Ms, A, K]).astype(np.float32)
     valid = np.asarray(lom.validate_input(Ms, A, K)).ravel()
-    cls = np.asarray(lom.classify_magnetic_material(Ms, A, K)).ravel()
+    _, p_hard = lom._run_hardsoft_classifier(X)            # calibrated hard-class probability
+    cls = np.where(p_hard >= 0.5, "hard", "soft")          # the 0/1 decision (for the routing check)
     pred = np.full((len(Ms), 3), np.nan, np.float32)
     Xlog = np.log1p(X)                                     # same preprocessing as the pipeline
     vmask = valid == "valid"
-    for c in ("soft", "hard"):
-        m = vmask & (cls == c)
-        if m.any():
-            sess = ort.InferenceSession(str(lom.MODELS[c]), lom._SESSION_OPTIONS)
-            ylog = sess.run(None, {sess.get_inputs()[0].name: Xlog[m]})[0]
-            pred[m] = np.expm1(ylog)                       # inverse log transform
+    if soft_routing:
+        y_soft = np.expm1(lom._run_regressor("soft", Xlog))
+        y_hard = np.expm1(lom._run_regressor("hard", Xlog))
+        w = p_hard[:, None]
+        blended = (1.0 - w) * y_soft + w * y_hard
+        pred[vmask] = blended[vmask]
+    else:
+        for c in ("soft", "hard"):
+            m = vmask & (cls == c)
+            if m.any():
+                pred[m] = np.expm1(lom._run_regressor(c, Xlog[m]))
     return pred, vmask, cls
 
 
@@ -191,6 +200,15 @@ def main():
     r2_ok = target_stats(df["Mr"].values[ok], pred[ok, mr])["R2"]
     print(f"  Mr R^2: all used = {r2_all:.3f}   |   correctly-routed only = {r2_ok:.3f}  "
           f"(the gap is classifier-error, not regressor-error)")
+
+    # --- soft routing vs hard routing (item 3): does blending by p_hard help? ---
+    pred_hard, _, _ = predict_batch(Ms, A, K, soft_routing=False)
+    print("\n=== routing comparison: per-target R^2 on used points ===")
+    print(f"  {'target':<6}   hard-routing   soft-routing (deployed)")
+    for i, t in enumerate(TARGETS):
+        r2_h = target_stats(df[t].values[use], pred_hard[use, i])["R2"]
+        r2_s = target_stats(df[t].values[use], pred[use, i])["R2"]
+        print(f"  {t:<6}     {r2_h:8.3f}       {r2_s:8.3f}")
 
     parity_plot(df, pred, use, cls, misclass, OUT / "parity.png")
 
