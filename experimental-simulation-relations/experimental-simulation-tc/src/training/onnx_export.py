@@ -9,11 +9,16 @@ correction delta = Tc_exp - Tc_sim (when delta_learning is on). Each exported ON
 therefore accepts that full input vector and returns the model's raw output; the
 predict script (src/predict_tc.py) adds Tc_sim back when the file is a `_delta` model.
 
-Only the RAW-200D embedding variant is exported, because:
-  * the PCA-compressed variants use an OFFLINE PCA (compress_embedding_PCA.py) whose
-    fitted object is NOT persisted, so a PCA model could not be served from a formula;
-  * the no-embedding models take only Tc_sim and ignore the composition.
-So raw_200D is the only variant a formula-based predict script can actually serve.
+IMPORTANT — WHICH VARIANTS ARE EXPORTED:
+  * ONLY the RAW-200D embedding variant is exported to ONNX.
+  * The PCA-compressed embedding variants (pca_8 / pca_16 / pca_32 / pca_64) are NOT exported
+    to ONNX -- no .onnx file is written for them. Reason: the PCA is fitted OFFLINE
+    (compress_embedding_PCA.py) and its fitted object is NOT persisted, so a PCA model could not
+    be reconstructed / served from the raw 200-D composition embedding at prediction time.
+  * The no-embedding variants (Tc_sim only, composition ignored) are also NOT exported.
+So raw_200D is the only variant a formula-based predict script can actually serve. (Training of
+the PCA / no-embedding variants is unaffected -- they are still trained and scored, just not
+written to ONNX.)
 
 Model families exported: Linear, RandomForest, LightGBM, MLP. Symbolic Regression is
 NOT ONNX-exportable (it is a symbolic expression, not a tensor graph) and is skipped.
@@ -150,7 +155,12 @@ def maybe_export_onnx(*, family: str, model, scaler, input_dim: int,
     Returns the written path, or None if skipped.
     """
     if not (use_embedding and embedding_type is None):
-        return None  # only raw_200D embedding models are servable from a formula
+        # NOT EXPORTED TO ONNX: this branch is taken for the PCA-compressed embedding variants
+        # (embedding_type is set, e.g. 'pca_8'/'pca_16'/'pca_32'/'pca_64') and for the
+        # no-embedding variant. Only the raw-200D variant (use_embedding=True and
+        # embedding_type is None) is exportable/servable -- see the module docstring. Returning
+        # None here means NO .onnx file is written for this variant; training is unaffected.
+        return None
     if family == "lgbm" and not _LGBM_ONNX:
         print("    ONNX export skipped (LightGBM needs onnxmltools)")
         return None
