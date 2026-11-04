@@ -1,26 +1,29 @@
 #!/usr/bin/env python
 # coding: utf-8
-"""Build the SIMULATED-Tc preprocessed_data from the CURATED simulation-only sources.
+"""Build the EXPERIMENTAL-Tc preprocessed_data from the CURATED experiment-only sources.
 
-This project (compound-to-simulated-tc) now produces Simulation_Tc*.csv ONLY, and from the
-curated split files in ``data/curated/`` rather than from the raw sources. Those curated
+This project (compound-to-experimental-tc) now produces Experimental_Tc*.csv ONLY, and from
+the curated split files in ``data/curated/`` rather than from the raw sources. Those curated
 files come from the Curated-Tc-data curation:
   * step 03 split every raw source into ``<source>_experimental.csv`` / ``<source>_simulated.csv``
     using each source's own exp/sim flag, overridden for RE-free compounds by partner UU's
     Sim-TC-HH-NH-AV.xlsx (prefer measured; theory -> simulated), and DROPPED the entries UU
     flagged as wrong/unusable;
   * step 04 regenerated the preprocessed data from those splits.
-This script reproduces step 04's SIMULATION path exactly: pool every
-``data/curated/*_simulated.csv`` and run the same clean / reduced-formula / median-dedup /
+This script reproduces step 04's EXPERIMENTAL path exactly: pool every
+``data/curated/*_experimental.csv`` and run the same clean / reduced-formula / median-dedup /
 RE-split as the original pipeline. All "which compounds are kept vs dropped" decisions are
-already baked into the curated ``*_simulated.csv`` files, so this script just pools and
+already baked into the curated ``*_experimental.csv`` files, so this script just pools and
 processes them (no further dropping here).
 
+Note: the experimental set is now LARGER than before, because the RE-free curation moved many
+values the public databases had mislabelled as "simulated" into the experimental split.
+
 Outputs (preprocessed_data/):
-    Simulation_Tc_all.csv       composition, Tc_sim
-    Simulation_Tc_RE.csv        composition, Tc_sim   (rare-earth)
-    Simulation_Tc_RE-Free.csv   composition, Tc_sim   (rare-earth free)
-    Simulated_Tc.csv            copy of Simulation_Tc_all.csv
+    Experimental_Tc_all.csv     composition, Tc_exp
+    Experimental_Tc.csv         composition, Tc_exp, contains_re
+    Experimental_Tc_RE.csv      composition, Tc_exp   (rare-earth)
+    Experimental_Tc_RE-Free.csv composition, Tc_exp   (rare-earth free)
 
 The original raw-source generator (produced both experimental and simulated) is kept at
 ``src/process_tc_data.py.bak``.
@@ -112,18 +115,18 @@ def split_re(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
 
 
 # ---------------------------------------------------------------------------
-# Load curated simulation-only sources
+# Load curated experiment-only sources
 # ---------------------------------------------------------------------------
 
-def load_curated_simulated() -> tuple[pd.DataFrame, list]:
-    """Pool (composition, Tc) from every curated ``*_simulated.csv`` file in data/curated/.
+def load_curated_experimental() -> tuple[pd.DataFrame, list]:
+    """Pool (composition, Tc) from every curated ``*_experimental.csv`` file in data/curated/.
     Auxiliary files starting with '_' (e.g. _dropped_flagged_wrong.csv) are ignored."""
     files = sorted(
-        f for f in glob.glob(os.path.join(CURATED_DIR, "*_simulated.csv"))
+        f for f in glob.glob(os.path.join(CURATED_DIR, "*_experimental.csv"))
         if not os.path.basename(f).startswith("_")
     )
     if not files:
-        raise SystemExit(f"No '*_simulated.csv' files found in {CURATED_DIR}")
+        raise SystemExit(f"No '*_experimental.csv' files found in {CURATED_DIR}")
     frames = [pd.read_csv(f)[["composition", "Tc"]] for f in files]
     return pd.concat(frames, ignore_index=True), [os.path.basename(f) for f in files]
 
@@ -133,25 +136,25 @@ def load_curated_simulated() -> tuple[pd.DataFrame, list]:
 # ---------------------------------------------------------------------------
 
 def main() -> None:
-    pool, files = load_curated_simulated()
-    print(f"Simulated (curated) — pooled {len(pool)} rows from {len(files)} files:")
+    pool, files = load_curated_experimental()
+    print(f"Experimental (curated) — pooled {len(pool)} rows from {len(files)} files:")
     for f in files:
         print(f"    {f}")
 
-    df_sim = process(pool, tc_col_out="Tc_sim")
-    print(f"Simulated — total: {len(df_sim)}, "
-          f"duplicates: {df_sim['composition'].duplicated().sum()}")
+    df_exp = process(pool, tc_col_out="Tc_exp")
+    print(f"Experimental — total: {len(df_exp)}, "
+          f"duplicates: {df_exp['composition'].duplicated().sum()}")
 
     os.makedirs(OUT_DIR, exist_ok=True)
-    out_all = df_sim.drop(columns="contains_re")
-    out_all.to_csv(os.path.join(OUT_DIR, "Simulation_Tc_all.csv"), index=False)
-    out_all.to_csv(os.path.join(OUT_DIR, "Simulated_Tc.csv"), index=False)  # alias copy
+    df_exp.drop(columns="contains_re").to_csv(
+        os.path.join(OUT_DIR, "Experimental_Tc_all.csv"), index=False)
+    df_exp.to_csv(os.path.join(OUT_DIR, "Experimental_Tc.csv"), index=False)  # keeps contains_re
 
-    df_sim_re, df_sim_re_free = split_re(df_sim)
-    df_sim_re.to_csv(os.path.join(OUT_DIR, "Simulation_Tc_RE.csv"), index=False)
-    df_sim_re_free.to_csv(os.path.join(OUT_DIR, "Simulation_Tc_RE-Free.csv"), index=False)
+    df_exp_re, df_exp_re_free = split_re(df_exp)
+    df_exp_re.to_csv(os.path.join(OUT_DIR, "Experimental_Tc_RE.csv"), index=False)
+    df_exp_re_free.to_csv(os.path.join(OUT_DIR, "Experimental_Tc_RE-Free.csv"), index=False)
 
-    print(f"Wrote Simulation_Tc_all / _RE / _RE-Free (+ Simulated_Tc) to {OUT_DIR}")
+    print(f"Wrote Experimental_Tc_all / Experimental_Tc / _RE / _RE-Free to {OUT_DIR}")
 
 
 if __name__ == "__main__":
