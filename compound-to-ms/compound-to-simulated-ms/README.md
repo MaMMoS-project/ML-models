@@ -217,11 +217,11 @@ together on this data with the current config **{RF, MLP, LightGBM}**, 10-member
 Deployed best model per dataset (from `results/sim_ms_best_by_dataset.csv`, ensemble mean ± std
 over N = 10 splits):
 
-| Dataset | Embedding | Model | N  | R²       | R²_std   | MAE      | MAE_std  | RMSE     | RMSE_std | MAE_Am    | MedRelErr |
-| ------- | --------- | ----- | -- | -------- | -------- | -------- | -------- | -------- | -------- | --------- | --------- |
-| RE      | raw_200D  | LGBM  | 10 | 0.759582 | 0.007876 | 0.282908 | 0.005135 | 0.391850 | 0.007552 | 70,575.46 | 0.196481  |
-| RE-Free | raw_200D  | LGBM  | 10 | 0.756751 | 0.004090 | 0.288057 | 0.002389 | 0.390855 | 0.003898 | 76,169.30 | 0.205665  |
-| All     | raw_200D  | LGBM  | 10 | 0.745036 | 0.004305 | 0.298519 | 0.002133 | 0.402195 | 0.003458 | 77,125.72 | 0.215374  |
+| Dataset | Embedding | Model | N  | R²    | R² std | MAE   | MAE std | RMSE  | RMSE std | MAE_Am    | MedRelErr |
+| ------- | --------- | ----- | -- | ----- | ------ | ----- | ------- | ----- | -------- | --------- | --------- |
+| RE      | raw_200D  | LGBM  | 10 | 0.760 | 0.008  | 0.283 | 0.005   | 0.392 | 0.008    | 70575.461 | 0.196     |
+| RE-Free | raw_200D  | LGBM  | 10 | 0.757 | 0.004  | 0.288 | 0.002   | 0.391 | 0.004    | 76169.297 | 0.206     |
+| All     | raw_200D  | LGBM  | 10 | 0.745 | 0.004  | 0.299 | 0.002   | 0.402 | 0.003    | 77125.724 | 0.215     |
 
 > **MLP is the strongest family on every dataset** and is the deployed best, ONNX-exported
 > directly (`raw_200D` MLP for All, `pca_64` MLP for RE and RE-Free) — for the PCA variants the
