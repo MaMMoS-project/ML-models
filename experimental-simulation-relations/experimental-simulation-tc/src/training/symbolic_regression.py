@@ -164,7 +164,13 @@ class SymbolicRegressionTrainer:
                 return m.predict(X_te)
 
             print(f"\nRunning {cv_folds}-fold CV for SR (slow — {cv_folds} symbolic searches)...")
-            cv = cross_val_report_fn(_fit_predict, X, y, self.loader, n_splits=cv_folds)
+            # SR uses only Tc_sim (no embedding); leakage-free CV when augmented.
+            aug_ctx = (dict(dataset_type=dataset_type, use_embedding=False,
+                            embedding_type=None, df=df,
+                            phases=getattr(self.loader, 'aug_phases', ('sim', 'exp')))
+                       if is_augmented else None)
+            cv = cross_val_report_fn(_fit_predict, X, y, self.loader, n_splits=cv_folds,
+                                     aug_ctx=aug_ctx)
             print(f"{cv_folds}-fold CV Metrics (headline):")
             print(f"  R²   = {cv['R2']:.4f} ± {cv['R2_std']:.4f}")
             print(f"  RMSE = {cv['RMSE']:.2f} ± {cv['RMSE_std']:.2f} K")

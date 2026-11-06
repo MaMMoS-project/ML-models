@@ -148,6 +148,9 @@ def train_augmented_embedding():
     # ------------------------------------------------------------------
     for variant in AUGMENTATION_VARIANTS:
         label = variant["label"]
+        # Augmentation phase(s) this variant adds (for the leakage-free CV).
+        aug_phases = {"sim_augmented": ("sim",), "exp_augmented": ("exp",),
+                      "combined_augmented": ("sim", "exp")}.get(label, ("sim", "exp"))
         description = variant["description"]
         file_map = variant["file_map"]
 
@@ -238,6 +241,7 @@ def train_augmented_embedding():
                     lin_trainer.loader.delta_learning = delta_learning
                     lin_trainer.loader.use_re_features = use_re_features
                     lin_trainer.loader.cv_folds = cv_folds
+                    lin_trainer.loader.aug_phases = aug_phases
                     orig_prep = lin_trainer.loader.prepare_dataset
                     lin_trainer.loader.load_augmented_data = lambda dt=None: df_data.copy()
                     lin_trainer.loader.prepare_dataset = _make_patched_prepare(orig_prep)
@@ -278,6 +282,7 @@ def train_augmented_embedding():
                     rf_trainer.loader.delta_learning = delta_learning
                     rf_trainer.loader.use_re_features = use_re_features
                     rf_trainer.loader.cv_folds = cv_folds
+                    rf_trainer.loader.aug_phases = aug_phases
                     orig_prep = rf_trainer.loader.prepare_dataset
                     rf_trainer.loader.load_augmented_data = lambda dt=None: df_data.copy()
                     rf_trainer.loader.prepare_dataset = _make_patched_prepare(orig_prep)
@@ -317,6 +322,7 @@ def train_augmented_embedding():
                         gbm_trainer.loader.delta_learning = delta_learning
                         gbm_trainer.loader.use_re_features = use_re_features
                         gbm_trainer.loader.cv_folds = cv_folds
+                        gbm_trainer.loader.aug_phases = aug_phases
                         orig_prep = gbm_trainer.loader.prepare_dataset
                         gbm_trainer.loader.load_augmented_data = lambda dt=None: df_data.copy()
                         gbm_trainer.loader.prepare_dataset = _make_patched_prepare(orig_prep)
@@ -357,6 +363,7 @@ def train_augmented_embedding():
                     mlp_trainer.loader.delta_learning = delta_learning
                     mlp_trainer.loader.use_re_features = use_re_features
                     mlp_trainer.loader.cv_folds = cv_folds
+                    mlp_trainer.loader.aug_phases = aug_phases
                     orig_prep = mlp_trainer.loader.prepare_dataset
                     mlp_trainer.loader.load_augmented_data = lambda dt=None: df_data.copy()
                     mlp_trainer.loader.prepare_dataset = _make_patched_prepare(orig_prep)

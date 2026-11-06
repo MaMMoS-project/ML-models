@@ -15,19 +15,23 @@ re_features: true
 # 5-fold CV for the headline metrics (the RE split is small and single-split noisy).
 cv: 5
 
-# CURRENT SETTING: the "fast trio" — LightGBM + RandomForest + Linear (same choice
-# as training_config.yaml). Accuracy top-3 is {LightGBM, MLP, RF} and consistent
-# across RE / RE-free (no conflict), but MLP is slow and beats Linear by only
-# ~0.001 R2, so MLP is swapped for Linear for turnaround. Re-enable sr/mlp for a
-# full 5-family comparison run.
+# CURRENT SETTING: ALL FIVE families enabled (the default, same as training_config.yaml) —
+# a run produces the full comparison. On the curated delta run the families are a near-tie
+# (top-5 within ~0.01 R2) and the best family depends on the split (RF for All-Pairs, Ridge
+# for RE-Pairs, LightGBM for RE-Free-Pairs). For faster turnaround, disable the two slow
+# families (sr + mlp) and keep the fast trio linear + rf + lgbm, at a negligible accuracy cost.
+# Augmented-data note: every family's CV is now computed LEAKAGE-FREE
+# (base_trainer.leakage_free_cv), so re-enabling the slow families gives trustworthy
+# augmented numbers too. Requirements: MLP needs PyTorch (already in the venv); SR needs
+# the `pysr` package + its Julia backend pre-installed on a login node (see README).
 models:
   sr:
-    enabled: false      # Symbolic Regression (PySR) — slowest by far; rank #5
+    enabled: true       # Symbolic Regression (PySR) — slowest; needs pysr + Julia backend
   linear:
     enabled: true       # fast; ~ties MLP for #3/#4
   rf:
     enabled: true       # fast; top-3
   lgbm:
-    enabled: true       # fast; rank #1 both RE & RE-free
+    enabled: true       # fast; best on RE-Free-Pairs
   mlp:
-    enabled: false      # FCNN / PyTorch MLP — slow; top-3 on accuracy but dropped for speed
+    enabled: true       # FCNN / PyTorch MLP — slow (epochs); needs torch (already present)

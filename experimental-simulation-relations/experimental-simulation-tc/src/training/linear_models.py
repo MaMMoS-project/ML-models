@@ -120,7 +120,12 @@ class LinearModelsTrainer:
             cv = None
             if cv_folds and cv_folds >= 2:
                 cv_model = make_pipeline(StandardScaler(), model)
-                cv = cross_val_report(cv_model, X, y, self.loader, n_splits=cv_folds)
+                aug_ctx = (dict(dataset_type=dataset_type, use_embedding=use_embedding,
+                                embedding_type=embedding_type, df=df,
+                                phases=getattr(self.loader, 'aug_phases', ('sim', 'exp')))
+                           if is_augmented else None)
+                cv = cross_val_report(cv_model, X, y, self.loader, n_splits=cv_folds,
+                                      aug_ctx=aug_ctx)
                 print(f"{cv_folds}-fold CV R² = {cv['R2']:.4f} ± {cv['R2_std']:.4f} (headline)")
 
             # Plot results

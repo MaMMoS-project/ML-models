@@ -603,8 +603,144 @@ def split_data(X: np.ndarray, y: np.ndarray, test_size: float = 0.2, random_stat
     return train_test_split(X, y, test_size=test_size, random_state=random_state)
 
 
+# ---------------------------------------------------------------------------
+# Leakage-free cross-validation for the data augmentation
+# ---------------------------------------------------------------------------
+# The augmented trainers must NOT KFold over the pre-made mock-filled matrix: that
+# leaks (synthetic rows enter the test folds, and every mock value is bootstrapped from
+# the ΔTc of ALL real pairs, held-out ones included). Instead we cross-validate over the
+# REAL pairs only, regenerate the mock data INSIDE each fold from the TRAINING pairs
+# alone, and score on the held-out REAL pairs. This folds the former standalone
+# src/eval_leakage_free.py audit into the pipeline so the reported augmented numbers are
+# trustworthy.
+
+_MERGED_POOLS_CACHE: Dict = {}
+
+
+def _merged_pools(dataset_type: str):
+    """(pairs, sim_only, exp_only) DataFrames for a split, from data/merged_curie_temp.csv."""
+    if dataset_type in _MERGED_POOLS_CACHE:
+        return _MERGED_POOLS_CACHE[dataset_type]
+    merged = pd.read_csv(_project_root() / "data" / "merged_curie_temp.csv")
+    if dataset_type == "re":
+        merged = merged[merged["contains_rare_earth"] == True]   # noqa: E712
+    elif dataset_type == "re-free":
+        merged = merged[merged["contains_rare_earth"] == False]  # noqa: E712
+    sim, exp = merged["Tc_sim"].notna(), merged["Tc_exp"].notna()
+    out = (merged[sim & exp].reset_index(drop=True),
+           merged[sim & ~exp].reset_index(drop=True),
+           merged[exp & ~sim].reset_index(drop=True))
+    _MERGED_POOLS_CACHE[dataset_type] = out
+    return out
+
+
+def _resolve_emb_col(df, embedding_type):
+    for c in (f"comp_emb_pca_{embedding_type}_components",
+              f"comp_emb_{embedding_type}_components", str(embedding_type)):
+        if c in df.columns:
+            return c
+    if "compound_embedding" in df.columns:
+        return "compound_embedding"
+    raise ValueError(f"embedding column for {embedding_type!r} not found in augmented df")
+
+
+def _bootstrap_positive(anchor, pool, sign, rng):
+    """mock = anchor + sign*bootstrap(pool), resampled until > 0 (<=100 iters) — mirrors
+    augment_data.bootstrap_augment / bootstrap_augment_sim exactly."""
+    n = len(anchor)
+    if n == 0:
+        return np.array([])
+    out = np.full(n, -np.inf)
+    it = 0
+    while np.any(out < 0) and it < 100:
+        m = out < 0
+        out[m] = anchor[m] + sign * rng.choice(pool, size=int(m.sum()), replace=True)
+        it += 1
+    return out
+
+
+def _regen_mock(sim_only, exp_only, delta_train, rng, phases):
+    """Regenerate the mock rows for the requested augmentation phase(s), from delta_train."""
+    frames = []
+    if "sim" in phases and len(sim_only):          # Phase 1: Tc_sim-only -> mock Tc_exp
+        a = sim_only["Tc_sim"].to_numpy(float)
+        frames.append(pd.DataFrame({"composition": sim_only["composition"].values,
+                                    "Tc_sim": a,
+                                    "Tc_exp": _bootstrap_positive(a, delta_train, +1, rng)}))
+    if "exp" in phases and len(exp_only):          # Phase 2: Tc_exp-only -> mock Tc_sim
+        a = exp_only["Tc_exp"].to_numpy(float)
+        frames.append(pd.DataFrame({"composition": exp_only["composition"].values,
+                                    "Tc_sim": _bootstrap_positive(a, delta_train, -1, rng),
+                                    "Tc_exp": a}))
+    return (pd.concat(frames, ignore_index=True) if frames
+            else pd.DataFrame(columns=["composition", "Tc_sim", "Tc_exp"]))
+
+
+def leakage_free_cv(estimator, loader, dataset_type, use_embedding, embedding_type,
+                    df_embedded=None, phases=("sim", "exp"),
+                    n_splits: int = 5, n_repeats: int = 1, random_state: int = 42,
+                    fit_predict_fn=None) -> Dict:
+    """Leakage-free CV of an augmented model: per fold, train on the TRAIN real pairs plus
+    mock rows regenerated from the TRAIN pairs' ΔTc only, and test on the held-out REAL
+    pairs. Reuses loader.prepare_dataset, so the delta target, RE features, Tc_sim-last
+    ordering and (for the embedding variant) the embedding columns match the pipeline.
+    Embedding vectors are looked up per composition from the augmented embedded frame.
+
+    sklearn-cloneable estimators are passed via `estimator` (cloned + fit/predict per fold).
+    Non-cloneable models (MLP, Symbolic Regression) instead pass `fit_predict_fn(X_tr, y_tr,
+    X_te) -> y_pred_target` (predictions in the training-target space); this is the leakage-
+    free counterpart of cross_val_report_fn."""
+    import contextlib
+    import io as _io
+    pairs, sim_only, exp_only = _merged_pools(dataset_type)
+    emb_col = emb_map = None
+    if use_embedding:
+        emb_col = _resolve_emb_col(df_embedded, embedding_type)
+        emb_map = dict(zip(df_embedded["composition"].astype(str), df_embedded[emb_col]))
+
+        def _keep(d):
+            return d[d["composition"].astype(str).isin(emb_map)].reset_index(drop=True)
+        pairs, sim_only, exp_only = _keep(pairs), _keep(sim_only), _keep(exp_only)
+
+    def _attach(df):
+        df = df[["composition", "Tc_sim", "Tc_exp"]].copy()
+        if use_embedding:
+            df[emb_col] = df["composition"].astype(str).map(emb_map)
+        return df
+
+    splitter = (RepeatedKFold(n_splits=n_splits, n_repeats=n_repeats, random_state=random_state)
+                if n_repeats > 1
+                else KFold(n_splits=n_splits, shuffle=True, random_state=random_state))
+    r2s, rmses, maes = [], [], []
+    for i, (tr, te) in enumerate(splitter.split(pairs)):
+        ptr, pte = pairs.iloc[tr], pairs.iloc[te]
+        delta_tr = (ptr["Tc_exp"] - ptr["Tc_sim"]).to_numpy(float)
+        rng = np.random.default_rng(10_000 * i + random_state)
+        mock = _regen_mock(sim_only, exp_only, delta_tr, rng, phases)
+        train_df = _attach(pd.concat([ptr, mock], ignore_index=True))
+        test_df = _attach(pte)
+        with contextlib.redirect_stdout(_io.StringIO()):
+            Xtr, ytr = loader.prepare_dataset(train_df, dataset_type, use_embedding, embedding_type)
+            Xte, yte = loader.prepare_dataset(test_df, dataset_type, use_embedding, embedding_type)
+        if fit_predict_fn is not None:
+            yp = loader.reconstruct_target(np.asarray(fit_predict_fn(Xtr, ytr, Xte)), Xte)
+        else:
+            est = clone(estimator)
+            est.fit(Xtr, ytr)
+            yp = loader.reconstruct_target(est.predict(Xte), Xte)
+        yt = loader.reconstruct_target(yte, Xte)
+        m = ModelEvaluator.compute_metrics(yt, yp)
+        r2s.append(m["R2"]); rmses.append(m["RMSE"]); maes.append(m["MAE"])
+    r2s, rmses, maes = np.array(r2s), np.array(rmses), np.array(maes)
+    return {"R2": float(r2s.mean()), "R2_std": float(r2s.std()),
+            "RMSE": float(rmses.mean()), "RMSE_std": float(rmses.std()),
+            "MAE": float(maes.mean()), "MAE_std": float(maes.std()),
+            "n_splits": n_splits, "n_repeats": n_repeats, "leakage_free": True}
+
+
 def cross_val_report(model, X: np.ndarray, y: np.ndarray, loader,
-                     n_splits: int = 5, n_repeats: int = 1, random_state: int = 42) -> Dict:
+                     n_splits: int = 5, n_repeats: int = 1, random_state: int = 42,
+                     aug_ctx: Optional[dict] = None) -> Dict:
     """K-fold CV metrics in Tc space, delta-aware.
 
     A fresh clone of `model` (same hyperparameters, unfitted) is trained on each
@@ -620,7 +756,19 @@ def cross_val_report(model, X: np.ndarray, y: np.ndarray, loader,
     not sklearn-cloneable and use cross_val_report_fn() instead.
 
     Returns mean and std of R2/RMSE/MAE across folds.
+
+    When `aug_ctx` is given (augmented training), the CV is done LEAKAGE-FREE via
+    leakage_free_cv() instead of folding over the pre-made mock matrix X/y: it folds over
+    the real pairs, regenerates the mock data per fold from the training pairs only, and
+    scores on held-out real pairs. `aug_ctx` carries dataset_type, use_embedding,
+    embedding_type, the augmented frame `df` (for per-composition embeddings) and `phases`.
     """
+    if aug_ctx is not None:
+        return leakage_free_cv(
+            model, loader, aug_ctx["dataset_type"], aug_ctx["use_embedding"],
+            aug_ctx["embedding_type"], df_embedded=aug_ctx.get("df"),
+            phases=aug_ctx.get("phases", ("sim", "exp")),
+            n_splits=n_splits, n_repeats=n_repeats, random_state=random_state)
     if n_repeats > 1:
         splitter = RepeatedKFold(n_splits=n_splits, n_repeats=n_repeats,
                                  random_state=random_state)
@@ -646,7 +794,8 @@ def cross_val_report(model, X: np.ndarray, y: np.ndarray, loader,
 
 
 def cross_val_report_fn(fit_predict_fn, X: np.ndarray, y: np.ndarray, loader,
-                        n_splits: int = 5, n_repeats: int = 1, random_state: int = 42) -> Dict:
+                        n_splits: int = 5, n_repeats: int = 1, random_state: int = 42,
+                        aug_ctx: Optional[dict] = None) -> Dict:
     """K-fold CV for non-sklearn models (MLP, Symbolic Regression).
 
     Like cross_val_report, but instead of cloning an estimator it calls
@@ -656,7 +805,18 @@ def cross_val_report_fn(fit_predict_fn, X: np.ndarray, y: np.ndarray, loader,
     single-split / sklearn-CV ones. This lets torch and PySR models be CV'd
     without an sklearn-compatible clone(). Any scaling must happen INSIDE
     fit_predict_fn (fit on the fold's train data only).
+
+    When `aug_ctx` is given (augmented training), the CV is done LEAKAGE-FREE via
+    leakage_free_cv(..., fit_predict_fn=fit_predict_fn), exactly as for the cloneable
+    estimators in cross_val_report.
     """
+    if aug_ctx is not None:
+        return leakage_free_cv(
+            None, loader, aug_ctx["dataset_type"], aug_ctx["use_embedding"],
+            aug_ctx["embedding_type"], df_embedded=aug_ctx.get("df"),
+            phases=aug_ctx.get("phases", ("sim", "exp")),
+            n_splits=n_splits, n_repeats=n_repeats, random_state=random_state,
+            fit_predict_fn=fit_predict_fn)
     if n_repeats > 1:
         splitter = RepeatedKFold(n_splits=n_splits, n_repeats=n_repeats,
                                  random_state=random_state)

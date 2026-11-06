@@ -255,7 +255,12 @@ class FCNNTrainer:
                 )
                 return self._predict(m, X_te_s)
 
-            cv = cross_val_report_fn(_fit_predict, X, y, self.loader, n_splits=cv_folds)
+            aug_ctx = (dict(dataset_type=dataset_type, use_embedding=use_embedding,
+                            embedding_type=embedding_type, df=df,
+                            phases=getattr(self.loader, 'aug_phases', ('sim', 'exp')))
+                       if is_augmented else None)
+            cv = cross_val_report_fn(_fit_predict, X, y, self.loader, n_splits=cv_folds,
+                                     aug_ctx=aug_ctx)
             print(f"\n{cv_folds}-fold CV Metrics (headline):")
             print(f"  R²   = {cv['R2']:.4f} ± {cv['R2_std']:.4f}")
             print(f"  RMSE = {cv['RMSE']:.2f} ± {cv['RMSE_std']:.2f} K")

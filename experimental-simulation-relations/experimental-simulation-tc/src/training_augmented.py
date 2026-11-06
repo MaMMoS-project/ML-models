@@ -136,6 +136,10 @@ def training_augmented():
             use_re_features=use_re_features,
             cv_folds=cv_folds,
         )
+        # Which augmentation phase(s) this variant adds — used by the leakage-free CV to
+        # regenerate the matching mock rows per fold (exp->Phase 2, sim->Phase 1).
+        custom_loader.aug_phases = {"sim_augmented": ("sim",), "exp_augmented": ("exp",),
+                                    "combined_augmented": ("sim", "exp")}.get(label, ("sim", "exp"))
 
         variant_results = []
 

@@ -43,18 +43,19 @@ cv: 0
 # (margins are tiny — top-5 within ~0.01 R2 — so this is a near-tie, but the order
 # is stable between RE and RE-free.)
 #
-# CURRENT SETTING: the "fast trio" — LightGBM + RandomForest + Linear. The accuracy
-# top-3 is {LightGBM, MLP, RF}, but MLP is a SLOW family and beats Linear by only
-# ~0.001 R2, so we swap MLP -> Linear: three fast families, best turnaround, at a
-# ~0.001 R2 cost. Re-enable sr/mlp (set `enabled: true`) for a full comparison run.
+# CURRENT SETTING: ALL FIVE families enabled (the default) — a run produces the full
+# comparison. On the curated delta run the families are a near-tie (top-5 within ~0.01 R2)
+# and the best family depends on the split (RF for All-Pairs, Ridge for RE-Pairs, LightGBM
+# for RE-Free-Pairs). For faster turnaround, disable the two SLOW families (sr + mlp, set
+# `enabled: false`) and keep the fast trio linear + rf + lgbm, at a negligible accuracy cost.
 models:
   sr:
-    enabled: false      # Symbolic Regression (PySR) — slowest by far; rank #5
+    enabled: true       # Symbolic Regression (PySR) — slowest; needs pysr + Julia backend
   linear:
     enabled: true       # LASSO / Ridge / LinearRegression — fast; ~ties MLP for #3/#4
   rf:
     enabled: true       # Random Forest — fast; top-3
   lgbm:
-    enabled: true       # LightGBM (gradient-boosted trees) — fast; rank #1 both RE & RE-free
+    enabled: true       # LightGBM (gradient-boosted trees) — fast; best on RE-Free-Pairs
   mlp:
-    enabled: false      # FCNN / PyTorch MLP — slow (epochs); top-3 on accuracy but dropped for speed
+    enabled: true       # FCNN / PyTorch MLP — slow (epochs); needs torch (already present)
