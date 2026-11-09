@@ -1,534 +1,276 @@
-# ML model for systematic errors between simulations and experimental measurements of the Spontaneous Magnetization
+# compound-to-experimental-ms
 
-Machine-learning pipeline for correcting DFT-simulated saturation magnetisation (Ms)
-values against experimental measurements. Models learn the systematic error between
-simulated Ms (A/m) and experimental Ms (A/m) and predict a corrected value.
+Predict the **experimental saturation magnetisation Ms** (in A/m) of a magnetic compound
+directly from its chemical formula, via a matscholar200 compound embedding.
 
-## Current version of model
-v0.2
+This is a sibling of `compound-to-experimental-tc` (same pipeline and code structure) but
+targets Ms instead of Tc, and is fed by the raw Ms sources used by `my_ms`. The companion
+project `compound-to-simulated-ms` is identical but targets the *simulated* (DFT) Ms.
 
-## 0. Installation
-Use requirements.txt. In addition pytorch, compatible with your system, must be installed.
-- https://pytorch.org/
+> **Trained in log-space.** Ms spans ~6 orders of magnitude, so models are trained on
+> `log1p(Ms)`; `predict_ms.py` applies `expm1` so predictions come back in physical A/m.
 
-## Pipeline Overview
+> **What the target is (important).** The model is trained on **genuinely measured**
+> saturation magnetisation, pooled from literature compilations, the Bhandari tables and the
+> NEMAD magnetic-materials database (`Experimental == True` rows only). **Materials Project is
+> deliberately excluded**: its `total_magnetization` is a DFT value — the *collinear /
+> uncompensated* sublattice moment, not a measurement — which over-estimates ferrimagnets
+> several-fold. Because the labels are now real *net* Ms, the model reproduces the physical
+> saturation magnetisation, **including for ferrimagnets**: on the held-out reference set it now
+> predicts Fe₃O₄ ≈ 0.31 (real ≈ 0.48), YIG ≈ 0.145 (real ≈ 0.14) and MnFe₂O₄ ≈ 0.26 (real ≈ 0.40)
+> MA/m — versus the old MP-DFT model's +252 %…+554 % over-predictions. The residual bias is now a
+> mild *under*-prediction of the strongest ferromagnets (e.g. pure Fe), a consequence of the
+> smaller, noisier genuinely-measured dataset (4,464 compounds vs the old 9,939 MP-DFT ones).
+> (Deduplication uses the pymatgen *reduced formula*, so spellings like CoFe₂O₄ / Fe₂CoO₄ are
+> pooled.) See `first_model_analysis.txt` and `further_improvements.txt`.
 
-The pipeline runs in the stages below. **Stage 0 must be run first if
-`data/merged_df_python.csv` does not already exist** — it builds that merged table from
-the raw data sources; every later stage depends on it.
+## Pipeline overview
+
+```
+data/raw/<sources>                         (literature + Bhandari I/XIII + NEMAD; no Materials Project)
+  └─ src/preprocess_ms_data.py   ──► preprocessed_data/Experimental_Ms{,_all,_RE,_RE-Free}.csv
+       └─ src/create_embeddings.py        ──► outputs/*_w_embeddings.pkl        (200-D)
+            └─ src/compress_embeddings_pca.py ──► outputs/*_w_embeddings_PCA.pkl (+PCA 8/16/32/64)
+                 └─ src/train_ms.py (+ _all/_re/_re_free) ──► results/onnx_models/*.onnx,
+                                                              results/exp_ms_best_by_dataset.csv
+                      └─ src/predict_ms.py   ──► Ms (A/m) for any formula
+```
 
 ```mermaid
-flowchart TB
+flowchart LR
+    A["Raw data<br/>(7 source files)"]
+    B["Preprocess<br/><code>preprocess_ms_data.py</code><br/>↓<br/>Experimental_Ms*.csv"]
+    C["Embeddings<br/><code>create_embeddings.py</code><br/>↓<br/>200-D *.pkl"]
+    D["PCA Compression<br/><code>compress_embeddings_pca.py</code><br/>↓<br/>8/16/32/64-D *.pkl"]
+    E["Train Models<br/><code>train_ms*.py</code><br/>↓<br/>ONNX models + metrics"]
+    F["Predict<br/><code>predict_ms.py</code><br/>↓<br/>Ms (A/m)"]
 
-%% =========================
-%% Styles
-%% =========================
-classDef input   fill:#D6EAF8,stroke:#2E86C1,stroke-width:2px,color:#000;
-classDef process fill:#D5F5E3,stroke:#27AE60,stroke-width:2px,color:#000;
-classDef output  fill:#FDEBD0,stroke:#E67E22,stroke-width:2px,color:#000;
-
-%% =========================
-%% 0. Build merged dataset (run first if the merged CSV is missing)
-%% =========================
-subgraph cluster_build["0. Build merged dataset"]
-    direction TB
-    R0["data/ raw sources:\noqmd_stable.csv, mp_fm_dedup_exp/sim_data.csv,\nliterature_values.csv, Bhandari_*.csv"]
-    Bb["python3 -m src.build_merged_dataset"]
-    R0 --> Bb
-    Bb --> A0
-end
-
-%% =========================
-%% 1. Data Augmentation
-%% =========================
-subgraph cluster_0["1. Data Augmentation (Bootstrap Sampling)"]
-    direction TB
-    A0["data/merged_df_python.csv"]
-    B0["python3 -m src.augment_data\n[--ms-threshold VALUE]"]
-    A0 --> B0
-    B0 --> O1["outputs/Pairs_*.csv"]
-    B0 --> O2["outputs/Augm_sim_*.csv"]
-    B0 --> O3["outputs/Augm_exp_*.csv"]
-    B0 --> O4["outputs/Augm_combined_*.csv"]
-    B0 --> O5["outputs/distributions_plots/*.png"]
-end
-
-%% =========================
-%% 2. Create Embeddings
-%% =========================
-subgraph cluster_1["2. Create Embeddings"]
-    direction TB
-    A1["data/embeddings/matscholar200.json"]
-    B1["python3 -m src.create_embeddings"]
-    A1 --> B1
-    O1 --> B1
-    O4 --> B1
-    B1 --> O7["outputs/embeddings_tsne_plots/*.png"]
-    B1 --> O8["outputs/*_w_embeddings.pkl"]
-end
-
-%% =========================
-%% 3. PCA Compression
-%% =========================
-subgraph cluster_2["3. PCA Compression of Embeddings"]
-    direction TB
-    B2["python3 -m src.compress_embedding_PCA"]
-    O8 --> B2
-    B2 --> O10["outputs/*_w_embeddings_PCA.pkl"]
-end
-
-%% =========================
-%% 4. Training
-%% =========================
-subgraph cluster_3["4. Training"]
-    direction TB
-    B3["python3 -m src.training_pairs\n[--ms-threshold VALUE]"]
-    B4["python3 -m src.training_augmented\n[--ms-threshold VALUE]"]
-    B5["python3 -m src.training_pairs_emb\n[--ms-threshold VALUE]"]
-    B6["python3 -m src.training_augmented_emb\n[--ms-threshold VALUE]"]
-    O1  --> B3
-    O4  --> B4
-    O10 --> B5
-    O10 --> B6
-    B3  --> O11["results/pairs_*/"]
-    B4  --> O12["results/augmented_*/"]
-    B5  --> O13["results/pairs_emb_*/"]
-    B6  --> O14["results/augmented_emb_*/"]
-end
-
-%% =========================
-%% Apply Classes
-%% =========================
-class A0,A1 input;
-class B0,B1,B2,B3,B4,B5,B6 process;
-class O1,O2,O3,O4,O5,O7,O8,O10,O11,O12,O13,O14 output;
-
-style cluster_0 fill:#F8F9FA,stroke:#5D6D7E,stroke-width:2px
-style cluster_1 fill:#F4F6F7,stroke:#5D6D7E,stroke-width:2px
-style cluster_2 fill:#F8F9FA,stroke:#5D6D7E,stroke-width:2px
-style cluster_3 fill:#F4F6F7,stroke:#5D6D7E,stroke-width:2px
+    A --> B --> C --> D --> E --> F
 ```
 
-| Stage | Script | Description |
-|---|---|---|
-| 0 | `src/build_merged_dataset.py` | Build `data/merged_df_python.csv` from the raw sources (**run first if it does not exist**) |
-| 1 | `src/augment_data.py` | Bootstrap augmentation to generate mock Ms_exp / Ms_sim for unpaired rows |
-| 2 | `src/create_embeddings.py` | Create 200-D Matscholar compound embeddings |
-| 3 | `src/compress_embedding_PCA.py` | Compress embeddings to 8/16/32/64 PCA components |
-| 4a | `src/training_pairs.py` | Train on real pairs only, no embeddings |
-| 4b | `src/training_augmented.py` | Train on augmented data, no embeddings |
-| 4c | `src/training_pairs_emb.py` | Train on real pairs with compound embeddings |
-| 4d | `src/training_augmented_emb.py` | Train on augmented data with compound embeddings |
+## 0. Installation
 
-Models trained: Symbolic Regression (PySR), Linear (LASSO / Ridge / OLS), Random Forest, FCNN/MLP.
-
-Datasets: All pairs, RE-only (rare-earth compounds), RE-free (not containing RE compounds).
-
-All models operate in log1p-space; metrics are reported in original A/m space.
-
-## 1. Data Augmentation
-
-Run:
-
+Python ≥ 3.12. Create a venv and install `requirements.txt`:
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
 ```
-src/augment_data.py
-```
+(On the cluster the SLURM scripts load `python-waterboa/2025.06` + `cuda/13.0` and `source` the
+shared `BSW` venv — adjust the `source` line if your environment differs. `clean.sh` wipes all
+generated outputs to force a fresh run.)
 
-The pipeline reads a single merged table:
+## 1. Pre-process the raw data
 
-```
-data/merged_df_python.csv
-```
-
-Columns: `composition`, `Ms (ampere/meter)_e` (experimental), `Ms (ampere/meter)_s`
-(simulated), `material_id`, `has_rare_earth`.
-
-If this file does not exist yet, build it first from the raw sources in `data/`
-(`oqmd_stable.csv`, `mp_fm_dedup_exp/sim_data.csv`, `literature_values.csv`,
-`Bhandari_*.csv`):
-
-```
-python3 -m src.build_merged_dataset
-```
-
-This aggregates the experimental and simulated Ms values, converts every source to
-A/m, and reduces duplicate compositions with a single median (see the module docstring
-for the per-source unit conversions). It only needs to be re-run when the raw sources
-change.
-
-## 2. & 3. Embedding Creation and Compression
+`src/preprocess_ms_data.py` reads the raw **experimental** Ms sources from `data/raw/`, converts
+each to A/m, pools all values per composition into a **single median** (no mean, no
+median-of-medians), flags rare-earth membership (pymatgen), drops unparsable formulae,
+**drops low-Ms compounds** (`--ms-threshold`, default 50000 A/m, as in `my_ms`), and by
+default **drops known ferrimagnets** (see below).
 
 ```bash
-python3 -m src.create_embeddings
-python3 -m src.compress_embedding_PCA
+python src/preprocess_ms_data.py                    # default: drop known ferrimagnets, --ms-threshold 50000
+python src/preprocess_ms_data.py --include-ferrimagnets   # keep known ferrimagnets
+python src/preprocess_ms_data.py --ms-threshold 0   # keep all Ms magnitudes
 ```
 
-## 4a-d Model Training
+**`--include-ferrimagnets`** (default: off → ferrimagnets dropped). For ferrimagnets the
+training Ms is the *collinear / uncompensated* moment, not the net saturation magnetisation
+(see the "What the target actually is" note above), so by default the script removes the
+compounds it can confidently identify as ferrimagnetic — magnetite (Fe₃O₄), classic spinel
+ferrites (MFe₂O₄), iron garnets (R₃Fe₅O₁₂) and hexaferrites (MFe₁₂O₁₉) — a **curated,
+high-confidence subset** (~18, to be extended). The script prints a warning either way:
+- default → `CAREFUL: the dataset MAY STILL CONTAIN UNKNOWN ferrimagnets` (composition cannot
+  identify ferrimagnetism in general);
+- with the flag → `CAREFUL: N KNOWN ferrimagnets ARE INCLUDED`.
+
+Raw sources (in `data/raw/`) and their conversion to A/m:
+
+| source | sep | composition col | value col | → A/m |
+|---|---|---|---|---|
+| `literature_values.csv` | `;` | `Compound` | `mu0Ms (T)` | `/ µ0` |
+| `Bhandari_I_exp.csv` | `\|` | `Material` | `Ms_exp (MA/m)` | `× 1e6` |
+| `Bhandari_XIII_exp.csv` | `\|` | `Material` | `Ms (MA/m)` | `× 1e6` |
+| `Nemad_extracted_Ms.csv` | `,` (`#`-headers) | `composition` | `Ms` | already A/m |
+
+**Materials Project is intentionally NOT a source** — its `total_magnetization` is a DFT value
+(the collinear/uncompensated moment), not a measurement, so the `load_mp_exp` loader is kept in
+the code for reference but deliberately left out of `EXP_LOADERS`.
+
+Outputs (`preprocessed_data/`): `Experimental_Ms.csv` (composition, Ms, contains_re),
+`Experimental_Ms_all.csv`, `Experimental_Ms_RE.csv`, `Experimental_Ms_RE-Free.csv`.
+
+## 2–3. Embeddings + PCA
 
 ```bash
-python3 -m src.training_pairs
-python3 -m src.training_pairs_emb
-python3 -m src.training_augmented
-python3 -m src.training_augmented_emb
+python src/create_embeddings.py        # → outputs/*_w_embeddings.pkl (200-D matscholar200)
+python src/compress_embeddings_pca.py  # → adds comp_emb_pca_8/16/32/64
 ```
 
-## Options
+## 4. Train
 
-### `--ms-threshold VALUE`
-
-Accepted by: `augment_data`, `training_pairs`, `training_augmented`,
-`training_pairs_emb`, `training_augmented_emb`.
-
-Drops all rows where `Ms_sim` or `Ms_exp` is at or below `VALUE` (A/m) **before**
-any log-space transformation or model training. This removes the low-Ms poor-DFT
-regime where simulations are unreliable and which degrades model performance.
-
-| Value | Effect |
-|---|---|
-| `50000` | Default — matches the filter used in the reference implementation |
-| Any positive float | Custom threshold in A/m |
-| `0` | Disable filtering entirely (use all data) |
-
-Examples:
+**NEEDS** (from steps 1–3): the preprocessed CSVs (`preprocessed_data/*.csv`) and the PCA
+embeddings (`outputs/*_w_embeddings_PCA.pkl`). Run steps 1–3 first.
 
 ```bash
-# Default (50,000 A/m threshold)
-python3 -m src.training_pairs
-
-# Custom threshold
-python3 -m src.training_pairs --ms-threshold 100000
-
-# Disable threshold
-python3 -m src.training_pairs --ms-threshold 0
+python src/train_ms.py            # all three datasets (RE-Free, RE, All)
+# or one at a time (SLURM-friendly):
+python src/train_ms_all.py
+python src/train_ms_re.py
+python src/train_ms_re_free.py
 ```
 
-The threshold is applied consistently across:
-- `DataLoader.load_pairs_data()` and `load_augmented_data()` in `base_trainer.py`
-- Pairs, sim-only, and exp-only rows in `augment_data.py`
-- PKL-loaded DataFrames in the embedding training scripts
+Which model families run is set in **`training_config.yaml`** (currently **all four** — Linear,
+Random Forest, LightGBM, MLP — with `re_features: true`). Training is in `log1p(Ms)` space; metrics/plots are reported in log1p
+units. Outputs: `results/onnx_models/<Dataset>_<emb>_<model>[_refeats]_e<N>.onnx`,
+per-dataset `*_results[_agg].csv`, and `results/exp_ms_best_by_dataset.csv`.
 
-### `--delta-learning`
+### Configuration (`training_config.yaml`)
+- `re_features: true` — append 7 rare-earth physics features → 207-D input; the ONNX file gets a
+  `_refeats` suffix. **All embedding variants (raw_200D + PCA 8/16/32/64) are ONNX-exportable**: a
+  `_pca_passthrough` helper folds the embedding-only PCA and the feature pass-through into one
+  equivalent PCA over the full 207-D input, so PCA + scaler are baked into the graph and the ONNX
+  consumes the raw `[embedding | RE features]` vector. `predict_ms` computes & appends the RE
+  features automatically.
+- `models:` — per-family `enabled` / `ensemble`. All four families are enabled; **RF and LightGBM
+  dominate** (they take every per-dataset best), Linear is well behind, and the **MLP is numerically
+  unstable** on this small dataset (a few ensemble members produce extreme A/m outliers via
+  `expm1`). The deployed best models are therefore all RF or LGBM.
 
-Accepted by: `training_pairs`, `training_augmented`, `training_pairs_emb`,
-`training_augmented_emb`. It is an on/off flag (no value).
+## 5. Predict
 
-When set, models train on the **correction** to the simulation rather than the
-experimental value directly:
+`src/predict_ms.py` predicts Ms (A/m) for any formula using the exported ONNX models — it
+does all preprocessing internally (embedding, PCA/scaler baked into the graph, RE features,
+and `expm1` back to A/m).
 
-```
-target = log1p(Ms_exp) - log1p(Ms_sim)      # instead of log1p(Ms_exp)
-```
-
-The simulation is treated as the baseline and the model only predicts the systematic
-deviation from it. Predictions are reconstructed as
-`log1p(Ms_sim) + model_output`, and the `log1p(Ms_sim)` baseline is added back
-**before** metrics are computed — so reported R²/RMSE/MAE stay in `log1p(Ms_exp)`
-space and remain directly comparable to direct-target runs.
-
-Why it helps: `log1p(Ms_exp)` is dominated by `log1p(Ms_sim)` (the simulation is a
-good first approximation). Predicting the target directly spends most of the model's
-capacity reproducing that trivial identity; subtracting it focuses all capacity on the
-element-specific correction — the hard part. This benefits flexible models (MLP,
-RandomForest, Symbolic Regression) most, especially on the small, noisy rare-earth
-(RE) data. Linear models are mathematically near-invariant to it.
+**NEEDS**: the ONNX models from step 4 (`results/onnx_models/*.onnx`) — run training first;
+`python src/predict_ms.py --list` shows what's available.
 
 ```bash
-# Direct target (default)
-python3 -m src.training_pairs
-
-# Delta-learning
-python3 -m src.training_pairs --delta-learning
-
-# Combine with a threshold
-python3 -m src.training_pairs --ms-threshold 50000 --delta-learning
+python src/predict_ms.py --compound Nd2Fe14B --best      # best model for the compound type
+python src/predict_ms.py --compound Fe --all             # all applicable models, mean ± std
+python src/predict_ms.py --compounds-file new_materials.txt --best
+python src/predict_ms.py --list
+python src/predict_ms.py --compound Fe --best --no-disclaimer   # suppress the disclaimer
 ```
 
-Measured effect (test R²): MLP on RE + embeddings improved 0.74 → 0.82, MLP on All +
-embeddings 0.83 → 0.89, and Symbolic Regression on RE 0.41 → 0.47. See
-`report_improvement_steps_for_results.txt` for the full table. Note: Symbolic
-Regression requires PySR installed in the run environment, otherwise its rows are
-silently skipped.
+> **Are these compounds actually new?** `python -m src.check_new_materials` cross-checks every
+> formula in `new_materials.txt` against the raw sources, the training set, and the validation
+> references (matched by reduced formula) and writes `new_materials_known.txt`. Re-run it after any
+> data change — whether the shipped formulas are in-sample or genuinely new depends on the current
+> training set.
 
-### `--re-features`
+**Reliability disclaimer.** By default `predict_ms.py` prints a disclaimer to **stderr** before
+predicting (except for `--list`); it goes to stderr so it never pollutes the machine-readable table
+on stdout. Pass **`--no-disclaimer`** to suppress it (e.g. for scripted/batch use). Note: the
+disclaimer text baked into `predict_ms.py` still describes the old MP-DFT behaviour (ferrimagnet
+over-prediction) and is **outdated** for this genuinely-measured model — it should be revised.
+Predictions remain a model estimate and antiferromagnet/compensated cases should still be sanity-checked.
 
-Accepted by: `training_pairs`, `training_augmented`, `training_pairs_emb`,
-`training_augmented_emb`. On/off flag (no value).
+`--best`/`--all` auto-detect rare-earth content and pick the right dataset's model(s). The
+RE and RE-Free models do not extrapolate across the RE boundary, so `predict_ms` **refuses**
+a mismatched `--model` (use an `All_*` model, which is valid for both).
 
-Appends rare-earth 4f **physics features** to `X`, computed per composition from a
-RE³⁺ Hund's-rules lookup table (`src/re_features.py`) and aggregated over the formula.
-For rare-earth compounds the DFT simulation-vs-experiment gap is dominated by the
-localized 4f moment, which standard collinear DFT mistreats; these features give the
-models a near-first-principles estimate of that correction. RE-free rows get all-zero
-features, so the flag is safe for every split.
+## 6. Results
 
-The seven features:
+All models trained with the default options (known ferrimagnets dropped, `--ms-threshold 50000`).
+Training set after reduced-formula dedup, the threshold and ferrimagnet removal: **4,464 compounds**
+(RE 3,007 / RE-free 1,457), from the genuinely-measured sources only — **no Materials Project**.
+Metrics are the ensemble mean ± std over ten random 80/20 splits in `log1p(Ms)` space; `MAE_Am` is
+the mean absolute error back in A/m and `MedRelErr` the median relative error.
 
-| Feature | Physics |
-|---|---|
-| `re_fraction` | total atomic fraction of RE elements |
-| `mu_free` | Σ xᵢ·(g_J·J)ᵢ — free-ion saturation moment (magnitude of the correction) |
-| `spin_proj` | Σ xᵢ·(g_J−1)·Jᵢ — spin projection (RKKY coupling sign/strength to 3d) |
-| `de_gennes` | Σ xᵢ·(g_J−1)²J(J+1)ᵢ — exchange strength |
-| `nf_weighted` | Σ xᵢ·n_fᵢ — mean 4f filling |
-| `heavy_fraction` | atomic fraction of heavy-RE (n_f ≥ 7) atoms |
-| `s_state_fraction` | atomic fraction of **S-state** RE (Gd³⁺, Eu²⁺; half-filled 4f⁷, L=0) |
+### Best model per dataset
 
-`s_state_fraction` isolates the two ions (Gd, Eu²⁺) whose large, isotropic,
-crystal-field-unquenched **pure-spin** moment collinear DFT misses most — these need
-by far the largest correction (mean Δ: Eu +1.4, Gd +0.8; all other REs ~+0.01–0.07).
-Because `mu_sat` and `de_gennes` rank Tb/Dy *above or near* Gd/Eu, no single continuous
-feature isolates them linearly; the explicit flag does, which helps the linear and
-symbolic-regression models in particular.
+| Dataset | Embedding | Model |  N |    R² | R² Std |   MAE | MAE Std |  RMSE | RMSE Std |    MAE_Am | MedRelErr |
+| ------- | --------- | ----- | -: | ----: | -----: | ----: | ------: | ----: | -------: | --------: | --------: |
+| RE      | pca_16    | LGBM  | 10 | 0.621 |  0.019 | 0.332 |   0.008 | 0.493 |    0.010 | 162137 |     0.199 |
+| All     | pca_16    | RF    | 10 | 0.603 |  0.022 | 0.346 |   0.015 | 0.515 |    0.017 | 158341 |     0.207 |
+| RE-Free | raw_200D  | RF    | 10 | 0.552 |  0.042 | 0.375 |   0.024 | 0.536 |    0.028 | 151281 |     0.236 |
 
-**Valence note:** Eu is modelled as Eu²⁺ (4f⁷, ~7 μ_B) and Yb as Yb²⁺ (4f¹⁴,
-nonmagnetic), not the default trivalent states. The Eu²⁺ choice is well justified
-(Eu is commonly divalent and was the largest residual anomaly); the Yb²⁺ choice is
-more uncertain (few samples, genuine mixed valence).
+> **Compared with the previous (MP-dominated) run** the headline R² is lower (RE 0.89→0.62,
+> All 0.81→0.60, RE-free 0.74→0.55): the old numbers were obtained on self-consistent DFT values,
+> whereas this model learns genuinely measured — noisier and scarcer — Ms. In exchange it fixes the
+> ferrimagnet over-prediction (see the target note at the top: Fe₃O₄ +252%→−36%, YIG +554%→+4%).
+> **RF and LGBM take every per-dataset best**; Linear is far behind and the MLP is numerically
+> unstable on this small dataset, so the detailed tables below report the robust `MedRelErr` rather
+> than `MAE_Am`.
 
-```bash
-python3 -m src.training_pairs --re-features                  # add RE features
-python3 -m src.training_pairs --re-features --delta-learning # recommended combo
-```
+### Results All-Materials
 
-Measured effect (test R², RE pairs, no embedding, delta target): RandomForest
-0.47 → **0.85**, Ridge 0.47 → 0.74 — six-to-seven interpretable physics features match
-or beat the 200-D embedding with no embedding at all. Gains are largest for the
-non-embedding models; on top of embeddings the headroom is smaller (the embedding
-already encodes element identity), though RF + embedding + RE still improved
-0.67 → 0.75. The companion diagnostic is `python3 -m src.residual_diagnostic`.
+Metrics in `log1p(Ms)` space (the training space); MedRelErr is the median relative error in A/m.
 
-To enable for a full run, the SLURM scripts expose an `RE_FEATURES` variable
-(`run_1node-RE-delta.sh` sets it to `--re-features` by default; `run_1node-RE.sh`
-leaves it empty). The `s_state_fraction` feature is part of `--re-features` — no
-separate flag is needed.
+| Dataset | Embedding | Model | N | R² (mean ± std) | MAE (mean ± std) | RMSE (mean ± std) | MedRelErr |
+|---|---|---|---:|---|---|---|---|
+| All | pca_16 | RF | 10 | 0.603 ± 0.022 | 0.346 ± 0.015 | 0.515 ± 0.017 | 0.207 |
+| All | pca_8 | RF | 10 | 0.598 ± 0.027 | 0.354 ± 0.017 | 0.519 ± 0.020 | 0.218 |
+| All | raw_200D | RF | 10 | 0.597 ± 0.020 | 0.347 ± 0.014 | 0.519 ± 0.018 | 0.204 |
+| All | pca_32 | RF | 10 | 0.596 ± 0.024 | 0.348 ± 0.014 | 0.520 ± 0.017 | 0.204 |
+| All | raw_200D | LGBM | 10 | 0.589 ± 0.019 | 0.360 ± 0.014 | 0.525 ± 0.017 | 0.222 |
+| All | pca_32 | LGBM | 10 | 0.588 ± 0.023 | 0.359 ± 0.013 | 0.526 ± 0.017 | 0.219 |
+| All | pca_16 | LGBM | 10 | 0.585 ± 0.019 | 0.364 ± 0.015 | 0.527 ± 0.017 | 0.227 |
+| All | pca_64 | LGBM | 10 | 0.581 ± 0.024 | 0.360 ± 0.015 | 0.529 ± 0.019 | 0.215 |
+| All | pca_8 | LGBM | 10 | 0.573 ± 0.021 | 0.374 ± 0.016 | 0.535 ± 0.020 | 0.243 |
+| All | pca_64 | RF | 10 | 0.571 ± 0.019 | 0.368 ± 0.017 | 0.536 ± 0.018 | 0.223 |
+| All | pca_32 | MLP | 10 | 0.367 ± 0.044 | 0.495 ± 0.024 | 0.651 ± 0.017 | 0.346 |
+| All | pca_16 | MLP | 10 | 0.366 ± 0.055 | 0.504 ± 0.023 | 0.651 ± 0.024 | 0.359 |
+| All | pca_8 | MLP | 10 | 0.358 ± 0.030 | 0.504 ± 0.017 | 0.656 ± 0.017 | 0.358 |
+| All | raw_200D | Linear | 10 | 0.241 ± 0.029 | 0.557 ± 0.019 | 0.713 ± 0.018 | 0.407 |
+| All | pca_64 | Linear | 10 | 0.231 ± 0.024 | 0.562 ± 0.018 | 0.718 ± 0.017 | 0.412 |
+| All | pca_32 | Linear | 10 | 0.217 ± 0.032 | 0.570 ± 0.020 | 0.724 ± 0.019 | 0.415 |
+| All | pca_8 | Linear | 10 | 0.205 ± 0.034 | 0.577 ± 0.021 | 0.730 ± 0.020 | 0.423 |
+| All | pca_16 | Linear | 10 | 0.203 ± 0.035 | 0.577 ± 0.020 | 0.731 ± 0.020 | 0.422 |
+| All | pca_64 | MLP | 10 | 0.179 ± 0.271 | 0.522 ± 0.029 | 0.734 ± 0.112 | 0.368 |
+| All | raw_200D | MLP | 10 | 0.160 ± 0.116 | 0.561 ± 0.022 | 0.748 ± 0.042 | 0.393 |
 
-### `--cv N`
+### Results RE-Materials
 
-Accepted by: `training_pairs`, `training_augmented`, `training_pairs_emb`,
-`training_augmented_emb`. `N` = number of folds (≥ 2); `0`/absent = single 80/20 split.
+Metrics in `log1p(Ms)` space (the training space); MedRelErr is the median relative error in A/m.
 
-Reports **N-fold cross-validated metrics (mean ± std)** as the headline numbers
-instead of a single split. Strongly recommended for the small, noisy **RE** split,
-whose single-split R² swings by ±0.02–0.09 between otherwise-identical runs — the
-swings that previously masqueraded as improvements/regressions.
+| Dataset | Embedding | Model | N | R² (mean ± std) | MAE (mean ± std) | RMSE (mean ± std) | MedRelErr |
+|---|---|---|---:|---|---|---|---|
+| RE | pca_16 | LGBM | 10 | 0.621 ± 0.019 | 0.332 ± 0.008 | 0.493 ± 0.010 | 0.199 |
+| RE | pca_16 | RF | 10 | 0.621 ± 0.022 | 0.329 ± 0.008 | 0.493 ± 0.012 | 0.199 |
+| RE | pca_64 | LGBM | 10 | 0.621 ± 0.022 | 0.328 ± 0.011 | 0.493 ± 0.014 | 0.190 |
+| RE | pca_8 | RF | 10 | 0.619 ± 0.020 | 0.333 ± 0.009 | 0.494 ± 0.011 | 0.201 |
+| RE | pca_32 | LGBM | 10 | 0.617 ± 0.023 | 0.332 ± 0.008 | 0.495 ± 0.013 | 0.193 |
+| RE | raw_200D | LGBM | 10 | 0.617 ± 0.027 | 0.324 ± 0.012 | 0.495 ± 0.016 | 0.183 |
+| RE | pca_32 | RF | 10 | 0.612 ± 0.025 | 0.331 ± 0.010 | 0.499 ± 0.014 | 0.191 |
+| RE | pca_8 | LGBM | 10 | 0.610 ± 0.020 | 0.341 ± 0.008 | 0.500 ± 0.012 | 0.213 |
+| RE | raw_200D | RF | 10 | 0.609 ± 0.023 | 0.330 ± 0.009 | 0.500 ± 0.013 | 0.192 |
+| RE | pca_64 | RF | 10 | 0.605 ± 0.023 | 0.334 ± 0.009 | 0.503 ± 0.012 | 0.197 |
+| RE | pca_16 | MLP | 10 | 0.326 ± 0.071 | 0.497 ± 0.033 | 0.657 ± 0.040 | 0.344 |
+| RE | pca_8 | MLP | 10 | 0.311 ± 0.075 | 0.505 ± 0.021 | 0.664 ± 0.032 | 0.355 |
+| RE | raw_200D | Linear | 10 | 0.206 ± 0.033 | 0.549 ± 0.013 | 0.714 ± 0.017 | 0.402 |
+| RE | pca_64 | Linear | 10 | 0.198 ± 0.038 | 0.552 ± 0.014 | 0.717 ± 0.019 | 0.406 |
+| RE | pca_32 | Linear | 10 | 0.191 ± 0.036 | 0.557 ± 0.014 | 0.720 ± 0.018 | 0.406 |
+| RE | pca_16 | Linear | 10 | 0.190 ± 0.036 | 0.559 ± 0.014 | 0.720 ± 0.018 | 0.408 |
+| RE | pca_8 | Linear | 10 | 0.183 ± 0.035 | 0.562 ± 0.014 | 0.724 ± 0.018 | 0.416 |
+| RE | pca_32 | MLP | 10 | 0.171 ± 0.127 | 0.537 ± 0.039 | 0.727 ± 0.058 | 0.364 |
+| RE | raw_200D | MLP | 10 | 0.128 ± 0.084 | 0.558 ± 0.035 | 0.747 ± 0.033 | 0.386 |
+| RE | pca_64 | MLP | 10 | -0.414 ± 0.607 | 0.576 ± 0.035 | 0.934 ± 0.194 | 0.374 |
 
-Applies to **all five model families**:
-- **Linear, RandomForest, LightGBM** — a fresh clone of the tuned model is refit on
-  each fold (`cross_val_report`).
-- **MLP** — a fresh network is trained per fold; early stopping uses a validation
-  split carved from the fold's *training* data, so the held-out fold stays unseen.
-- **Symbolic Regression** — a fresh symbolic search runs per fold. **This is slow**
-  (N × the full SR cost); the per-fold train is subsampled (`max_train_samples`) as
-  in the single-split path.
+### Results RE-Free Materials
 
-Single-split is still computed (it drives the prediction plot and, for SR, the
-reported equation); CV means become the headline R²/RMSE/MAE and an `*_std` is added.
+Metrics in `log1p(Ms)` space (the training space); MedRelErr is the median relative error in A/m.
 
-```bash
-python3 -m src.training_pairs --cv 5 --delta-learning --re-features   # recommended
-python3 -m src.training_pairs                                          # single split (default)
-```
-
-The SLURM scripts expose a `CV` variable (`run_1node-RE-delta.sh` sets `--cv 5`).
-
-## Outputs
-
-| Path | Contents |
-|---|---|
-| `outputs/Pairs_*.csv` | Original paired rows (per dataset split) |
-| `outputs/Augm_sim_*.csv` | Phase 1 augmented (sim-only → mock exp) |
-| `outputs/Augm_exp_*.csv` | Phase 2 augmented (exp-only → mock sim) |
-| `outputs/Augm_combined_*.csv` | Phase 3 combined augmented dataset |
-| `outputs/*.pkl` | DataFrames with compound embeddings |
-| `results/` | Model comparison CSVs and prediction plots |
-| `logs/` | Per-stage stdout logs |
-
-## Source layout
-
-```
-src/
-├── build_merged_dataset.py    Stage 0: build data/merged_df_python.csv from raw sources
-├── augment_data.py            Bootstrap augmentation
-├── create_embeddings.py       Matscholar200 compound embeddings
-├── compress_embedding_PCA.py  PCA compression of embeddings
-├── composition_data.py        Composition parsing utilities
-├── log_to_file.py             Stdout-to-file logging decorator
-├── training_pairs.py          Entry point: pairs, no embeddings
-├── training_augmented.py      Entry point: augmented, no embeddings
-├── training_pairs_emb.py      Entry point: pairs + embeddings
-├── training_augmented_emb.py  Entry point: augmented + embeddings
-└── training/
-    ├── base_trainer.py        DataLoader, ModelEvaluator, split_data
-    ├── fcnn_mlp.py            FCNN/MLP trainer
-    ├── linear_models.py       LASSO / Ridge / OLS trainer
-    ├── random_forest.py       Random Forest trainer
-    └── symbolic_regression.py PySR trainer
-```
-
-### 📈 Model Performance Comparison
-
-(best models and symbolic regression baseline shown)
-
-## Pairs-Dataset
-
-| Model Family       | Model  | Dataset       | Embedding |        R² |      RMSE |       MAE |
-| ------------------ | ------ | ------------- | --------- | --------: | --------: | --------: |
-| LightGBM           | LGBM   | All-Pairs     | pca_64    | **0.868** | **0.305** |     0.192 |
-| LightGBM           | LGBM   | All-Pairs     | raw_200D  |     0.868 |     0.306 | **0.187** |
-| LightGBM           | LGBM   | All-Pairs     | pca_32    |     0.864 |     0.311 |     0.193 |
-| Linear             | LASSO  | All-Pairs     | raw_200D  |     0.835 |     0.342 |     0.205 |
-| Linear             | LASSO  | All-Pairs     | pca_64    |     0.833 |     0.344 |     0.207 |
-| MLP                | FCNN   | All-Pairs     | raw_200D  |     0.831 |     0.346 |     0.213 |
-| LightGBM           | LGBM   | All-Pairs     | pca_16    |     0.830 |     0.347 |     0.210 |
-| RandomForest       | RF     | All-Pairs     | pca_64    |     0.826 |     0.351 |     0.203 |
-| RandomForest       | RF     | All-Pairs     | pca_32    |     0.825 |     0.353 |     0.203 |
-| MLP                | FCNN   | All-Pairs     | pca_64    |     0.825 |     0.352 |     0.197 |
-| RandomForest       | RF     | All-Pairs     | raw_200D  |     0.823 |     0.354 |     0.205 |
-| LightGBM           | LGBM   | All-Pairs     | pca_8     |     0.822 |     0.355 |     0.216 |
-| Linear             | LASSO  | All-Pairs     | pca_32    |     0.821 |     0.357 |     0.229 |
-| RandomForest       | RF     | All-Pairs     | pca_16    |     0.809 |     0.368 |     0.209 |
-| MLP                | FCNN   | All-Pairs     | pca_16    |     0.808 |     0.369 |     0.216 |
-| MLP                | FCNN   | All-Pairs     | pca_8     |     0.807 |     0.370 |     0.218 |
-| RandomForest       | RF     | All-Pairs     | pca_8     |     0.807 |     0.370 |     0.212 |
-| Linear             | RIDGE  | All-Pairs     | pca_16    |     0.804 |     0.372 |     0.228 |
-| Linear             | RIDGE  | All-Pairs     | pca_8     |     0.799 |     0.377 |     0.227 |
-| MLP                | FCNN   | All-Pairs     | –         |     0.782 |     0.393 |     0.235 |
-| Linear             | LINEAR | All-Pairs     | –         |     0.782 |     0.393 |     0.239 |
-| SymbolicRegression | PySR   | All-Pairs     | –         |     0.782 |     0.393 |     0.236 |
-| LightGBM           | LGBM   | All-Pairs     | –         |     0.781 |     0.394 |     0.233 |
-| RandomForest       | RF     | All-Pairs     | –         |     0.744 |     0.426 |     0.257 |
-| LightGBM           | LGBM   | RE-Free-Pairs | raw_200D  | **0.902** | **0.257** |     0.158 |
-| LightGBM           | LGBM   | RE-Free-Pairs | pca_64    |     0.898 |     0.262 |     0.167 |
-| RandomForest       | RF     | RE-Free-Pairs | raw_200D  |     0.897 |     0.264 |     0.155 |
-| LightGBM           | LGBM   | RE-Free-Pairs | pca_32    |     0.896 |     0.265 |     0.168 |
-| RandomForest       | RF     | RE-Free-Pairs | pca_32    |     0.892 |     0.270 |     0.157 |
-| MLP                | FCNN   | RE-Free-Pairs | raw_200D  |     0.892 |     0.270 |     0.170 |
-| LightGBM           | LGBM   | RE-Free-Pairs | pca_16    |     0.893 |     0.269 |     0.165 |
-| Linear             | RIDGE  | RE-Free-Pairs | pca_32    |     0.891 |     0.272 |     0.165 |
-| Linear             | RIDGE  | RE-Free-Pairs | pca_64    |     0.891 |     0.271 |     0.165 |
-| Linear             | RIDGE  | RE-Free-Pairs | raw_200D  |     0.891 |     0.271 |     0.165 |
-| LightGBM           | LGBM   | RE-Free-Pairs | pca_8     |     0.890 |     0.272 |     0.170 |
-| MLP                | FCNN   | RE-Free-Pairs | pca_32    |     0.890 |     0.273 |     0.163 |
-| RandomForest       | RF     | RE-Free-Pairs | pca_16    |     0.889 |     0.273 |     0.158 |
-| RandomForest       | RF     | RE-Free-Pairs | pca_64    |     0.889 |     0.274 |     0.161 |
-| Linear             | LASSO  | RE-Free-Pairs | pca_16    |     0.887 |     0.276 |     0.165 |
-| MLP                | FCNN   | RE-Free-Pairs | pca_16    |     0.887 |     0.276 |     0.162 |
-| RandomForest       | RF     | RE-Free-Pairs | pca_8     |     0.887 |     0.276 |     0.160 |
-| Linear             | LASSO  | RE-Free-Pairs | pca_8     |     0.886 |     0.277 |     0.164 |
-| MLP                | FCNN   | RE-Free-Pairs | pca_64    |     0.884 |     0.280 |     0.158 |
-| LightGBM           | LGBM   | RE-Free-Pairs | –         |     0.874 |     0.291 |     0.178 |
-| Linear             | LASSO  | RE-Free-Pairs | –         |     0.873 |     0.293 |     0.175 |
-| MLP                | FCNN   | RE-Free-Pairs | –         |     0.872 |     0.293 |     0.175 |
-| SymbolicRegression | PySR   | RE-Free-Pairs | –         |     0.872 |     0.294 |     0.169 |
-| RandomForest       | RF     | RE-Free-Pairs | –         |     0.855 |     0.313 |     0.198 |
-| LightGBM           | LGBM   | RE-Pairs      | raw_200D  | **0.774** | **0.405** | **0.272** |
-| MLP                | FCNN   | RE-Pairs      | raw_200D  |     0.751 |     0.424 |     0.308 |
-| Linear             | RIDGE  | RE-Pairs      | raw_200D  |     0.748 |     0.427 |     0.317 |
-| LightGBM           | LGBM   | RE-Pairs      | pca_64    |     0.748 |     0.427 |     0.277 |
-| Linear             | LASSO  | RE-Pairs      | pca_64    |     0.747 |     0.428 |     0.317 |
-| RandomForest       | RF     | RE-Pairs      | pca_32    |     0.733 |     0.440 |     0.284 |
-| LightGBM           | LGBM   | RE-Pairs      | pca_32    |     0.724 |     0.447 |     0.301 |
-| MLP                | FCNN   | RE-Pairs      | pca_64    |     0.718 |     0.452 |     0.320 |
-| LightGBM           | LGBM   | RE-Pairs      | pca_16    |     0.698 |     0.467 |     0.296 |
-| RandomForest       | RF     | RE-Pairs      | pca_64    |     0.694 |     0.470 |     0.300 |
-| RandomForest       | RF     | RE-Pairs      | pca_16    |     0.689 |     0.474 |     0.303 |
-| Linear             | LASSO  | RE-Pairs      | pca_32    |     0.676 |     0.484 |     0.366 |
-| MLP                | FCNN   | RE-Pairs      | pca_32    |     0.674 |     0.486 |     0.358 |
-| MLP                | FCNN   | RE-Pairs      | pca_16    |     0.650 |     0.503 |     0.339 |
-| LightGBM           | LGBM   | RE-Pairs      | pca_8     |     0.585 |     0.548 |     0.367 |
-| RandomForest       | RF     | RE-Pairs      | pca_8     |     0.585 |     0.548 |     0.369 |
-| Linear             | RIDGE  | RE-Pairs      | pca_16    |     0.591 |     0.544 |     0.410 |
-| Linear             | RIDGE  | RE-Pairs      | pca_8     |     0.490 |     0.607 |     0.435 |
-| LightGBM           | LGBM   | RE-Pairs      | –         |     0.486 |     0.610 |     0.440 |
-| RandomForest       | RF     | RE-Pairs      | –         |     0.467 |     0.621 |     0.444 |
-| Linear             | RIDGE  | RE-Pairs      | –         |     0.467 |     0.621 |     0.452 |
-| MLP                | FCNN   | RE-Pairs      | –         |     0.430 |     0.642 |     0.463 |
-| SymbolicRegression | PySR   | RE-Pairs      | –         |     0.411 |     0.653 |     0.460 |
-
-## Augmented Dataset
-
-| Model_Family       | Model    | Dataset          | Embedding    |        R2 |      RMSE |       MAE |
-| ------------------ | -------- | ---------------- | ------------ | --------: | --------: | --------: |
-| **MLP**            | **FCNN** | **All-Augm**     | **pca_16**   | **0.794** | **0.395** | **0.223** |
-| Linear             | RIDGE    | All-Augm         | pca_16       |     0.793 |     0.395 |     0.226 |
-| RandomForest       | RF       | All-Augm         | pca_16       |     0.789 |     0.400 |     0.232 |
-| **MLP**            | **FCNN** | **All-Augm**     | **pca_32**   | **0.794** | **0.395** | **0.223** |
-| Linear             | LASSO    | All-Augm         | pca_32       |     0.793 |     0.395 |     0.226 |
-| RandomForest       | RF       | All-Augm         | pca_32       |     0.788 |     0.400 |     0.233 |
-| **MLP**            | **FCNN** | **All-Augm**     | **pca_64**   | **0.794** | **0.395** | **0.222** |
-| Linear             | RIDGE    | All-Augm         | pca_64       |     0.794 |     0.395 |     0.226 |
-| RandomForest       | RF       | All-Augm         | pca_64       |     0.789 |     0.400 |     0.234 |
-| **MLP**            | **FCNN** | **All-Augm**     | **pca_8**    | **0.793** | **0.395** | **0.225** |
-| Linear             | RIDGE    | All-Augm         | pca_8        |     0.793 |     0.395 |     0.226 |
-| RandomForest       | RF       | All-Augm         | pca_8        |     0.788 |     0.400 |     0.232 |
-| **MLP**            | **FCNN** | **All-Augm**     | **raw_200D** | **0.794** | **0.395** | **0.223** |
-| Linear             | RIDGE    | All-Augm         | raw_200D     |     0.794 |     0.395 |     0.226 |
-| RandomForest       | RF       | All-Augm         | raw_200D     |     0.787 |     0.401 |     0.233 |
-| LightGBM           | LGBM     | All-Augm         | —            |     0.792 |     0.395 |     0.227 |
-| MLP                | FCNN     | All-Augm         | —            |     0.792 |     0.395 |     0.223 |
-| Linear             | LASSO    | All-Augm         | —            |     0.792 |     0.395 |     0.226 |
-| SymbolicRegression | PySR     | All-Augm         | —            |     0.791 |     0.396 |     0.226 |
-| RandomForest       | RF       | All-Augm         | —            |     0.778 |     0.408 |     0.239 |
-| MLP                | FCNN     | RE-Augm          | pca_16       |     0.621 |     0.616 |     0.429 |
-| Linear             | LASSO    | RE-Augm          | pca_16       |     0.621 |     0.616 |     0.428 |
-| RandomForest       | RF       | RE-Augm          | pca_16       |     0.607 |     0.627 |     0.438 |
-| MLP                | FCNN     | RE-Augm          | pca_32       | **0.621** | **0.616** |     0.428 |
-| Linear             | LASSO    | RE-Augm          | pca_32       |     0.621 |     0.616 |     0.428 |
-| RandomForest       | RF       | RE-Augm          | pca_32       |     0.610 |     0.625 |     0.438 |
-| Linear             | RIDGE    | RE-Augm          | pca_64       |     0.621 |     0.616 | **0.427** |
-| MLP                | FCNN     | RE-Augm          | pca_64       |     0.621 |     0.616 |     0.431 |
-| RandomForest       | RF       | RE-Augm          | pca_64       |     0.608 |     0.627 |     0.440 |
-| MLP                | FCNN     | RE-Augm          | pca_8        |     0.621 |     0.616 |     0.432 |
-| Linear             | RIDGE    | RE-Augm          | pca_8        |     0.621 |     0.616 |     0.428 |
-| RandomForest       | RF       | RE-Augm          | pca_8        |     0.605 |     0.629 |     0.437 |
-| Linear             | RIDGE    | RE-Augm          | raw_200D     | **0.621** | **0.616** | **0.427** |
-| MLP                | FCNN     | RE-Augm          | raw_200D     |     0.621 |     0.616 |     0.430 |
-| RandomForest       | RF       | RE-Augm          | raw_200D     |     0.605 |     0.629 |     0.440 |
-| MLP                | FCNN     | RE-Augm          | —            |     0.607 |     0.621 |     0.434 |
-| Linear             | LINEAR   | RE-Augm          | —            |     0.607 |     0.621 |     0.431 |
-| SymbolicRegression | PySR     | RE-Augm          | —            |     0.606 |     0.621 |     0.434 |
-| LightGBM           | LGBM     | RE-Augm          | —            |     0.605 |     0.622 |     0.431 |
-| RandomForest       | RF       | RE-Augm          | —            |     0.572 |     0.648 |     0.446 |
-| **MLP**            | **FCNN** | **RE-Free-Augm** | **pca_16**   | **0.862** | **0.308** |     0.168 |
-| Linear             | RIDGE    | RE-Free-Augm     | pca_16       |     0.862 |     0.308 | **0.166** |
-| RandomForest       | RF       | RE-Free-Augm     | pca_16       |     0.858 |     0.312 |     0.174 |
-| **MLP**            | **FCNN** | **RE-Free-Augm** | **pca_32**   | **0.862** | **0.308** |     0.169 |
-| Linear             | RIDGE    | RE-Free-Augm     | pca_32       |     0.862 |     0.308 | **0.166** |
-| RandomForest       | RF       | RE-Free-Augm     | pca_32       |     0.859 |     0.312 |     0.174 |
-| **MLP**            | **FCNN** | **RE-Free-Augm** | **pca_64**   | **0.862** | **0.308** |     0.171 |
-| Linear             | RIDGE    | RE-Free-Augm     | pca_64       |     0.862 |     0.308 | **0.166** |
-| RandomForest       | RF       | RE-Free-Augm     | pca_64       |     0.858 |     0.312 |     0.175 |
-| **MLP**            | **FCNN** | **RE-Free-Augm** | **pca_8**    | **0.862** | **0.308** |     0.168 |
-| Linear             | LASSO    | RE-Free-Augm     | pca_8        |     0.862 |     0.308 | **0.166** |
-| RandomForest       | RF       | RE-Free-Augm     | pca_8        |     0.858 |     0.312 |     0.174 |
-| **MLP**            | **FCNN** | **RE-Free-Augm** | **raw_200D** | **0.862** | **0.308** |     0.169 |
-| Linear             | RIDGE    | RE-Free-Augm     | raw_200D     |     0.862 |     0.308 | **0.166** |
-| RandomForest       | RF       | RE-Free-Augm     | raw_200D     |     0.858 |     0.312 |     0.176 |
-| LightGBM           | LGBM     | RE-Free-Augm     | —            |     0.872 |     0.296 |     0.162 |
-| **MLP**            | **FCNN** | **RE-Free-Augm** | **—**        | **0.872** | **0.296** | **0.161** |
-| Linear             | LINEAR   | RE-Free-Augm     | —            |     0.872 |     0.296 |     0.161 |
-| SymbolicRegression | PySR     | RE-Free-Augm     | —            |     0.871 |     0.296 |     0.159 |
-| RandomForest       | RF       | RE-Free-Augm     | —            |     0.856 |     0.314 |     0.186 |
-
-## Best Model per Dataset
-
-| Dataset           | Category                     | Model_Family       | Model    | Embedding |        R² |      RMSE |       MAE |
-| ----------------- | ---------------------------- | ------------------ | -------- | --------- | --------: | --------: | --------: |
-| **All-Pairs**     | Best with embedding          | **LightGBM**       | **LGBM** | pca_64    | **0.868** | **0.305** |     0.192 |
-|                   | Best without embedding       | **MLP**            | **FCNN** | —         | **0.782** | **0.393** |     0.235 |
-|                   | Symbolic Regression baseline | SymbolicRegression | PySR     | —         |     0.782 |     0.393 |     0.236 |
-| **RE-Free-Pairs** | Best with embedding          | **LightGBM**       | **LGBM** | raw_200D  | **0.902** | **0.257** |     0.158 |
-|                   | Best without embedding       | **LightGBM**       | **LGBM** | —         |     0.874 |     0.291 |     0.178 |
-|                   | Symbolic Regression baseline | SymbolicRegression | PySR     | —         |     0.872 |     0.294 |     0.169 |
-| **RE-Pairs**      | Best with embedding          | **LightGBM**       | **LGBM** | raw_200D  | **0.774** | **0.405** | **0.272** |
-|                   | Best without embedding       | **LightGBM**       | **LGBM** | —         |     0.486 |     0.610 |     0.440 |
-|                   | Symbolic Regression baseline | SymbolicRegression | PySR     | —         |     0.411 |     0.653 |     0.460 |
-| **All-Augm**      | Best with embedding          | **MLP**            | **FCNN** | pca_32    | **0.794** | **0.395** |     0.223 |
-|                   | Best without embedding       | **MLP**            | **FCNN** | —         |     0.792 |     0.395 | **0.223** |
-|                   | Symbolic Regression baseline | SymbolicRegression | PySR     | —         |     0.791 |     0.396 |     0.226 |
-| **RE-Augm**       | Best with embedding          | **MLP**            | **FCNN** | pca_32    | **0.621** | **0.616** |     0.428 |
-|                   | Best without embedding       | **MLP**            | **FCNN** | —         |     0.607 |     0.621 |     0.434 |
-|                   | Symbolic Regression baseline | SymbolicRegression | PySR     | —         |     0.606 |     0.621 |     0.434 |
-| **RE-Free-Augm**  | Best with embedding          | **MLP**            | **FCNN** | pca_16    | **0.862** | **0.308** |     0.168 |
-|                   | Best without embedding       | **MLP**            | **FCNN** | —         |     0.872 |     0.296 |     0.161 |
-|                   | Symbolic Regression baseline | SymbolicRegression | PySR     | —         |     0.871 |     0.296 | **0.159** |
+| Dataset | Embedding | Model | N | R² (mean ± std) | MAE (mean ± std) | RMSE (mean ± std) | MedRelErr |
+|---|---|---|---:|---|---|---|---|
+| RE-Free | raw_200D | RF | 10 | 0.552 ± 0.042 | 0.375 ± 0.024 | 0.536 ± 0.028 | 0.236 |
+| RE-Free | raw_200D | LGBM | 10 | 0.547 ± 0.047 | 0.373 ± 0.019 | 0.538 ± 0.026 | 0.228 |
+| RE-Free | pca_16 | RF | 10 | 0.541 ± 0.044 | 0.375 ± 0.023 | 0.542 ± 0.025 | 0.239 |
+| RE-Free | pca_32 | RF | 10 | 0.527 ± 0.042 | 0.388 ± 0.022 | 0.550 ± 0.026 | 0.248 |
+| RE-Free | pca_16 | LGBM | 10 | 0.527 ± 0.053 | 0.387 ± 0.024 | 0.550 ± 0.028 | 0.246 |
+| RE-Free | pca_8 | RF | 10 | 0.525 ± 0.048 | 0.394 ± 0.023 | 0.551 ± 0.025 | 0.258 |
+| RE-Free | pca_64 | RF | 10 | 0.523 ± 0.051 | 0.387 ± 0.025 | 0.552 ± 0.030 | 0.245 |
+| RE-Free | pca_32 | LGBM | 10 | 0.519 ± 0.056 | 0.386 ± 0.023 | 0.554 ± 0.029 | 0.236 |
+| RE-Free | pca_64 | LGBM | 10 | 0.512 ± 0.061 | 0.389 ± 0.028 | 0.559 ± 0.036 | 0.241 |
+| RE-Free | pca_8 | LGBM | 10 | 0.501 ± 0.055 | 0.410 ± 0.022 | 0.565 ± 0.024 | 0.277 |
+| RE-Free | raw_200D | Linear | 10 | 0.321 ± 0.058 | 0.515 ± 0.014 | 0.659 ± 0.020 | 0.370 |
+| RE-Free | pca_32 | Linear | 10 | 0.316 ± 0.057 | 0.519 ± 0.013 | 0.661 ± 0.020 | 0.378 |
+| RE-Free | pca_64 | Linear | 10 | 0.313 ± 0.059 | 0.517 ± 0.013 | 0.663 ± 0.020 | 0.372 |
+| RE-Free | pca_16 | Linear | 10 | 0.290 ± 0.056 | 0.527 ± 0.014 | 0.674 ± 0.020 | 0.376 |
+| RE-Free | pca_8 | Linear | 10 | 0.282 ± 0.055 | 0.529 ± 0.015 | 0.678 ± 0.019 | 0.385 |
+| RE-Free | pca_8 | MLP | 10 | 0.078 ± 0.181 | 0.590 ± 0.050 | 0.765 ± 0.062 | 0.420 |
+| RE-Free | pca_16 | MLP | 10 | -0.023 ± 0.137 | 0.621 ± 0.058 | 0.809 ± 0.063 | 0.432 |
+| RE-Free | raw_200D | MLP | 10 | -0.309 ± 0.287 | 0.660 ± 0.048 | 0.909 ± 0.080 | 0.443 |
+| RE-Free | pca_32 | MLP | 10 | -0.568 ± 0.534 | 0.719 ± 0.075 | 0.997 ± 0.196 | 0.466 |
+| RE-Free | pca_64 | MLP | 10 | -12.055 ± 20.528 | 1.410 ± 1.457 | 2.394 ± 1.803 | 0.586 |

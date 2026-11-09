@@ -1,0 +1,57 @@
+# -*- coding: utf-8 -*-
+"""Train models to predict experimental Ms — RE-Free (rare-earth-free) dataset.
+
+Run in order:
+
+    python src/create_embeddings.py
+    python src/compress_embeddings_pca.py
+    python src/train_ms_re_free.py
+
+Input file (outputs/):
+    Experimental_Ms_RE-Free_w_embeddings_PCA.pkl
+
+Outputs:
+    results/RE-Free_results.csv
+    results/exp_ms_comparison.csv      (updated from all available datasets)
+    results/exp_ms_best_by_dataset.csv (updated from all available datasets)
+    results/figures/RE-Free_*.png
+    logs/train_ms_re_free.txt
+"""
+
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from src.log_to_file import log_output
+from src.train_ms import (
+    DATASETS,
+    PROJECT_ROOT,
+    RESULTS_DIR,
+    train_one_dataset,
+    update_global_summary,
+)
+
+_DS = next(d for d in DATASETS if d["name"] == "RE-Free")
+
+# Create log directory
+from src.log_to_file import log_output
+import os
+log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'logs')
+os.makedirs(log_dir, exist_ok=True)
+
+
+@log_output("logs/train_ms_re_free.txt")
+def main() -> None:
+    print("=" * 70)
+    print("Training (RE-Free): compound embedding → experimental Ms")
+    print("=" * 70)
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    train_one_dataset(_DS, RESULTS_DIR / "figures")
+    update_global_summary()
+
+
+if __name__ == "__main__":
+    log_path = PROJECT_ROOT / "logs" / "train_ms_re_free.txt"
+    print(f"Output logged to: {log_path}")
+    main()
+    print(f"Done. Results in: {RESULTS_DIR}")

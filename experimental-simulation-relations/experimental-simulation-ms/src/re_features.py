@@ -1,10 +1,15 @@
 # -*- coding: utf-8 -*-
-"""Rare-earth (RE) physics features for Ms error correction.
+"""Rare-earth (RE) physics features for experimental-Tc prediction.
 
-Standard collinear DFT/GGA mistreats the localized 4f shell, so for rare-earth
-compounds the simulation-vs-experiment gap is dominated by the missing/mis-estimated
-4f moment. That moment is well approximated by the free-ion Hund's-rules value of
-the RE3+ ion, scaled by RE content and the sign of its coupling to the 3d sublattice.
+This project predicts experimental Tc DIRECTLY from a matscholar200 compound
+embedding (there is no simulated-Tc baseline). The embedding is an
+element-abundance-weighted mean of element vectors, so it carries little explicit
+information about the localized 4f shell that drives rare-earth magnetism. These
+hand-built free-ion features add that physics back.
+
+For ORDERING TEMPERATURES the de Gennes factor (g_J - 1)^2 J(J+1) is especially
+relevant: within a RE series it governs the RE contribution to the ordering
+temperature (T_ordering ~ de Gennes factor for the RKKY-coupled 4f sublattice).
 
 This module provides:
   - RE3+ Hund's-rules constants (lanthanides La..Lu)
@@ -14,6 +19,7 @@ This module provides:
 All quantities are textbook free-ion RE3+ values (e.g. Jensen & Mackintosh).
 Caveats: assumes RE3+ (exceptions: Eu2+, Yb2+/3+, Ce4+, Sm2+); crystal-field
 quenching and finite temperature reduce the effective moment below gJ*J.
+Features are all-zero for RE-free compositions, so they are safe on any dataset.
 """
 from typing import Dict, List, Optional
 
@@ -42,7 +48,7 @@ def _entry(n_f, J, gJ, heavy, s_state=False):
         'de_gennes': de_gennes,
         'heavy': 1.0 if heavy else 0.0,
         # S-state ion: half-filled 4f7 with L=0 (Gd3+, Eu2+) -> large, isotropic,
-        # CEF-unquenched, collinear pure-spin moment that collinear DFT badly misses.
+        # CEF-unquenched, collinear pure-spin moment.
         's_state': 1.0 if s_state else 0.0,
     }
 
@@ -55,9 +61,7 @@ RE_PROPS: Dict[str, Dict[str, float]] = {
     'Pm': _entry(4,  4.0, 3.0 / 5.0,  False),   # 4f4
     'Sm': _entry(5,  2.5, 2.0 / 7.0,  False),   # 4f5
     # Eu is commonly DIVALENT (Eu2+, 4f7 — same config as Gd3+, ~7 mu_B), not Eu3+
-    # (4f6, ground J=0, nominally nonmagnetic). The residual diagnostic showed Eu as
-    # the single largest systematic under-prediction with the Eu3+ (J=0) assumption,
-    # so we model Eu as Eu2+ here.
+    # (4f6, ground J=0, nominally nonmagnetic). Modelling Eu as Eu2+ here.
     'Eu': _entry(7,  3.5, 2.0,        True, s_state=True),   # Eu2+ 4f7 S-state (was Eu3+ 4f6, J=0)
     'Gd': _entry(7,  3.5, 2.0,        True, s_state=True),   # 4f7 S-state — half-filled, max de Gennes
     'Tb': _entry(8,  6.0, 3.0 / 2.0,  True),    # 4f8
@@ -66,7 +70,7 @@ RE_PROPS: Dict[str, Dict[str, float]] = {
     'Er': _entry(11, 7.5, 6.0 / 5.0,  True),    # 4f11
     'Tm': _entry(12, 6.0, 7.0 / 6.0,  True),    # 4f12
     # Yb is mixed/intermediate valence; Yb2+ (4f14) is a full, NONMAGNETIC shell,
-    # whereas Yb3+ (4f13) has gJ*J=4.0. We model Yb as Yb2+ here. NOTE: this affects
+    # whereas Yb3+ (4f13) has gJ*J=4.0. Modelling Yb as Yb2+ here. NOTE: this affects
     # few samples and is the more uncertain of the two valence choices — revisit if
     # the dataset is Yb3+-dominated.
     'Yb': _entry(14, 0.0, 0.0,        True),    # Yb2+ 4f14 nonmagnetic (was Yb3+ 4f13)
@@ -78,13 +82,13 @@ RE_ELEMENTS: List[str] = list(RE_PROPS.keys())
 # Feature names produced by compute_re_features (stable order).
 RE_FEATURE_NAMES: List[str] = [
     're_fraction',     # total atomic fraction of RE elements
-    'mu_free',         # sum_i x_i * (gJ*J)_i   — magnitude of the expected correction
+    'mu_free',         # sum_i x_i * (gJ*J)_i   — magnitude of the expected moment
     'spin_proj',       # sum_i x_i * (gJ-1)J_i  — coupling sign/strength to 3d
-    'de_gennes',       # sum_i x_i * deGennes_i — exchange strength
+    'de_gennes',       # sum_i x_i * deGennes_i — exchange strength / RE ordering-T scale (key for Tc)
     'nf_weighted',     # sum_i x_i * n_f_i      — mean 4f filling
     'heavy_fraction',  # atomic fraction of heavy-RE (n_f>=7) atoms
     's_state_fraction',# atomic fraction of S-state RE (Gd3+, Eu2+) — isolates the
-                       # large, CEF-unquenched pure-spin moment DFT misses (Eu/Gd)
+                       # large, CEF-unquenched pure-spin moment (Eu/Gd)
 ]
 
 _ZERO = {k: 0.0 for k in RE_FEATURE_NAMES}
