@@ -13,7 +13,7 @@ graph TD
     %% === Cluster 1: Process TC Data ===
     subgraph cluster_1["1. Process TC Data"]
         direction TB
-        A0[data/*] --> B0[src/process_tc_data.py]
+        A0["data/curated/*_simulated.csv"] --> B0[src/process_tc_data.py]
         B0 --> A[preprocessed_data/*.csv]
     end
 
@@ -56,9 +56,9 @@ graph TD
 ```
 
 Three datasets are trained independently (steps 3a–3c can run in any order or in parallel):
-- **RE-Free** — rare-earth-free compounds (~6 200 rows)
-- **RE** — rare-earth-containing compounds (~9 800 rows)
-- **All** — combined dataset (~16 000 rows)
+- **RE-Free** — rare-earth-free compounds (392 rows — **curated**, see §1)
+- **RE** — rare-earth-containing compounds (1,148 rows)
+- **All** — combined dataset (1,540 rows)
 
 > **Note:** `src/train_sim_tc.py` is still available as a convenience script that runs all
 > three datasets in sequence and is the shared library used by the individual scripts.
@@ -80,7 +80,19 @@ pip install torch --index-url https://download.pytorch.org/whl/cpu
 
 ## 1. Pre-Process Data
 
-1. **Aggregate** data from multiple sources.  
+> **RE-free data curation (with partner UU).** The rare-earth-free (RE-free) Tc data has been
+> curated together with partner UU. Each raw-source entry was reviewed and classified as
+> *experimental* or *theoretical* (mean-field / Monte-Carlo / RPA / ...); for RE-free compounds
+> this expert classification (`Sim-TC-HH-NH-AV.xlsx`) takes **precedence** over the raw-source
+> flag -- correcting many values the public databases had mislabelled as "simulated" -- and
+> entries UU flagged as wrong/unusable were dropped. The raw sources were split accordingly
+> into experimental/simulated files under `data/curated/`, and this (simulated-Tc) project now
+> builds its datasets from the **simulation-only** curated files `data/curated/*_simulated.csv`
+> and writes **simulation outputs only**. Net effect: the RE-free simulated set went from 959
+> -> **392** reduced compounds (All 2,107 -> **1,540**); the RE set is unchanged (the curation
+> is RE-free only). The original raw-source generator is kept at `src/process_tc_data.py.bak`.
+
+1. **Aggregate** the curated simulation-only source files (`data/curated/*_simulated.csv`).  
 2. **Clean** Tc values: remove units, symbols, and uncertainties; convert to float.  
 3. **Drop** invalid (non-numeric) Tc entries.  
 4. **Canonicalise & deduplicate**: reduce each formula to its pymatgen *reduced formula* (so H₂O/H₄O₂, CoFe₂O₄/Fe₂CoO₄ and other spelling / element-ordering / stoichiometric-multiple variants pool together; unparsable strings are dropped), then take the **median Tc** per reduced composition.  
@@ -97,22 +109,18 @@ python src/process_tc_data.py
 
 **Needs:**
 ```
-data/m-tcsum_nur_new.csv
-data/literature_values_prepared.csv
-data/DS1+DS2.csv
-data/combinded_tables.xlsx"
-data/MagneticMaterials_All.csv
+data/curated/DS1+DS2_simulated.csv
+data/curated/MagneticMaterials_All_simulated.csv
+data/curated/combinded_tables_simulated.csv
+data/curated/literature_values_prepared_simulated.csv
+data/curated/m-tcsum_nur_new_simulated.csv
 ```
 **Outputs:**
 ```
-preprocessed_data/Experimental_Tc.csv          
-preprocessed_data/Experimental_Tc_RE.csv   
-preprocessed_data/Simulated_Tc.csv           
-preprocessed_data/Simulation_Tc_RE.csv
-preprocessed_data/Experimental_Tc_RE-Free.csv  
-preprocessed_data/Experimental_Tc_all.csv  
-preprocessed_data/Simulation_Tc_RE-Free.csv  
 preprocessed_data/Simulation_Tc_all.csv
+preprocessed_data/Simulation_Tc_RE.csv
+preprocessed_data/Simulation_Tc_RE-Free.csv
+preprocessed_data/Simulated_Tc.csv            (copy of Simulation_Tc_all.csv)
 ```
 
 
@@ -355,91 +363,44 @@ MAE and RMSE in Kelvin lower is better.
 > variance is sizeable (note the ± std).
 
 ### Best model per dataset (ensemble mean ± std)
+Latest run: re_features: true, N = 10 members.
 
-| **Dataset** | **Model**    | **Embedding** |            **R²** | **MAE (K)** | **RMSE (K)** |
-| ----------- | ------------ | ------------- | ----------------: | ----------: | -----------: |
-| RE          | **RF**       | raw_200D      | **0.760 ± 0.068** |  **55.856** |   **94.302** |
-| All         | **LightGBM** | raw_200D      | **0.643 ± 0.037** | **101.448** |  **171.584** |
-| RE-Free     | **RF**       | raw_200D      | **0.478 ± 0.068** | **153.088** |  **223.385** |
-
-### All Materials — all models × embeddings (ensemble mean ± std, with RE features)
-
-Latest run: 4 families, re_features: true, N = 10 members.
-
-| Dataset | Embedding | Model    |  N |                R² |                 MAE |                 RMSE |
-| ------- | --------- | -------- | -: | ----------------: | ------------------: | -------------------: |
-| All     | raw_200D  | **LGBM** | 10 | **0.643 ± 0.037** | **101.448 ± 4.282** | **171.584 ± 11.784** |
-| All     | raw_200D  | RF       | 10 |     0.642 ± 0.036 |     103.940 ± 4.368 |     171.794 ± 11.873 |
-| All     | pca_64    | LGBM     | 10 |     0.634 ± 0.040 |     105.200 ± 4.462 |     173.750 ± 11.382 |
-| All     | pca_32    | LGBM     | 10 |     0.632 ± 0.041 |     105.651 ± 4.512 |     174.165 ± 12.609 |
-| All     | pca_32    | RF       | 10 |     0.630 ± 0.038 |     106.163 ± 4.694 |     174.706 ± 12.166 |
-| All     | pca_64    | RF       | 10 |     0.625 ± 0.041 |     108.842 ± 5.346 |     175.912 ± 12.294 |
-| All     | pca_16    | RF       | 10 |     0.610 ± 0.041 |     107.570 ± 4.972 |     179.311 ± 12.970 |
-| All     | pca_16    | LGBM     | 10 |     0.610 ± 0.045 |     106.402 ± 5.380 |     179.317 ± 13.481 |
-| All     | pca_8     | RF       | 10 |     0.593 ± 0.043 |     111.096 ± 6.232 |     183.310 ± 13.539 |
-| All     | pca_8     | LGBM     | 10 |     0.582 ± 0.047 |     111.455 ± 6.949 |     185.686 ± 14.054 |
-| All     | pca_64    | MLP      | 10 |     0.516 ± 0.046 |     126.242 ± 7.258 |     199.843 ± 13.297 |
-| All     | raw_200D  | MLP      | 10 |     0.492 ± 0.053 |     132.834 ± 7.866 |     204.783 ± 14.948 |
-| All     | pca_32    | MLP      | 10 |     0.487 ± 0.057 |     132.811 ± 7.596 |     205.786 ± 16.156 |
-| All     | pca_16    | MLP      | 10 |     0.461 ± 0.048 |     136.967 ± 7.327 |     211.008 ± 13.520 |
-| All     | pca_8     | MLP      | 10 |     0.422 ± 0.027 |     145.514 ± 4.474 |      218.615 ± 9.967 |
-| All     | raw_200D  | Linear   | 10 |     0.331 ± 0.031 |     163.452 ± 4.339 |     235.142 ± 10.605 |
-| All     | pca_64    | Linear   | 10 |     0.328 ± 0.028 |     164.507 ± 4.583 |     235.709 ± 10.144 |
-| All     | pca_32    | Linear   | 10 |     0.309 ± 0.035 |     165.935 ± 4.621 |     238.994 ± 11.315 |
-| All     | pca_16    | Linear   | 10 |     0.305 ± 0.025 |     168.422 ± 4.046 |      239.610 ± 9.914 |
-| All     | pca_8     | Linear   | 10 |     0.301 ± 0.021 |     169.258 ± 3.663 |      240.361 ± 9.051 |
+| Dataset | Embedding | Model | N  | R²    | R² std | MAE     | MAE std | RMSE    | RMSE std |
+| ------- | --------- | ----- | -- | ----- | ------ | ------- | ------- | ------- | -------- |
+| RE      | raw_200D  | RF    | 10 | 0.760 | 0.068  | 55.856  | 5.427   | 94.302  | 15.090   |
+| RE-Free | raw_200D  | RF    | 10 | 0.377 | 0.111  | 195.310 | 14.908  | 276.861 | 36.036   |
 
 
 ### RE Materials — all models × embeddings (ensemble mean ± std, with RE features)
 
 Latest run: 4 families, re_features: true, N = 10 members. 
 
-| Dataset | Embedding | Model  |  N |                R² |                MAE |                RMSE |
-| ------- | --------- | ------ | -: | ----------------: | -----------------: | ------------------: |
-| RE      | raw_200D  | **RF** | 10 | **0.760 ± 0.068** |     55.856 ± 5.427 | **94.302 ± 15.091** |
-| RE      | raw_200D  | LGBM   | 10 |     0.741 ± 0.077 | **53.687 ± 5.423** |     98.053 ± 15.854 |
-| RE      | pca_64    | LGBM   | 10 |     0.729 ± 0.070 |     58.714 ± 5.498 |    100.318 ± 12.929 |
-| RE      | pca_32    | LGBM   | 10 |     0.728 ± 0.073 |     59.402 ± 5.656 |    100.527 ± 13.058 |
-| RE      | pca_32    | RF     | 10 |     0.720 ± 0.063 |     62.613 ± 5.145 |    102.351 ± 12.644 |
-| RE      | pca_16    | LGBM   | 10 |     0.717 ± 0.091 |     59.925 ± 5.939 |    102.139 ± 15.447 |
-| RE      | pca_8     | RF     | 10 |     0.702 ± 0.074 |     62.915 ± 5.916 |    105.351 ± 14.133 |
-| RE      | pca_64    | RF     | 10 |     0.700 ± 0.085 |     64.204 ± 5.562 |    105.568 ± 13.180 |
-| RE      | pca_16    | RF     | 10 |     0.697 ± 0.087 |     64.278 ± 6.099 |    106.005 ± 13.868 |
-| RE      | pca_8     | LGBM   | 10 |     0.682 ± 0.066 |     62.830 ± 5.365 |    109.243 ± 12.498 |
-| RE      | pca_32    | MLP    | 10 |     0.747 ± 0.000 |     68.937 ± 0.000 |     104.729 ± 0.000 |
-| RE      | raw_200D  | MLP    | 10 |     0.745 ± 0.000 |     68.112 ± 0.000 |     105.110 ± 0.000 |
-| RE      | pca_16    | MLP    | 10 |     0.726 ± 0.000 |     72.688 ± 0.000 |     109.073 ± 0.000 |
-| RE      | pca_64    | MLP    | 10 |     0.609 ± 0.000 |     82.370 ± 0.000 |     130.221 ± 0.000 |
-| RE      | pca_8     | MLP    | 10 |     0.658 ± 0.000 |     75.936 ± 0.000 |     121.751 ± 0.000 |
-| RE      | pca_64    | Linear | 10 |     0.510 ± 0.000 |     95.375 ± 0.000 |     145.708 ± 0.000 |
-| RE      | pca_16    | Linear | 10 |     0.505 ± 0.000 |     96.536 ± 0.000 |     146.450 ± 0.000 |
-| RE      | raw_200D  | Linear | 10 |     0.505 ± 0.000 |     96.364 ± 0.000 |     146.545 ± 0.000 |
-| RE      | pca_32    | Linear | 10 |     0.495 ± 0.000 |     97.828 ± 0.000 |     148.016 ± 0.000 |
-| RE      | pca_8     | Linear | 10 |     0.477 ± 0.000 |     97.165 ± 0.000 |     150.599 ± 0.000 |
+| Dataset | Embedding | Model | N  | R²    | R² std | MAE    | MAE std | RMSE    | RMSE std |
+| ------- | --------- | ----- | -- | ----- | ------ | ------ | ------- | ------- | -------- |
+| RE      | raw_200D  | RF    | 10 | 0.760 | 0.068  | 55.856 | 5.427   | 94.302  | 15.091   |
+| RE      | raw_200D  | LGBM  | 10 | 0.741 | 0.077  | 53.687 | 5.423   | 98.053  | 15.854   |
+| RE      | pca_64    | LGBM  | 10 | 0.730 | 0.070  | 58.717 | 5.492   | 100.270 | 12.927   |
+| RE      | pca_32    | LGBM  | 10 | 0.727 | 0.073  | 59.457 | 5.701   | 100.578 | 13.140   |
+| RE      | pca_32    | RF    | 10 | 0.720 | 0.063  | 62.613 | 5.145   | 102.351 | 12.644   |
+| RE      | pca_16    | LGBM  | 10 | 0.717 | 0.091  | 59.925 | 5.939   | 102.139 | 15.447   |
+| RE      | pca_8     | RF    | 10 | 0.702 | 0.074  | 62.915 | 5.916   | 105.351 | 14.133   |
+| RE      | pca_64    | RF    | 10 | 0.700 | 0.085  | 64.204 | 5.562   | 105.568 | 13.180   |
+| RE      | pca_16    | RF    | 10 | 0.697 | 0.087  | 64.278 | 6.099   | 106.005 | 13.868   |
+| RE      | pca_8     | LGBM  | 10 | 0.682 | 0.066  | 62.830 | 5.365   | 109.243 | 12.498   |
 
 ### RE-Free Materials — all models × embeddings (ensemble mean ± std, with RE features) 
 
 Latest run: 4 families, re_features: true, N = 10 members. (RE features are all-zero for RE-free compounds, so they leave LightGBM/Linear unchanged and only perturb RF/MLP within noise.)
 
-| Dataset | Embedding | Model  |  N |                R² |                  MAE |                 RMSE |
-| ------- | --------- | ------ | -: | ----------------: | -------------------: | -------------------: |
-| RE-Free | raw_200D  | **RF** | 10 | **0.478 ± 0.068** | **153.088 ± 10.659** | **223.385 ± 25.639** |
-| RE-Free | pca_64    | LGBM   | 10 |     0.465 ± 0.058 |      156.233 ± 8.710 |     226.305 ± 22.628 |
-| RE-Free | raw_200D  | LGBM   | 10 |     0.465 ± 0.072 |     153.402 ± 10.916 |     226.239 ± 25.252 |
-| RE-Free | pca_32    | RF     | 10 |     0.452 ± 0.073 |     158.070 ± 11.769 |     228.813 ± 25.441 |
-| RE-Free | pca_64    | RF     | 10 |     0.451 ± 0.070 |     160.208 ± 10.479 |     229.194 ± 26.192 |
-| RE-Free | pca_16    | RF     | 10 |     0.437 ± 0.086 |     159.755 ± 11.947 |     231.737 ± 24.954 |
-| RE-Free | pca_16    | LGBM   | 10 |     0.431 ± 0.058 |      162.529 ± 7.899 |     233.163 ± 21.112 |
-| RE-Free | pca_32    | LGBM   | 10 |     0.416 ± 0.068 |     163.707 ± 10.981 |     236.304 ± 24.657 |
-| RE-Free | pca_8     | RF     | 10 |     0.403 ± 0.066 |      165.927 ± 8.925 |     238.842 ± 23.966 |
-| RE-Free | pca_8     | LGBM   | 10 |     0.367 ± 0.075 |      173.490 ± 7.136 |     246.022 ± 24.954 |
-| RE-Free | raw_200D  | MLP    | 10 |     0.282 ± 0.052 |      190.902 ± 8.413 |     261.844 ± 19.396 |
-| RE-Free | pca_32    | MLP    | 10 |     0.278 ± 0.065 |      190.232 ± 9.194 |     262.669 ± 21.327 |
-| RE-Free | pca_16    | MLP    | 10 |     0.265 ± 0.062 |      194.291 ± 8.404 |     265.043 ± 22.040 |
-| RE-Free | raw_200D  | Linear | 10 |     0.210 ± 0.039 |      203.902 ± 7.661 |     274.837 ± 19.294 |
-| RE-Free | pca_32    | Linear | 10 |     0.210 ± 0.041 |      205.085 ± 8.768 |     274.939 ± 19.685 |
-| RE-Free | pca_64    | Linear | 10 |     0.209 ± 0.033 |      206.072 ± 7.943 |     275.100 ± 19.413 |
-| RE-Free | pca_16    | Linear | 10 |     0.193 ± 0.047 |      209.682 ± 7.965 |     277.750 ± 19.789 |
-| RE-Free | pca_8     | MLP    | 10 |     0.189 ± 0.062 |      208.095 ± 9.757 |     278.500 ± 23.956 |
-| RE-Free | pca_8     | Linear | 10 |     0.180 ± 0.050 |      214.119 ± 9.137 |     280.176 ± 22.816 |
-| RE-Free | pca_64    | MLP    | 10 |     0.173 ± 0.109 |     200.721 ± 14.133 |     280.715 ± 24.973 |
+| Dataset | Embedding | Model | N  | R²    | R² std | MAE     | MAE std | RMSE    | RMSE std |
+| ------- | --------- | ----- | -- | ----- | ------ | ------- | ------- | ------- | -------- |
+| RE-Free | raw_200D  | RF    | 10 | 0.377 | 0.111  | 195.310 | 14.908  | 276.861 | 36.036   |
+| RE-Free | pca_32    | RF    | 10 | 0.366 | 0.090  | 204.466 | 14.176  | 279.469 | 32.194   |
+| RE-Free | pca_32    | LGBM  | 10 | 0.339 | 0.112  | 207.012 | 15.112  | 285.085 | 32.692   |
+| RE-Free | pca_64    | RF    | 10 | 0.336 | 0.087  | 207.609 | 17.324  | 286.538 | 36.045   |
+| RE-Free | pca_16    | RF    | 10 | 0.323 | 0.088  | 210.558 | 15.042  | 288.891 | 32.227   |
+| RE-Free | pca_8     | RF    | 10 | 0.320 | 0.073  | 214.991 | 12.047  | 289.767 | 29.342   |
+| RE-Free | raw_200D  | LGBM  | 10 | 0.320 | 0.057  | 213.459 | 13.095  | 289.960 | 28.133   |
+| RE-Free | pca_64    | LGBM  | 10 | 0.302 | 0.104  | 206.535 | 20.142  | 293.596 | 37.587   |
+| RE-Free | pca_16    | LGBM  | 10 | 0.295 | 0.068  | 210.959 | 12.913  | 295.001 | 27.611   |
+| RE-Free | pca_8     | LGBM  | 10 | 0.272 | 0.073  | 222.973 | 12.046  | 299.298 | 24.338   |
