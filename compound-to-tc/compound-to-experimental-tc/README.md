@@ -12,7 +12,7 @@ graph TD
     %% === Cluster 0: Process TC Data ===
     subgraph cluster_0["0. Process TC Data"]
         direction TB
-        A0[data/*] --> B0[src/process_tc_data.py]
+        A0["data/curated/*_experimental.csv"] --> B0[src/process_tc_data.py]
         B0 --> A[preprocessed_data/*.csv]
     end
 
@@ -63,9 +63,9 @@ graph TD
 ```
 
 Three datasets are trained independently (steps 3a–3c can run in any order or in parallel):
-- **RE-Free** — rare-earth-free compounds (~6 200 rows)
-- **RE** — rare-earth-containing compounds (~9 800 rows)
-- **All** — combined dataset (~16 000 rows)
+- **RE-Free** — rare-earth-free compounds (5,857 rows — **curated**, see §1)
+- **RE** — rare-earth-containing compounds (8,800 rows)
+- **All** — combined dataset (14,657 rows)
 
 > **Note:** `src/train_exp_tc.py` is still available as a convenience script that runs all
 > three datasets in sequence and is the shared library used by the individual scripts.
@@ -87,7 +87,20 @@ pip install torch --index-url https://download.pytorch.org/whl/cpu
 
 ## 1. Pre-Process Data
 
-1. **Aggregate** data from multiple sources.  
+> **RE-free data curation (with partner UU).** The rare-earth-free (RE-free) Tc data has been
+> curated together with partner UU. Each raw-source entry was reviewed and classified as
+> *experimental* or *theoretical* (mean-field / Monte-Carlo / RPA / ...); for RE-free compounds
+> this expert classification (`Sim-TC-HH-NH-AV.xlsx`) takes **precedence** over the raw-source
+> flag, and entries UU flagged as wrong/unusable were dropped. The raw sources were split
+> accordingly into experimental/simulated files under `data/curated/`, and this
+> (experimental-Tc) project now builds its datasets from the **experiment-only** curated files
+> `data/curated/*_experimental.csv` and writes **experimental outputs only**. Because the audit
+> found that many values the public databases had labelled "simulated" are in fact
+> experimental, the experimental set GREW: RE-free 5,680 -> **5,857** (All 14,480 -> **14,657**);
+> the RE set is unchanged (the curation is RE-free only). The original raw-source generator is
+> kept at `src/process_tc_data.py.bak`.
+
+1. **Aggregate** the curated experiment-only source files (`data/curated/*_experimental.csv`).  
 2. **Clean** Tc values: remove units, symbols, and uncertainties; convert to float.  
 3. **Drop** invalid (non-numeric) Tc entries.  
 4. **Canonicalise & deduplicate**: reduce each formula to its pymatgen *reduced formula* (so H₂O/H₄O₂, CoFe₂O₄/Fe₂CoO₄ and other spelling / element-ordering / stoichiometric-multiple variants pool together; unparsable strings are dropped), then take the **median Tc** per reduced composition.  
@@ -103,22 +116,18 @@ python src/process_tc_data.py
 ```
 **Needs:**
 ```
-data/m-tcsum_nur_new.csv
-data/literature_values_prepared.csv
-data/DS1+DS2.csv
-data/combinded_tables.xlsx"
-data/MagneticMaterials_All.csv
+data/curated/DS1+DS2_experimental.csv
+data/curated/MagneticMaterials_All_experimental.csv
+data/curated/combinded_tables_experimental.csv
+data/curated/literature_values_prepared_experimental.csv
+data/curated/m-tcsum_nur_new_experimental.csv
 ```
 **Outputs:**
 ```
-preprocessed_data/Experimental_Tc.csv          
-preprocessed_data/Experimental_Tc_RE.csv   
-preprocessed_data/Simulated_Tc.csv           
-preprocessed_data/Simulation_Tc_RE.csv
-preprocessed_data/Experimental_Tc_RE-Free.csv  
-preprocessed_data/Experimental_Tc_all.csv  
-preprocessed_data/Simulation_Tc_RE-Free.csv  
-preprocessed_data/Simulation_Tc_all.csv
+preprocessed_data/Experimental_Tc_all.csv
+preprocessed_data/Experimental_Tc.csv            (adds a contains_re column)
+preprocessed_data/Experimental_Tc_RE.csv
+preprocessed_data/Experimental_Tc_RE-Free.csv
 ```
 
 ## 2. Create compound embeddings

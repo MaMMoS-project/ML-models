@@ -32,7 +32,7 @@
       enabled: true
       ensemble: 10
     mlp:
-      enabled: false
+      enabled: true
       ensemble: 10
     lgbm:
       enabled: true
