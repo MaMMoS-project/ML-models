@@ -36,3 +36,32 @@ Al,,nonmagnetic,no,yes,no,no magnetic ordering
 ZnO,,nonmagnetic,no,yes,no,no magnetic ordering (undoped)
 NaCl,,nonmagnetic,no,no,no,no magnetic ordering
 H2O,,nonmagnetic,no,no,no,no magnetic ordering
+CoOsCrAl,369,unknown,yes,no,no,new simulated Tc from Sim-TC-HH-NH-AV.xlsx (UU curated); method=MF
+CoFeCrAl,421,unknown,yes,yes,no,new simulated Tc from Sim-TC-HH-NH-AV.xlsx (UU curated); method=MF
+CoNi,1256.5,unknown,yes,yes,no,"new simulated Tc from Sim-TC-HH-NH-AV.xlsx (UU curated); method=MC, MF"
+CoFeCrSi,517,unknown,yes,no,no,new simulated Tc from Sim-TC-HH-NH-AV.xlsx (UU curated); method=MF
+FeCrHfAl,568,unknown,yes,no,no,new simulated Tc from Sim-TC-HH-NH-AV.xlsx (UU curated); method=MF
+OsCrHfAl,428,unknown,yes,no,no,new simulated Tc from Sim-TC-HH-NH-AV.xlsx (UU curated); method=MF
+RuCrHfAl,669,unknown,yes,no,no,new simulated Tc from Sim-TC-HH-NH-AV.xlsx (UU curated); method=MF
+FeVHfAl,742,unknown,yes,no,no,new simulated Tc from Sim-TC-HH-NH-AV.xlsx (UU curated); method=MF
+FeVHfSn,705,unknown,yes,no,no,new simulated Tc from Sim-TC-HH-NH-AV.xlsx (UU curated); method=MF
+MnBi2Te4,37,unknown,yes,no,no,new simulated Tc from Sim-TC-HH-NH-AV.xlsx (UU curated); method=Model
+Mn1.14Al0.86,670,unknown,yes,no,no,"new simulated Tc from Sim-TC-HH-NH-AV.xlsx (UU curated); method=MC, MF"
+Mn1.2Ga0.8,690,unknown,yes,no,no,new simulated Tc from Sim-TC-HH-NH-AV.xlsx (UU curated); method=MC
+CoMnCrAs,654,unknown,yes,no,no,new simulated Tc from Sim-TC-HH-NH-AV.xlsx (UU curated); method=MF
+CoMnCrSi,589,unknown,yes,no,no,new simulated Tc from Sim-TC-HH-NH-AV.xlsx (UU curated); method=MF
+Ni2MnIn,343,unknown,yes,yes,no,new simulated Tc from Sim-TC-HH-NH-AV.xlsx (UU curated); method=Multisublattice MF
+MnCrNbAl,624,unknown,yes,no,no,new simulated Tc from Sim-TC-HH-NH-AV.xlsx (UU curated); method=MF
+Ni2MnSb,380,unknown,yes,yes,no,new simulated Tc from Sim-TC-HH-NH-AV.xlsx (UU curated); method=MC
+Ni2MnSn,358,unknown,yes,yes,no,"new simulated Tc from Sim-TC-HH-NH-AV.xlsx (UU curated); method=MF, Multisublattice MF"
+FeVNbAl,693,unknown,yes,no,no,new simulated Tc from Sim-TC-HH-NH-AV.xlsx (UU curated); method=MF
+FeVTaAl,681,unknown,yes,no,no,new simulated Tc from Sim-TC-HH-NH-AV.xlsx (UU curated); method=MF
+CoFeTaGe,453,unknown,yes,no,no,new simulated Tc from Sim-TC-HH-NH-AV.xlsx (UU curated); method=MF
+MnCrTaAl,637,unknown,yes,no,no,new simulated Tc from Sim-TC-HH-NH-AV.xlsx (UU curated); method=MF
+FeCrTiAl,560,unknown,yes,no,no,new simulated Tc from Sim-TC-HH-NH-AV.xlsx (UU curated); method=MF
+CoFeTiSb,476,unknown,yes,no,no,new simulated Tc from Sim-TC-HH-NH-AV.xlsx (UU curated); method=MF
+CoFeTiSi,157,unknown,yes,yes,no,new simulated Tc from Sim-TC-HH-NH-AV.xlsx (UU curated); method=MF
+MnVTiAl,963,unknown,yes,no,no,new simulated Tc from Sim-TC-HH-NH-AV.xlsx (UU curated); method=MF
+MnVTiSi,573,unknown,yes,no,no,new simulated Tc from Sim-TC-HH-NH-AV.xlsx (UU curated); method=MF
+Co2VSn,103,unknown,yes,yes,no,new simulated Tc from Sim-TC-HH-NH-AV.xlsx (UU curated); method=RPA (like)
+CoFeVSb,308,unknown,yes,no,no,new simulated Tc from Sim-TC-HH-NH-AV.xlsx (UU curated); method=MF

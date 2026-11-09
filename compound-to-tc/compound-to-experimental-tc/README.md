@@ -12,7 +12,7 @@ graph TD
     %% === Cluster 0: Process TC Data ===
     subgraph cluster_0["0. Process TC Data"]
         direction TB
-        A0[data/*] --> B0[src/process_tc_data.py]
+        A0["data/curated/*_experimental.csv"] --> B0[src/process_tc_data.py]
         B0 --> A[preprocessed_data/*.csv]
     end
 
@@ -63,9 +63,9 @@ graph TD
 ```
 
 Three datasets are trained independently (steps 3a–3c can run in any order or in parallel):
-- **RE-Free** — rare-earth-free compounds (~6 200 rows)
-- **RE** — rare-earth-containing compounds (~9 800 rows)
-- **All** — combined dataset (~16 000 rows)
+- **RE-Free** — rare-earth-free compounds (5,857 rows — **curated**, see §1)
+- **RE** — rare-earth-containing compounds (8,800 rows)
+- **All** — combined dataset (14,657 rows)
 
 > **Note:** `src/train_exp_tc.py` is still available as a convenience script that runs all
 > three datasets in sequence and is the shared library used by the individual scripts.
@@ -87,7 +87,20 @@ pip install torch --index-url https://download.pytorch.org/whl/cpu
 
 ## 1. Pre-Process Data
 
-1. **Aggregate** data from multiple sources.  
+> **RE-free data curation (with partner UU).** The rare-earth-free (RE-free) Tc data has been
+> curated together with partner UU. Each raw-source entry was reviewed and classified as
+> *experimental* or *theoretical* (mean-field / Monte-Carlo / RPA / ...); for RE-free compounds
+> this expert classification (`Sim-TC-HH-NH-AV.xlsx`) takes **precedence** over the raw-source
+> flag, and entries UU flagged as wrong/unusable were dropped. The raw sources were split
+> accordingly into experimental/simulated files under `data/curated/`, and this
+> (experimental-Tc) project now builds its datasets from the **experiment-only** curated files
+> `data/curated/*_experimental.csv` and writes **experimental outputs only**. Because the audit
+> found that many values the public databases had labelled "simulated" are in fact
+> experimental, the experimental set GREW: RE-free 5,680 -> **5,857** (All 14,480 -> **14,657**);
+> the RE set is unchanged (the curation is RE-free only). The original raw-source generator is
+> kept at `src/process_tc_data.py.bak`.
+
+1. **Aggregate** the curated experiment-only source files (`data/curated/*_experimental.csv`).  
 2. **Clean** Tc values: remove units, symbols, and uncertainties; convert to float.  
 3. **Drop** invalid (non-numeric) Tc entries.  
 4. **Canonicalise & deduplicate**: reduce each formula to its pymatgen *reduced formula* (so H₂O/H₄O₂, CoFe₂O₄/Fe₂CoO₄ and other spelling / element-ordering / stoichiometric-multiple variants pool together; unparsable strings are dropped), then take the **median Tc** per reduced composition.  
@@ -103,22 +116,18 @@ python src/process_tc_data.py
 ```
 **Needs:**
 ```
-data/m-tcsum_nur_new.csv
-data/literature_values_prepared.csv
-data/DS1+DS2.csv
-data/combinded_tables.xlsx"
-data/MagneticMaterials_All.csv
+data/curated/DS1+DS2_experimental.csv
+data/curated/MagneticMaterials_All_experimental.csv
+data/curated/combinded_tables_experimental.csv
+data/curated/literature_values_prepared_experimental.csv
+data/curated/m-tcsum_nur_new_experimental.csv
 ```
 **Outputs:**
 ```
-preprocessed_data/Experimental_Tc.csv          
-preprocessed_data/Experimental_Tc_RE.csv   
-preprocessed_data/Simulated_Tc.csv           
-preprocessed_data/Simulation_Tc_RE.csv
-preprocessed_data/Experimental_Tc_RE-Free.csv  
-preprocessed_data/Experimental_Tc_all.csv  
-preprocessed_data/Simulation_Tc_RE-Free.csv  
-preprocessed_data/Simulation_Tc_all.csv
+preprocessed_data/Experimental_Tc_all.csv
+preprocessed_data/Experimental_Tc.csv            (adds a contains_re column)
+preprocessed_data/Experimental_Tc_RE.csv
+preprocessed_data/Experimental_Tc_RE-Free.csv
 ```
 
 ## 2. Create compound embeddings
@@ -361,11 +370,11 @@ MAE and RMSE in Kelvin lower is better.
 
 ### Best model per dataset (ensemble mean ± std)
 
-| Dataset | Model        | Embedding |                R² |    MAE (K) |   RMSE (K) |
-| ------- | ------------ | --------- | ----------------: | ---------: | ---------: |
-| RE      | **LightGBM** | raw_200D  | **0.930 ± 0.011** | **40.045** | **71.182** |
-| All     | **LightGBM** | raw_200D  | **0.859 ± 0.011** |  **58.06** | **101.62** |
-| RE-Free | **LightGBM** | raw_200D  | **0.741 ± 0.022** | **79.313** |  **134.1** |
+| Dataset | Embedding | Model | N  | R²    | R² std | MAE    | MAE std | RMSE    | RMSE std |
+| ------- | --------- | ----- | -- | ----- | ------ | ------ | ------- | ------- | -------- |
+| RE      | raw_200D  | LGBM  | 10 | 0.930 | 0.010  | 39.962 | 1.826   | 71.167  | 4.919    |
+| All     | raw_200D  | LGBM  | 10 | 0.859 | 0.009  | 58.085 | 1.372   | 100.352 | 3.282    |
+| RE-Free | raw_200D  | LGBM  | 10 | 0.751 | 0.010  | 78.708 | 2.254   | 131.092 | 5.147    |
 
 LightGBM is now the best-performing model across **all three datasets**, although on RE-Free it is closely matched by Random Forest. RE compounds remain substantially more predictable, achieving an (R^2) of approximately **0.93**, compared with **0.86** for the combined dataset and **0.74** for RE-Free compounds. The **full 200-D embedding** provides the strongest overall performance for LightGBM on all three datasets, indicating that dimensionality reduction generally does not improve predictive accuracy for this model.
 
@@ -373,28 +382,18 @@ LightGBM is now the best-performing model across **all three datasets**, althoug
 
 Latest run: 4 families, `re_features: true`, N = 10 members. Sorted by R².
 
-| Embedding    | Model    |   R² (mean ± std) |   MAE (K) |   RMSE (K) |
-| ------------ | -------- | ----------------: | --------: | ---------: |
-| **raw_200D** | **LGBM** | **0.859 ± 0.011** | **58.06** | **101.62** |
-| raw_200D     | RF       |     0.856 ± 0.010 |     59.08 |     102.88 |
-| pca_32       | LGBM     |     0.855 ± 0.014 |     61.18 |     103.90 |
-| pca_64       | LGBM     |     0.855 ± 0.012 |     60.51 |     103.72 |
-| pca_32       | RF       |     0.854 ± 0.012 |     60.57 |     104.64 |
-| pca_16       | RF       |     0.852 ± 0.012 |     61.12 |     105.87 |
-| pca_64       | RF       |     0.846 ± 0.011 |     63.12 |     106.33 |
-| pca_16       | LGBM     |     0.842 ± 0.014 |     63.32 |     108.57 |
-| pca_8        | RF       |     0.836 ± 0.014 |     64.31 |     110.20 |
-| pca_8        | LGBM     |     0.830 ± 0.013 |     68.00 |     112.55 |
-| pca_64       | MLP      |     0.817 ± 0.011 |     71.16 |     116.10 |
-| pca_32       | MLP      |     0.817 ± 0.013 |     72.35 |     116.23 |
-| raw_200D     | MLP      |     0.813 ± 0.013 |     72.22 |     117.01 |
-| pca_16       | MLP      |     0.800 ± 0.014 |     78.13 |     122.22 |
-| pca_8        | MLP      |     0.772 ± 0.014 |     86.83 |     130.80 |
-| raw_200D     | Linear   |     0.490 ± 0.011 |    149.90 |     193.00 |
-| pca_32       | Linear   |     0.489 ± 0.012 |    150.00 |     193.70 |
-| pca_64       | Linear   |     0.488 ± 0.012 |    150.00 |     193.50 |
-| pca_16       | Linear   |     0.481 ± 0.012 |    151.90 |     195.80 |
-| pca_8        | Linear   |     0.456 ± 0.014 |    156.10 |     199.60 |
+| Dataset | Embedding | Model | N  | R²    | R² std | MAE    | MAE std | RMSE    | RMSE std |
+| ------- | --------- | ----- | -- | ----- | ------ | ------ | ------- | ------- | -------- |
+| All     | raw_200D  | LGBM  | 10 | 0.859 | 0.009  | 58.085 | 1.372   | 100.352 | 3.282    |
+| All     | raw_200D  | RF    | 10 | 0.856 | 0.010  | 58.920 | 1.839   | 101.538 | 3.525    |
+| All     | pca_64    | LGBM  | 10 | 0.855 | 0.008  | 60.961 | 1.016   | 102.022 | 2.997    |
+| All     | pca_32    | LGBM  | 10 | 0.853 | 0.009  | 61.566 | 1.095   | 102.496 | 3.274    |
+| All     | pca_32    | RF    | 10 | 0.853 | 0.009  | 60.249 | 1.572   | 102.596 | 3.022    |
+| All     | pca_16    | RF    | 10 | 0.851 | 0.009  | 60.349 | 1.613   | 103.280 | 3.083    |
+| All     | pca_16    | LGBM  | 10 | 0.847 | 0.010  | 63.461 | 1.476   | 104.558 | 3.389    |
+| All     | pca_64    | RF    | 10 | 0.845 | 0.009  | 63.212 | 1.724   | 105.247 | 3.182    |
+| All     | pca_8     | RF    | 10 | 0.836 | 0.007  | 64.416 | 1.423   | 108.371 | 2.622    |
+| All     | pca_8     | LGBM  | 10 | 0.826 | 0.008  | 68.901 | 1.135   | 111.747 | 2.528    |
 
 ---
 
@@ -402,28 +401,18 @@ Latest run: 4 families, `re_features: true`, N = 10 members. Sorted by R².
 
 Latest run: 4 families, `re_features: true`, N = 10 members. Sorted by R².
 
-| Embedding | Model  |   R² (mean ± std) |             MAE (K) |             RMSE (K) |
-| --------- | ------ | ----------------: | ------------------: | -------------------: |
-| raw_200D  | LGBM   | **0.930 ± 0.011** |  **40.045 ± 1.762** |   **71.182 ± 5.168** |
-| pca_32    | LGBM   | **0.930 ± 0.008** |  **41.183 ± 1.315** |   **72.345 ± 3.010** |
-| pca_64    | LGBM   | **0.928 ± 0.009** |  **41.068 ± 1.373** |   **71.571 ± 3.637** |
-| raw_200D  | RF     | **0.922 ± 0.011** |  **43.218 ± 1.741** |   **74.083 ± 5.033** |
-| pca_32    | RF     | **0.919 ± 0.010** |  **44.346 ± 1.522** |   **76.366 ± 4.103** |
-| pca_16    | RF     | **0.919 ± 0.010** |  **45.098 ± 1.351** |   **77.497 ± 4.006** |
-| pca_64    | RF     | **0.915 ± 0.009** |  **47.182 ± 1.526** |   **78.830 ± 3.987** |
-| pca_8     | RF     | **0.913 ± 0.010** |  **46.193 ± 1.424** |   **79.233 ± 3.659** |
-| pca_8     | LGBM   | **0.921 ± 0.009** |  **45.248 ± 1.784** |   **77.307 ± 4.311** |
-| pca_16    | LGBM   | **0.921 ± 0.011** |  **44.618 ± 1.208** |   **75.450 ± 4.211** |
-| pca_32    | MLP    | **0.908 ± 0.012** |  **51.263 ± 0.856** |   **81.138 ± 2.688** |
-| raw_200D  | MLP    | **0.906 ± 0.013** |  **51.497 ± 2.173** |   **82.323 ± 4.774** |
-| pca_16    | MLP    | **0.892 ± 0.012** |  **57.176 ± 1.191** |   **87.161 ± 3.626** |
-| pca_8     | MLP    | **0.865 ± 0.014** |  **67.030 ± 1.537** |   **99.061 ± 4.071** |
-| pca_64    | MLP    | **0.865 ± 0.071** |  **52.999 ± 2.184** |  **96.354 ± 19.260** |
-| raw_200D  | Linear | **0.578 ± 0.019** | **134.914 ± 2.495** |  **175.820 ± 3.678** |
-| pca_64    | Linear | **0.578 ± 0.019** | **135.186 ± 2.810** | **178.462 ± 11.214** |
-| pca_32    | Linear | **0.575 ± 0.018** | **135.643 ± 2.110** |  **176.574 ± 3.699** |
-| pca_16    | Linear | **0.565 ± 0.018** | **138.980 ± 2.292** |  **179.910 ± 5.092** |
-| pca_8     | Linear | **0.550 ± 0.017** | **141.527 ± 2.728** |  **183.396 ± 3.504** |
+| Dataset | Embedding | Model | N  | R²    | R² std | MAE    | MAE std | RMSE   | RMSE std |
+| ------- | --------- | ----- | -- | ----- | ------ | ------ | ------- | ------ | -------- |
+| RE      | raw_200D  | LGBM  | 10 | 0.930 | 0.010  | 39.962 | 1.826   | 71.167 | 4.919    |
+| RE      | pca_64    | LGBM  | 10 | 0.928 | 0.009  | 41.758 | 1.425   | 72.609 | 4.535    |
+| RE      | pca_32    | LGBM  | 10 | 0.927 | 0.009  | 42.330 | 1.345   | 72.945 | 4.204    |
+| RE      | raw_200D  | RF    | 10 | 0.925 | 0.010  | 43.421 | 1.702   | 74.086 | 4.833    |
+| RE      | pca_16    | LGBM  | 10 | 0.923 | 0.010  | 44.166 | 1.428   | 74.750 | 4.474    |
+| RE      | pca_32    | RF    | 10 | 0.920 | 0.009  | 45.414 | 1.589   | 76.532 | 4.218    |
+| RE      | pca_16    | RF    | 10 | 0.919 | 0.010  | 45.228 | 1.686   | 76.783 | 4.428    |
+| RE      | pca_8     | LGBM  | 10 | 0.916 | 0.009  | 45.864 | 1.744   | 78.080 | 4.226    |
+| RE      | pca_64    | RF    | 10 | 0.915 | 0.009  | 47.778 | 1.452   | 78.833 | 3.830    |
+| RE      | pca_8     | RF    | 10 | 0.913 | 0.009  | 46.796 | 1.461   | 79.416 | 4.091    |
 
 LightGBM tops the RE leaderboard; tree models (LightGBM, RF) dominate, MLP follows, and
 Linear is well behind.
@@ -437,27 +426,18 @@ Latest run: 4 families, `re_features: true`, N = 10 members. Sorted by R². (RE 
 are all-zero for RE-free compounds, so they leave LightGBM/Linear unchanged and only
 perturb RF/MLP within noise.)
 
-| Embedding | Model      |   R² (mean ± std) |          MAE (K) |        RMSE (K) |
-| --------- | ---------- | ----------------: | ---------------: | --------------: |
-| raw_200D  | **LGBM**   | **0.741 ± 0.022** | **79.313 ± 3.1** | **134.1 ± 4.6** |
-| raw_200D  | **RF**     | **0.738 ± 0.022** |     81.154 ± 3.8 |     134.0 ± 5.8 |
-| pca_32    | **LGBM**   | **0.736 ± 0.024** |       83.7 ± 2.6 |     137.1 ± 3.0 |
-| pca_64    | **LGBM**   | **0.731 ± 0.023** |       83.9 ± 2.6 |     138.2 ± 4.7 |
-| pca_32    | **RF**     | **0.728 ± 0.023** |       83.8 ± 2.8 |     137.6 ± 3.7 |
-| pca_16    | **LGBM**   | **0.722 ± 0.024** |       86.5 ± 2.9 |     137.9 ± 3.2 |
-| pca_16    | **RF**     | **0.724 ± 0.022** |       84.5 ± 3.0 |     138.2 ± 3.9 |
-| pca_64    | **RF**     | **0.718 ± 0.019** |       85.0 ± 2.6 |     139.5 ± 3.0 |
-| pca_8     | **LGBM**   | **0.680 ± 0.030** |       92.9 ± 3.7 |     146.0 ± 6.2 |
-| raw_200D  | **MLP**    | **0.630 ± 0.032** |      109.2 ± 4.4 |     157.6 ± 5.8 |
-| pca_16    | **MLP**    | **0.605 ± 0.021** |      114.5 ± 2.4 |     164.0 ± 4.3 |
-| pca_64    | **MLP**    | **0.539 ± 0.158** |     117.9 ± 11.4 |    171.9 ± 22.5 |
-| pca_8     | **MLP**    | **0.515 ± 0.023** |      130.4 ± 4.0 |     182.5 ± 4.5 |
-| raw_200D  | **Linear** | **0.388 ± 0.018** |      157.2 ± 2.1 |     205.8 ± 1.9 |
-| pca_64    | **Linear** | **0.387 ± 0.018** |      157.0 ± 2.4 |     206.0 ± 3.1 |
-| pca_32    | **Linear** | **0.381 ± 0.018** |      158.6 ± 2.5 |     206.6 ± 3.1 |
-| pca_16    | **Linear** | **0.370 ± 0.020** |      160.6 ± 2.5 |     209.3 ± 2.8 |
-| pca_8     | **Linear** | **0.334 ± 0.018** |      166.3 ± 2.8 |     215.0 ± 3.5 |
-
+| Dataset | Embedding | Model | N  | R²    | R² std | MAE    | MAE std | RMSE    | RMSE std |
+| ------- | --------- | ----- | -- | ----- | ------ | ------ | ------- | ------- | -------- |
+| RE-Free | raw_200D  | LGBM  | 10 | 0.751 | 0.010  | 78.708 | 2.254   | 131.092 | 5.147    |
+| RE-Free | raw_200D  | RF    | 10 | 0.745 | 0.008  | 80.645 | 1.773   | 132.528 | 4.119    |
+| RE-Free | pca_64    | LGBM  | 10 | 0.738 | 0.012  | 81.921 | 2.267   | 134.508 | 5.412    |
+| RE-Free | pca_32    | RF    | 10 | 0.734 | 0.010  | 83.344 | 1.612   | 135.357 | 4.116    |
+| RE-Free | pca_32    | LGBM  | 10 | 0.734 | 0.009  | 82.937 | 1.854   | 135.404 | 4.194    |
+| RE-Free | pca_16    | RF    | 10 | 0.727 | 0.010  | 84.274 | 2.046   | 137.080 | 4.230    |
+| RE-Free | pca_64    | RF    | 10 | 0.726 | 0.013  | 85.373 | 1.624   | 137.325 | 4.632    |
+| RE-Free | pca_16    | LGBM  | 10 | 0.724 | 0.011  | 85.177 | 2.069   | 137.965 | 4.858    |
+| RE-Free | pca_8     | RF    | 10 | 0.705 | 0.012  | 89.472 | 2.893   | 142.612 | 4.585    |
+| RE-Free | pca_8     | LGBM  | 10 | 0.693 | 0.014  | 92.806 | 2.540   | 145.477 | 4.698    |
 
 On the RE-Free dataset, LightGBM and Random Forest achieve the strongest performance, with comparable R² values of approximately 0.74. Overall, RE-Free is a more challenging prediction task than RE, resulting in consistently lower performance across all evaluated models.
 

@@ -1,0 +1,51 @@
+source,composition,Tc,reduced_formula,raw_source_flag,excel_reason
+MagneticMaterials_All,VS2,143.8,VS2,simulated,The paper does not contain this value
+MagneticMaterials_All,Co5Zr,773.15,ZrCo5,simulated,Not refered to in the paper
+MagneticMaterials_All,GaC0.5Fe3,788.0,Ga1Fe3C0.5,simulated,Not found
+MagneticMaterials_All,CoFeB,920.0,FeCoB,experimental,"Reference numbr, reference' unaccessible"
+MagneticMaterials_All,Ni50Mn35Sn15,187.0,Mn7Ni10Sn3,simulated,Not found
+MagneticMaterials_All,Cr2FeGe,748.0,Cr2FeGe,simulated,Can't open the source https://doi.org/10.1063/1.3619844
+MagneticMaterials_All,Ni50Mn35Sn15,350.0,Mn7Ni10Sn3,experimental,Not found
+MagneticMaterials_All,MnSe2,300.0,MnSe2,simulated,"not valid is aa mixed heterostructure, MnSe2 is only one part of it"
+MagneticMaterials_All,Cd0.75Ti0.25S,95.11,Ti0.25Cd0.75S1,simulated,"Energy difference in eV, no TC"
+MagneticMaterials_All,Cd0.75Ti0.25Se,0.4585,Ti0.25Cd0.75Se1,simulated,"Energy difference in eV, no TC"
+MagneticMaterials_All,Cd0.75Ti0.25Te,0.4616,Ti0.25Cd0.75Te1,simulated,"Energy difference in eV, no Tc"
+MagneticMaterials_All,Cr0.15Bi1.85Se3,20.0,Cr0.15Bi1.85Se3,simulated,Wrong concentration
+MagneticMaterials_All,Co0.75Fe0.25S2,120.0,Fe0.25Co0.75S2,simulated,Wrong material
+MagneticMaterials_All,Cu2OSeO3,60.0,Cu2SeO4,experimental,I don't see where this number comes from
+MagneticMaterials_All,Fe0.125Ti0.125Sn0.75O2,393.0,Ti0.125Fe0.125Sn0.75O2,simulated,Not a TC
+MagneticMaterials_All,FeCoB,750.0,FeCoB,simulated,"Reference numbr, reference' unaccessible"
+MagneticMaterials_All,MnAs0.9Sb0.1,318.0,Mn1Sb0.1As0.9,simulated,Not found
+MagneticMaterials_All,Cu2OSeO3,58.0,Cu2SeO4,simulated,I don't see where this number comes from
+MagneticMaterials_All,Ni50Mn35Sn15,310.0,Mn7Ni10Sn3,experimental,Not found
+MagneticMaterials_All,Ni50Mn35Sn15,334.0,Mn7Ni10Sn3,experimental,Not found
+MagneticMaterials_All,Zn0.99Ni0.01O,300.0,Zn0.99Ni0.01O1,simulated,"Reference not correct, paper is on BaSnO3 with different dopants"
+MagneticMaterials_All,Cu30Ni70,350.0,Cu3Ni7,experimental,Refers to another paper which is impossible to get
+MagneticMaterials_All,Cu30Ni70,297.15,Cu3Ni7,experimental,Refers to another paper which is impossible to get
+MagneticMaterials_All,Ni50Mn35Sn15,325.0,Mn7Ni10Sn3,experimental,Not found
+MagneticMaterials_All,Ni50.0Mn35.0Sn15.0,318.0,Mn7Ni10Sn3,experimental,Not found
+MagneticMaterials_All,Ga0.9375V0.0625N,350.0,V0.0625Ga0.9375N1,simulated,"no value mentioned only guessed, Tc > Troom"
+MagneticMaterials_All,VS2,72.0,VS2,experimental,The paper does not contain this value
+MagneticMaterials_All,VS2,10.0,VS2,experimental,The paper does not contain this value
+MagneticMaterials_All,FeCoCrZrB,325.0,ZrCrFeCoB,simulated,Cannot be checked wrong paper link
+MagneticMaterials_All,MnAs0.9Sb0.1,288.0,Mn1Sb0.1As0.9,experimental,Not found
+MagneticMaterials_All,VBO3,33.0,VBO3,simulated,not clear which system is menat
+MagneticMaterials_All,MnAs0.9Sb0.1,280.0,Mn1Sb0.1As0.9,experimental,Not found
+MagneticMaterials_All,ZnCr2Se4,115.0,Zn(CrSe2)2,simulated,"Number is Curie Weiss, wrong column"
+MagneticMaterials_All,Mn1.55Ti0.55Fe0.9O4,317.15,Ti0.55Mn1.55Fe0.9O4,simulated,"not TC, temperaturefor hypothermia treatment"
+MagneticMaterials_All,Ni7Cu3,293.7,Cu3Ni7,simulated,Refers to another paper which is impossible to get
+MagneticMaterials_All,Mn(II)@ZnO,860 K,MnZnI2O,simulated,Formula interpreted wrongly? Mn(II)ZnO?
+MagneticMaterials_All,Zn14V2O16,300 K,VZn7O8,simulated,Skip note really calculted
+MagneticMaterials_All,Zn14V2O16,300 K,VZn7O8,simulated,Skip note really calculted
+MagneticMaterials_All,Mn1.96SbBi0.04,553K,Mn1.96Bi0.04Sb1,simulated,Not found the Tc value
+MagneticMaterials_All,Mn1.94SbBi0.06,553K,Mn1.94Bi0.06Sb1,simulated,Not found the Tc value
+MagneticMaterials_All,MnCo0.25Sb,190 K,Mn1Co0.25Sb1,simulated,Not found
+MagneticMaterials_All,Ni2.20Mn0.80Ga,200 K,Mn0.8Ga1Ni2.2,simulated,Not found the Tc value
+MagneticMaterials_All,Ni0.23Fe2.77O4,850 K,Fe2.77Ni0.23O4,simulated,Number not in the paper
+MagneticMaterials_All,Zn0.75Cr0.25Te,300 K,Zn0.75Cr0.25Te1,simulated,"No Tc given, the 300K belong to similar system from literature"
+MagneticMaterials_All,MnCo0.25Sb,325 K,Mn1Co0.25Sb1,simulated,Not found
+MagneticMaterials_All,Ni50Mn35Sn15,187 K,Mn7Ni10Sn3,experimental,Not found
+DS1+DS2,Co0.75Fe0.25S2,140.7,Fe0.25Co0.75S2,experimental,Wrong material
+DS1+DS2,Cr2Se4Zn,129.5,Zn(CrSe2)2,experimental,"Number is Curie Weiss, wrong column"
+DS1+DS2,Cu2O4Se,58.0,Cu2SeO4,experimental,I don't see where this number comes from
+DS1+DS2,B1O3V1,32.5,VBO3,experimental,not clear which system is menat

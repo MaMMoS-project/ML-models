@@ -582,6 +582,43 @@ def _get_or_fit_pca(df: pd.DataFrame, ds_name: str, n_components: int) -> PCA:
     return pca
 
 
+def _pca_passthrough(pca: PCA, n_passthrough: int) -> PCA:
+    """Fold an embedding-only PCA + a feature pass-through into ONE fitted PCA.
+
+    With ``re_features: true`` the model is trained on ``[PCA(embedding) | feats]``.
+    To keep a single self-contained ONNX graph whose input is the RAW
+    ``[embedding | feats]`` vector (so ``predict_ms`` feeds it unchanged), we build one
+    PCA acting on the full input:
+
+        mean       = [pca.mean_                     | 0_{n_passthrough}]
+        components = [[pca.components_, 0        ],
+                      [0,              I_{n_pass} ]]
+
+    Then ``(x - mean) @ components.T`` == ``[PCA(emb) | feats]`` exactly: the first
+    ``n_components`` rows project the embedding block, the last ``n_passthrough`` rows
+    copy the feature block through. Because the result is a genuine fitted ``PCA``, both
+    the sklearn Pipeline export and the torch ``_MLPWithPreprocessing`` wrapper (which
+    already computes ``(x - mean) @ components.T``) serialise it with no further changes.
+    """
+    n_comp, n_emb = pca.components_.shape
+    total_in  = n_emb + n_passthrough
+    total_out = n_comp + n_passthrough
+    new = PCA(n_components=total_out)
+    new.mean_ = np.concatenate(
+        [np.asarray(pca.mean_, dtype=np.float64), np.zeros(n_passthrough, dtype=np.float64)]
+    )
+    comp = np.zeros((total_out, total_in), dtype=np.float64)
+    comp[:n_comp, :n_emb] = pca.components_
+    comp[n_comp:, n_emb:] = np.eye(n_passthrough, dtype=np.float64)
+    new.components_ = comp
+    new.whiten = False
+    new.n_components_  = total_out
+    new.n_features_in_ = total_in
+    # Present for completeness; unused by the transform when whiten=False.
+    new.explained_variance_ = np.ones(total_out, dtype=np.float64)
+    return new
+
+
 def _export_sklearn_onnx(
     model: object,
     scaler: Optional[StandardScaler],
@@ -831,24 +868,29 @@ def train_one_dataset(ds: Dict, figures_dir: Path) -> List[Dict]:
                         MAE_Am=m.get("MAE_Am"), MedRelErr=m.get("MedRelErr"),
                     ))
                     # --- ONNX export ---------------------------------------
-                    # With RE features the model takes [embedding | 7 RE feats], so the
-                    # deployed ONNX input grows to raw_dim + 7 and PCA is NOT applied
-                    # in-graph. Only raw_200D is wired (PCA variants would need a
-                    # ColumnTransformer to PCA the embedding but pass the 7 feats
-                    # through). A "_refeats" marker keeps the two contracts' files apart.
+                    # The deployed ONNX always consumes the RAW model input and applies
+                    # every preprocessing step in-graph:
+                    #   re_features off -> raw_dim-D embedding (PCA, if any, applied in-graph)
+                    #   re_features on  -> [raw_dim-D embedding | n_re RE feats] (207-D)
+                    # For a PCA variant with RE features the model was trained on
+                    # [PCA(emb) | feats]; _pca_passthrough folds the embedding-only PCA and
+                    # the feature pass-through into one equivalent PCA over the full input,
+                    # so both exporters stay unchanged. A "_refeats" marker keeps the
+                    # embedding-only and RE-feature file names apart.
                     n_re = len(RE_FEATURE_NAMES)
                     skip_reason = None
-                    if USE_RE_FEATURES and emb_label != "raw_200D":
-                        skip_reason = ("RE features: only raw_200D is ONNX-exportable "
-                                       "(PCA variants need a ColumnTransformer)")
-                    elif model_label == "LGBM" and not LGBM_ONNX_AVAILABLE:
+                    if model_label == "LGBM" and not LGBM_ONNX_AVAILABLE:
                         skip_reason = "LightGBM needs onnxmltools (install to enable)"
                     if skip_reason:
                         print(f"    ONNX export skipped ({skip_reason})")
                     else:
                         refeats_marker = "_refeats" if USE_RE_FEATURES else ""
-                        export_pca = None if USE_RE_FEATURES else pca
-                        export_dim = raw_dim + (n_re if USE_RE_FEATURES else 0)
+                        if USE_RE_FEATURES:
+                            export_dim = raw_dim + n_re
+                            export_pca = _pca_passthrough(pca, n_re) if pca is not None else None
+                        else:
+                            export_dim = raw_dim
+                            export_pca = pca
                         onnx_path = (ONNX_DIR /
                                      f"{run_name}_{model_label.lower()}{refeats_marker}{suffix}.onnx")
                         try:
