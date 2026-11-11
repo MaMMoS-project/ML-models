@@ -1,5 +1,16 @@
 """
 Linear Models Training: LASSO, RIDGE, and Linear Regression
+
+Feature scaling is configurable with --scaler {standard,none} (default: standard).
+With 'standard', all three models are wrapped in a scikit-learn Pipeline with a
+StandardScaler in front; with 'none' the pipeline step is a pass-through.
+The features live on very different scales (log1p(Ms_sim) ~ 11-14.5, embedding
+components ~ 0, rare-earth features 0-16), and the L1/L2 penalties of LASSO and RIDGE
+act on the coefficient size, so without standardisation the regularisation is uneven
+across features. Because the scaler is part of the pipeline it is re-fitted on the
+training part of every split (grid search, single split and each CV fold), so no
+information from held-out data leaks into it. The delta-learning reconstruction is
+unaffected: it reads log1p(Ms_sim) from the raw, unscaled X outside the pipeline.
 """
 import os
 import warnings
@@ -9,12 +20,28 @@ from pathlib import Path
 from typing import Dict, List, Optional
 from sklearn.linear_model import Lasso, Ridge, LinearRegression
 from sklearn.model_selection import GridSearchCV
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 from sklearn.exceptions import ConvergenceWarning
 from base_trainer import DataLoader, ModelEvaluator, split_data, cross_val_report
 
 warnings.filterwarnings("ignore", category=ConvergenceWarning)
 
 _N_JOBS = int(os.environ.get('SLURM_CPUS_PER_TASK', -1))
+
+
+def _scaled(estimator, scaler: str = 'standard') -> Pipeline:
+    """scaler -> estimator. With scaler='standard' a StandardScaler is used (constant
+    columns, e.g. the all-zero rare-earth features of the RE-free split, are left
+    unchanged by it); with scaler='none' the step is a pass-through, so the model
+    sees the raw features."""
+    step = StandardScaler() if scaler == 'standard' else 'passthrough'
+    return Pipeline([('scaler', step), ('model', estimator)])
+
+
+def _strip_prefix(params: dict) -> dict:
+    """{'model__alpha': 1} -> {'alpha': 1}, so logs and info files read as before."""
+    return {k.split('__', 1)[-1]: v for k, v in params.items()}
 
 
 class LinearModelsTrainer:
@@ -51,6 +78,8 @@ class LinearModelsTrainer:
 
         X, y = self.loader.prepare_dataset(df, dataset_type, use_embedding, embedding_type)
         X_train, X_test, y_train, y_test = split_data(X, y)
+        self._scaler = getattr(self.loader, 'scaler', 'standard')
+        print(f"Feature scaling: {self._scaler}")
 
         print(f"Training samples: {len(X_train)}")
         print(f"Test samples: {len(X_test)}")
@@ -66,7 +95,7 @@ class LinearModelsTrainer:
             elif model_type == 'ridge':
                 model, best_params = self._train_ridge(X_train, y_train)
             else:
-                model = LinearRegression()
+                model = _scaled(LinearRegression(), self._scaler)
                 model.fit(X_train, y_train)
                 best_params = {}
 
@@ -115,18 +144,18 @@ class LinearModelsTrainer:
         return results
 
     def _train_lasso(self, X_train, y_train):
-        param_grid = {'alpha': [0.0001, 0.001, 0.01, 0.1, 1, 10, 100]}
-        lasso = Lasso(max_iter=100000, tol=1e-4, selection='random')
+        param_grid = {'model__alpha': [0.0001, 0.001, 0.01, 0.1, 1, 10, 100]}
+        lasso = _scaled(Lasso(max_iter=100000, tol=1e-4, selection='random'), self._scaler)
         grid_search = GridSearchCV(lasso, param_grid, cv=5, scoring='r2', n_jobs=_N_JOBS)
         grid_search.fit(X_train, y_train)
-        return grid_search.best_estimator_, grid_search.best_params_
+        return grid_search.best_estimator_, _strip_prefix(grid_search.best_params_)
 
     def _train_ridge(self, X_train, y_train):
-        param_grid = {'alpha': [0.0001, 0.001, 0.01, 0.1, 1, 10, 100]}
-        ridge = Ridge(max_iter=1000)
+        param_grid = {'model__alpha': [0.0001, 0.001, 0.01, 0.1, 1, 10, 100]}
+        ridge = _scaled(Ridge(max_iter=1000), self._scaler)
         grid_search = GridSearchCV(ridge, param_grid, cv=5, scoring='r2', n_jobs=_N_JOBS)
         grid_search.fit(X_train, y_train)
-        return grid_search.best_estimator_, grid_search.best_params_
+        return grid_search.best_estimator_, _strip_prefix(grid_search.best_params_)
 
 
 def main():

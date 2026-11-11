@@ -477,6 +477,85 @@ class MsAugmenter:
         print(f"  {name}: n_orig={len(orig)}, n_augm={len(augm)}, "
               f"KS={ks_stat:.4f}, p={p_value:.4f} → {verdict}")
 
+    @staticmethod
+    def subsample_kolmogorov_smirnov_test(
+        data1: np.ndarray,
+        data2: np.ndarray,
+        k: int = 500,
+        B: int = 200,
+        alpha: float = 0.05,
+        aggregation: str = "median",
+        random_state: int | None = None,
+    ) -> dict:
+        """Two-sample KS test robust to large sample sizes via subsampling.
+
+        Ported from the sister experimental-simulation-tc project. A plain two-sample KS
+        test on the large augmented sets (tens of thousands of rows) is over-powered and
+        rejects H0 on negligible differences; drawing B subsamples of size k from each
+        sample and aggregating the per-subsample p-values gives an honest verdict.
+
+        Returns a dict with: d_full (KS statistic on the full samples, an effect size),
+        p_full (naive p — meaningless for large n), p_values (the B subsample p-values),
+        p_combined (aggregated p) and reject (bool at alpha). aggregation is "median"
+        (default, robust), "fisher" (powerful) or "tippett" (min p, conservative).
+        """
+        from scipy import stats as _stats
+        rng = np.random.default_rng(random_state)
+        s1 = np.asarray(data1)
+        s2 = np.asarray(data2)
+
+        # Full-sample D as effect size (ignore p_full for large n)
+        d_full, p_full = _stats.ks_2samp(s1, s2)
+
+        # Subsample size cannot exceed either sample (drawn without replacement)
+        k = int(min(k, len(s1), len(s2)))
+
+        p_values = np.empty(B)
+        for i in range(B):
+            sub1 = rng.choice(s1, size=k, replace=False)
+            sub2 = rng.choice(s2, size=k, replace=False)
+            _, p_values[i] = _stats.ks_2samp(sub1, sub2)
+
+        if aggregation == "median":
+            p_combined = float(np.median(p_values))
+        elif aggregation == "fisher":
+            stat = -2 * np.sum(np.log(np.clip(p_values, 1e-300, 1)))
+            p_combined = float(_stats.chi2.sf(stat, df=2 * B))
+        elif aggregation == "tippett":
+            p_combined = float(np.min(p_values))
+        else:
+            raise ValueError(f"Unknown aggregation: {aggregation!r}")
+
+        return {
+            "d_full":     d_full,
+            "p_full":     p_full,
+            "p_values":   p_values,
+            "p_combined": p_combined,
+            "reject":     p_combined < alpha,
+        }
+
+    @staticmethod
+    def _augmentation_stat(orig: np.ndarray, augm: np.ndarray, name: str):
+        """Robust augmentation-quality report (log-space deltas, original vs augmented).
+
+        Reports the subsample-aggregated KS p-value (H0 = same distribution; a large p
+        means the augmentation preserved the ΔMs distribution) together with the full-sample
+        KS D as an effect size, and the Wasserstein (earth-mover) distance — raw and
+        normalized by the standard deviation of the original deltas — as a scale-aware
+        complement that does not over-reject on large samples.
+        """
+        from scipy.stats import wasserstein_distance
+        if len(orig) == 0 or len(augm) == 0:
+            print(f"  {name}: insufficient data — skipping")
+            return
+        res = MsAugmenter.subsample_kolmogorov_smirnov_test(orig, augm, random_state=0)
+        w = float(wasserstein_distance(orig, augm))
+        nw = w / (float(np.std(orig)) + 1e-12)
+        verdict = "Reject H0" if res["reject"] else "Fail to reject H0"
+        print(f"  {name}: n_orig={len(orig)}, n_augm={len(augm)} | "
+              f"KS D(full)={res['d_full']:.4f}, subsample p(median)={res['p_combined']:.3f} "
+              f"→ {verdict} | Wasserstein={w:.4f} (normalized {nw:.4f})")
+
     def perform_distribution_tests(self):
         """KS test: RE vs RE-free log-delta distributions (justifies separate models)."""
         from scipy import stats
@@ -498,7 +577,7 @@ class MsAugmenter:
     def validate_augmentation(self):
         """KS tests comparing original pairs vs augmented datasets for each phase."""
         print("\n" + "="*60)
-        print("AUGMENTATION VALIDATION (KS tests on log-space deltas)")
+        print("AUGMENTATION VALIDATION (subsampled KS + Wasserstein on log-space deltas)")
         print("="*60)
         for phase, files in [
             ("Phase 1 (sim→exp)", [
@@ -516,7 +595,7 @@ class MsAugmenter:
             for name, orig_file, augm_file in files:
                 orig = self._load_log_deltas(self.output_dir / orig_file)
                 augm = self._load_log_deltas(self.output_dir / augm_file)
-                self._ks_test(orig, augm, name)
+                self._augmentation_stat(orig, augm, name)
 
     # ── Summary ───────────────────────────────────────────────────────────
 

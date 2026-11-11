@@ -15,6 +15,16 @@ from sklearn.base import clone
 from sklearn.model_selection import train_test_split, KFold, RepeatedKFold
 from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
 from typing import Tuple, Dict, Optional
+import warnings
+
+# The tree models (LightGBM / RandomForest) are fitted on a named DataFrame but
+# predicted on plain numpy arrays during CV / evaluation. sklearn then emits
+# "X does not have valid feature names, but <Est> was fitted with feature names"
+# on every predict call (thousands of lines). It is purely cosmetic here -- the
+# feature column ORDER is identical between fit and predict, so matching by
+# position is correct -- so silence this one message process-wide.
+warnings.filterwarnings(
+    "ignore", message=".*does not have valid feature names.*")
 
 sns.set_style("whitegrid")
 
@@ -116,17 +126,47 @@ def parse_cv_folds(default: int = 0) -> int:
     return args.cv if args.cv and args.cv >= 2 else 0
 
 
+SCALER_CHOICES = ('standard', 'none')
+
+
+def parse_scaler(default: str = 'standard') -> str:
+    """Parse --scaler {standard,none} from command line arguments.
+
+    'standard' (default): the scale-sensitive model families standardise their
+    input features (zero mean, unit variance, statistics from the training part of
+    each split only) -- LASSO / Ridge / linear regression through a StandardScaler
+    pipeline, the MLP through an input-normalisation layer.
+    'none': features are passed to these models unscaled (the behaviour before the
+    scaler was introduced).
+    Random forest, LightGBM and symbolic regression never scale: tree models are
+    invariant to monotone feature transformations.
+    """
+    import argparse
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument('--scaler', choices=SCALER_CHOICES, default=default,
+                        help='Feature scaling for linear models and the MLP. '
+                             'Default: %(default)s.')
+    args, _ = parser.parse_known_args()
+    return args.scaler
+
+
 class DataLoader:
     """Load and prepare Ms datasets for training."""
 
     def __init__(self, ms_threshold: Optional[float] = 50_000,
                  delta_learning: bool = False, use_re_features: bool = False,
-                 cv_folds: int = 0):
+                 cv_folds: int = 0, scaler: Optional[str] = None):
         project_root = Path(__file__).parent.parent.parent
         self.csv_path = project_root / "data" / "merged_df_python.csv"
         self.ms_threshold = ms_threshold
         self.delta_learning = delta_learning
         self.use_re_features = use_re_features
+        # Feature scaling for the scale-sensitive models (linear, MLP): 'standard'
+        # or 'none'. Taken from --scaler on the command line unless given explicitly,
+        # so every entry script honours the flag without further plumbing.
+        self.scaler = scaler if scaler is not None else parse_scaler()
+        if self.scaler not in SCALER_CHOICES:
+            raise ValueError(f"scaler must be one of {SCALER_CHOICES}, got {self.scaler!r}")
         # If >= 2, trainers report K-fold CV metrics instead of a single split.
         self.cv_folds = cv_folds
         # Column index of log1p(Ms_sim) within X, recorded by prepare_dataset so

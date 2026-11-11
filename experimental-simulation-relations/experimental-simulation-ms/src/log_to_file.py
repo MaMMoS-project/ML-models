@@ -1,43 +1,55 @@
 import os
 import sys
-from contextlib import redirect_stdout
 
 
-class Tee:
-    """A stdout-like stream that writes to several underlying streams at once,
-    flushing after every write so the log file is updated continuously."""
+class _Tee:
+    """Forward writes to several streams at once, flushing after each write.
+
+    Used so stdout is shown live in the terminal / SLURM .out file AND written
+    to the log file at the same time, line by line, rather than buffered until
+    the decorated function returns.
+    """
 
     def __init__(self, *streams):
         self.streams = streams
 
     def write(self, data):
-        for stream in self.streams:
-            stream.write(data)
-            stream.flush()
+        if isinstance(data, bytes):
+            data = data.decode("utf-8", errors="replace")
+
+        for s in self.streams:
+            if not s.closed:
+                s.write(data)
+                s.flush()
+
         return len(data)
 
     def flush(self):
-        for stream in self.streams:
-            stream.flush()
+        for s in self.streams:
+            if not s.closed:
+                s.flush()
 
 
 def log_output(file_path):
     def decorator(func):
         def wrapper(*args, **kwargs):
-            # make sure the target directory exists
-            directory = os.path.dirname(file_path)
-            if directory:
-                os.makedirs(directory, exist_ok=True)
+            parent = os.path.dirname(file_path)
+            if parent:
+                os.makedirs(parent, exist_ok=True)
 
-            # Truncate per run ("w") so each run starts a fresh log instead of
-            # appending onto previous runs; line-buffered (buffering=1) so each
-            # line is flushed to disk continuously. Each log file has a single
-            # decorated entry point, so per-run truncation is safe.
+            original_stdout = sys.stdout
+
+            # "w" truncates the log at the start of every run (one run per file);
+            # buffering=1 makes the file line-buffered for continuous output.
             with open(file_path, "w", buffering=1) as f:
-                tee = Tee(sys.stdout, f)
-                with redirect_stdout(tee):
+                sys.stdout = _Tee(original_stdout, f)
+
+                try:
                     result = func(*args, **kwargs)
+                finally:
+                    sys.stdout = original_stdout
 
             return result
+
         return wrapper
     return decorator

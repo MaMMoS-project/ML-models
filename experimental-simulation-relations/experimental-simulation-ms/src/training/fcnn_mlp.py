@@ -35,10 +35,21 @@ class FCNNTrainer:
 if TORCH_AVAILABLE:
 
     class MLP(nn.Module):
-        """Multi-layer perceptron for regression."""
+        """Multi-layer perceptron for regression.
+
+        The inputs are standardised inside the network: forward() computes
+        (x - x_mean) / x_scale before the first layer. The two statistics are
+        registered buffers, set from the TRAINING data by set_input_scaling(), so
+        they are stored in the checkpoint together with the weights and every
+        caller keeps passing raw, unscaled features. Without this the network sees
+        log1p(Ms_sim) ~ 13 next to embedding components ~ 0, which makes
+        gradient-based training badly conditioned.
+        """
 
         def __init__(self, input_dim: int, hidden_dims: list, dropout: float = 0.0):
             super(MLP, self).__init__()
+            self.register_buffer('x_mean', torch.zeros(input_dim))
+            self.register_buffer('x_scale', torch.ones(input_dim))
             layers = []
             prev_dim = input_dim
             for hidden_dim in hidden_dims:
@@ -50,8 +61,21 @@ if TORCH_AVAILABLE:
             layers.append(nn.Linear(prev_dim, 1))
             self.network = nn.Sequential(*layers)
 
+        def set_input_scaling(self, X_train: np.ndarray):
+            """Take mean / standard deviation from the training features.
+            Constant columns get scale 1 (as in sklearn's StandardScaler)."""
+            mean = X_train.mean(axis=0)
+            scale = X_train.std(axis=0)
+            scale[scale < 1e-12] = 1.0
+            self.x_mean.copy_(torch.as_tensor(mean, dtype=self.x_mean.dtype))
+            self.x_scale.copy_(torch.as_tensor(scale, dtype=self.x_scale.dtype))
+
         def forward(self, x):
-            return self.network(x).squeeze()
+            # squeeze(-1) collapses the trailing [N, 1] -> [N] output dimension only.
+            # Plain .squeeze() also removed the batch dim for a size-1 final batch
+            # ([1, 1] -> [] scalar), which mismatched the [1] target and triggered
+            # torch's "target size ... different to input size" broadcasting warning.
+            return self.network((x - self.x_mean) / self.x_scale).squeeze(-1)
 
     class FCNNTrainer:
         """Train and evaluate FCNN/MLP models."""
@@ -91,7 +115,14 @@ if TORCH_AVAILABLE:
                 TensorDataset(torch.FloatTensor(X_val), torch.FloatTensor(y_val)),
                 batch_size=batch_size, shuffle=False, pin_memory=pin,
             )
-            model = MLP(input_dim=X_tr.shape[1], hidden_dims=hidden_dims).to(self.device)
+            model = MLP(input_dim=X_tr.shape[1], hidden_dims=hidden_dims)
+            # Input standardisation from the training part only (never from the
+            # validation / held-out data); see MLP.set_input_scaling. With
+            # --scaler none the buffers keep their identity defaults (mean 0,
+            # scale 1), i.e. the network sees the raw features.
+            if getattr(self.loader, 'scaler', 'standard') == 'standard':
+                model.set_input_scaling(np.asarray(X_tr, dtype=float))
+            model = model.to(self.device)
             criterion = nn.MSELoss()
             optimizer = optim.Adam(model.parameters(), lr=learning_rate)
             scheduler = optim.lr_scheduler.ReduceLROnPlateau(
@@ -188,6 +219,7 @@ if TORCH_AVAILABLE:
             print(f"Feature dimensions: {X_train.shape[1]}")
             print(f"Hidden dimensions: {hidden_dims} (auto)")
             print(f"Batch size: {batch_size} (auto)")
+            print(f"Feature scaling: {getattr(self.loader, 'scaler', 'standard')}")
 
             print("\nTraining in log1p space...")
             best_model_path = self.output_dir / f"{dataset_name}_MLP_best.pt"
