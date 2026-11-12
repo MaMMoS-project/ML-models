@@ -386,7 +386,6 @@ Latest run: 4 families, re_features: true, N = 10 members.
 | All     | pca_16    | LGBM  | 10 | 0.580 | 0.072  | 103.176 | 6.478   | 172.620 | 16.112   |
 | All     | pca_8     | LGBM  | 10 | 0.574 | 0.066  | 105.021 | 6.306   | 173.899 | 14.618   |
 
-
 ### RE Materials — all models × embeddings (ensemble mean ± std, with RE features)
 
 Latest run: 4 families, re_features: true, N = 10 members. 
