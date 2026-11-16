@@ -22,8 +22,13 @@ Ms is the simulated (DFT) saturation magnetisation in A/m.
 Raw SIMULATED sources (in data/) and their conversion to A/m:
     oqmd_stable.csv           csv      'composition'  'Ms' [T, = mu0*M]     / MU_0
     Bhandari_XII_sim.csv      sep=';'  'material'     'Ms (A/m)'            (already A/m)
-    mp_fm_dedup_sim_data.csv  csv      'formula_pretty'
+    MP_energy_filtered.csv    csv      'formula_pretty'
                               'total_magnetization_normalized_vol' [mu_B/A^3] * MU_B / A^3
+                              (replaces the former mp_fm_dedup_sim_data.csv; it lists several FM
+                               structures per compound at different formation energies, so we keep
+                               only each compound's GROUND STATE -- the row(s) whose
+                               formation_energy_per_atom equals compound_min_formation_energy_per_atom
+                               -- before the usual reduced-formula median pooling.)
 
 Usage:
     python -m src.preprocess_ms_data
@@ -135,14 +140,26 @@ def load_bhandari_xii(d: Path) -> pd.DataFrame:    # already A/m
     return _frame(df["material"], df["Ms (A/m)"])
 
 
-def load_mp_sim(d: Path) -> pd.DataFrame:          # mu_B / Angstrom^3 -> A/m
-    df = pd.read_csv(d / "mp_fm_dedup_sim_data.csv",
-                     usecols=["formula_pretty", "total_magnetization_normalized_vol"])
-    ms = df["total_magnetization_normalized_vol"] * MU_B / (ANGSTROM ** 3)
+def load_energy_filtered(d: Path) -> pd.DataFrame:  # mu_B / Angstrom^3 -> A/m
+    """Ground-state FM magnetisation from MP_energy_filtered.csv (replaces mp_fm_dedup_sim_data.csv).
+
+    The file lists several FM structures per compound at different formation energies, with each
+    compound's minimum formation energy in ``compound_min_formation_energy_per_atom``. We keep only
+    the ground-state row(s) -- those AT that minimum energy -- and take their magnetisation; any
+    ties at the minimum are pooled by the downstream reduced-formula median like every other source.
+    """
+    df = pd.read_csv(d / "MP_energy_filtered.csv",
+                     usecols=["formula_pretty", "formation_energy_per_atom",
+                              "compound_min_formation_energy_per_atom",
+                              "total_magnetization_normalized_vol"])
+    at_min = np.isclose(df["formation_energy_per_atom"],
+                        df["compound_min_formation_energy_per_atom"])
+    df = df[at_min]
+    ms = df["total_magnetization_normalized_vol"].abs() * MU_B / (ANGSTROM ** 3)
     return _frame(df["formula_pretty"], ms)
 
 
-SIM_LOADERS = [load_oqmd, load_bhandari_xii, load_mp_sim]
+SIM_LOADERS = [load_oqmd, load_bhandari_xii, load_energy_filtered]
 
 
 # ---------------------------------------------------------------------------
@@ -237,7 +254,7 @@ def main() -> None:
               f"garnets / hexaferrites).")
         print(f"  !! CAREFUL: the dataset MAY STILL CONTAIN UNKNOWN ferrimagnets — "
               f"composition cannot identify ferrimagnetism in general.")
-    print(f"  wrote 4 files to {out_dir}/")
+    print(f"  wrote 3 files to {out_dir}/")
 
 
 if __name__ == "__main__":
