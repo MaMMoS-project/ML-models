@@ -223,6 +223,10 @@ over N = 10 splits):
 | RE-Free | raw_200D  | LGBM  | 10 | 0.757 | 0.004  | 0.288 | 0.002   | 0.391 | 0.004    | 76169.297 | 0.206     |
 | All     | raw_200D  | LGBM  | 10 | 0.745 | 0.004  | 0.299 | 0.002   | 0.402 | 0.003    | 77125.724 | 0.215     |
 
+All values are based on **10 runs (N = 10)**.
+
+**Best overall:** RE achieves the highest R² and lowest MAE, while RE-Free achieves the lowest RMSE.
+
 > **MLP is the strongest family on every dataset** and is the deployed best, ONNX-exported
 > directly (`raw_200D` MLP for All, `pca_64` MLP for RE and RE-Free) — for the PCA variants the
 > projection is folded into the graph (see `_pca_passthrough`). `raw_200D` MLP is statistically
@@ -234,13 +238,13 @@ over N = 10 splits):
 
 ### Results — All materials
 
-| Dataset | Embedding | Model | N  | R²    | R²_std | MAE   | MAE_std | RMSE  | RMSE_std | MAE_Am     | MedRelErr |
+| Dataset | Embedding | Model | N  | R²    | R² std | MAE   | MAE std | RMSE  | RMSE std | MAE_Am     | MedRelErr |
 | ------- | --------- | ----- | -- | ----- | ------ | ----- | ------- | ----- | -------- | ---------- | --------- |
 | All     | raw_200D  | LGBM  | 10 | 0.745 | 0.004  | 0.299 | 0.002   | 0.402 | 0.003    | 77125.724  | 0.215     |
 | All     | pca_64    | LGBM  | 10 | 0.714 | 0.005  | 0.322 | 0.003   | 0.426 | 0.004    | 85316.189  | 0.239     |
 | All     | pca_32    | LGBM  | 10 | 0.712 | 0.005  | 0.325 | 0.003   | 0.427 | 0.003    | 85756.694  | 0.241     |
 | All     | raw_200D  | RF    | 10 | 0.710 | 0.004  | 0.321 | 0.003   | 0.429 | 0.004    | 83450.649  | 0.233     |
-| All     | pca_16    | LGBM  | 10 | 0.690 | 0.005  | 0.339 | 0.003   | 0.444 | 0.003    | 89521.586  | 0.253     |
+| All     | pca_16    | LGBM  | 10 | 0.690 | 0.005  | 0.339 | 0.003   | 0.444 | 0.003    | 89521.574  | 0.253     |
 | All     | pca_32    | RF    | 10 | 0.683 | 0.004  | 0.345 | 0.003   | 0.448 | 0.003    | 93009.845  | 0.258     |
 | All     | pca_16    | RF    | 10 | 0.678 | 0.003  | 0.347 | 0.002   | 0.452 | 0.003    | 93411.367  | 0.260     |
 | All     | pca_64    | RF    | 10 | 0.665 | 0.005  | 0.352 | 0.003   | 0.461 | 0.004    | 93727.723  | 0.262     |
@@ -249,23 +253,22 @@ over N = 10 splits):
 
 ### Results — RE materials
 
-| Dataset | Embedding | Model | N  | R²    | R²_std | MAE   | MAE_std | RMSE  | RMSE_std | MAE_Am     | MedRelErr |
+| Dataset | Embedding | Model | N  | R²    | R² std | MAE   | MAE std | RMSE  | RMSE std | MAE_Am     | MedRelErr |
 | ------- | --------- | ----- | -- | ----- | ------ | ----- | ------- | ----- | -------- | ---------- | --------- |
 | RE      | raw_200D  | LGBM  | 10 | 0.760 | 0.008  | 0.283 | 0.005   | 0.392 | 0.008    | 70575.461  | 0.196     |
 | RE      | pca_64    | LGBM  | 10 | 0.734 | 0.008  | 0.303 | 0.005   | 0.412 | 0.007    | 76412.566  | 0.216     |
-| RE      | pca_32    | LGBM  | 10 | 0.724 | 0.007  | 0.313 | 0.005   | 0.420 | 0.006    | 78768.175  | 0.229     |
+| RE      | pca_32    | LGBM  | 10 | 0.724 | 0.007  | 0.313 | 0.005   | 0.420 | 0.006    | 78768.174  | 0.229     |
 | RE      | raw_200D  | RF    | 10 | 0.700 | 0.008  | 0.328 | 0.005   | 0.438 | 0.008    | 82088.333  | 0.241     |
 | RE      | pca_16    | LGBM  | 10 | 0.682 | 0.006  | 0.343 | 0.005   | 0.451 | 0.006    | 86048.682  | 0.257     |
-| RE      | pca_32    | RF    | 10 | 0.670 | 0.008  | 0.355 | 0.005   | 0.459 | 0.007    | 90263.846  | 0.270     |
+| RE      | pca_32    | RF    | 10 | 0.670 | 0.008  | 0.355 | 0.005   | 0.459 | 0.007    | 90263.847  | 0.270     |
 | RE      | pca_16    | RF    | 10 | 0.662 | 0.007  | 0.358 | 0.005   | 0.465 | 0.006    | 90111.545  | 0.271     |
 | RE      | pca_64    | RF    | 10 | 0.661 | 0.010  | 0.354 | 0.006   | 0.465 | 0.007    | 89345.856  | 0.263     |
 | RE      | pca_8     | RF    | 10 | 0.574 | 0.008  | 0.400 | 0.005   | 0.522 | 0.006    | 102600.148 | 0.298     |
 | RE      | pca_8     | LGBM  | 10 | 0.572 | 0.008  | 0.406 | 0.005   | 0.523 | 0.007    | 104517.387 | 0.308     |
 
-
 ### Results — RE-Free materials
 
-| Dataset | Embedding | Model | N  | R²    | R²_std | MAE   | MAE_std | RMSE  | RMSE_std | MAE_Am     | MedRelErr |
+| Dataset | Embedding | Model | N  | R²    | R² std | MAE   | MAE std | RMSE  | RMSE std | MAE_Am     | MedRelErr |
 | ------- | --------- | ----- | -- | ----- | ------ | ----- | ------- | ----- | -------- | ---------- | --------- |
 | RE-Free | raw_200D  | LGBM  | 10 | 0.757 | 0.004  | 0.288 | 0.002   | 0.391 | 0.004    | 76169.297  | 0.206     |
 | RE-Free | raw_200D  | RF    | 10 | 0.728 | 0.004  | 0.309 | 0.003   | 0.413 | 0.004    | 82883.156  | 0.223     |
@@ -277,4 +280,3 @@ over N = 10 splits):
 | RE-Free | pca_64    | RF    | 10 | 0.676 | 0.004  | 0.346 | 0.003   | 0.451 | 0.004    | 95417.842  | 0.258     |
 | RE-Free | pca_8     | RF    | 10 | 0.593 | 0.007  | 0.389 | 0.005   | 0.506 | 0.006    | 108853.946 | 0.291     |
 | RE-Free | pca_8     | LGBM  | 10 | 0.584 | 0.007  | 0.398 | 0.004   | 0.511 | 0.006    | 111015.387 | 0.302     |
-
