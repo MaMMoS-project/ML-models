@@ -550,14 +550,37 @@ models use **no augmentation** and **no embedding** (see the note below).
 
 | Dataset       | Best model     | Embedding | R²    | RMSE [K] | MAE [K] |
 |---------------|----------------|-----------|-------|----------|---------|
-| All-Pairs     | Random Forest  | none      | 0.847 | 91.7     | 35.3    |
-| RE-Pairs      | Ridge (Linear) | none      | 0.894 | 51.1     | 19.6    |
-| RE-Free-Pairs | LightGBM       | none      | 0.599 | 182.8    | 118.5   |
+| All-Pairs     | Linear Regression| none    | 0.900 | 81.4     | 42.59   |
+| RE-Pairs      | Symbolic Regression | none | 0.942 | 42.2     | 17.9    |
+| RE-Free-Pairs | Lasso       | none         | 0.687 | 137.8    | 79.1    |
 
-> **RE-free is the hard case** (R² ≈ 0.60): after the UU provenance re-curation the RE-free
+**Results Augmented Data**
+
+**Highest R² including MLP**:
+| Dataset      | Best model        | Augmentation               | R²        | RMSE [K] | MAE [K] |
+| ------------ | ----------------- | -------------------------- | --------- | -------- | ------- |
+| All-Augm     | Linear Regression | Combined (Tc_exp + Tc_sim) | 0.902     | 86.6     | 43.36   |
+| RE-Augm      | MLP (FCNN)        | Tc_exp                     | **0.969** | 46.2     | 15.75   |
+| RE-Free-Augm | MLP (FCNN)        | Tc_sim                     | **0.820** | 132.3    | 78.54   |
+
+**Highest R² excluding MLP**:
+| Dataset      | Best model        | Augmentation               | R²        | RMSE [K] | MAE [K] |
+| ------------ | ----------------- | -------------------------- | --------- | -------- | ------- |
+| All-Augm     | Linear Regression | Combined (Tc_exp + Tc_sim) | 0.902     | 86.6     | 43.36   |
+| RE-Augm      | LightGBM          | Combined (Tc_exp + Tc_sim) | 0.962     | 52.3     | 16.01   |
+| RE-Free-Augm | Linear Regression | Tc_exp                     | **0.819** | 119.5    | 74.90   |
+
+**Overall Best Results**
+| Dataset      | Best model        | Augmentation               | R²        | RMSE [K] | MAE [K] |
+| ------------ | ----------------- | -------------------------- | --------- | -------- | ------- |
+| All-Augm     | Linear Regression | Combined (Tc_exp + Tc_sim) | 0.902     | 86.6     | 43.36   |
+| RE-Augm      | MLP (FCNN)        | Tc_exp                     | **0.969** | 46.2     | 15.75   |
+| RE-Free-Augm | MLP (FCNN)        | Tc_sim                     | **0.820** | 132.3    | 78.54   |
+
+> **RE-free is the hard case** (R² ≈ 0.687): after the UU provenance re-curation the RE-free
 > pairs shrink to 125 genuine simulation–experiment pairs whose correction ΔTc = Tc_exp − Tc_sim
 > carries a real, significant bias (median −50 K; simulation overestimates Tc). RE pairs sit near
-> the identity (ΔTc median 0, R² ≈ 0.89).
+> the identity (ΔTc median 0, R² ≈ 0.942).
 >
 > **The bootstrap augmentation does not improve held-out accuracy.** A naive cross-validation over
 > the pre-made mock-filled matrix inflates the augmented scores (synthetic rows leak into the test
