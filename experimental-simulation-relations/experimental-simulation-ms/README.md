@@ -461,6 +461,17 @@ fold standard deviations are in `results/*_comparison/`.
 | RE | 0.532 (RF) | **0.533** (RF, pca_8) | 0.295 (LGBM) | 0.303 (LGBM, pca_8) |
 | RE-free | 0.307 (Ridge) | **0.347** (Ridge, pca_16) | 0.549 (MLP) | 0.549 (LGBM, pca_16) |
 
+
+### **Best R² Results — Flags Enabled**
+
+Both `--re-features` and `--delta-learning` enabled.
+
+| Split       | Pairs, no embedding | Pairs + embedding          | Augmented, no embedding | Augmented + embedding |
+| ----------- | ------------------- | -------------------------- | ----------------------- | --------------------- |
+| **All**     | TBD                 | **0.899** (LGBM, pca_64)   | 0.792 (MLP)             | TBD                   |
+| **RE**      | TBD                 | **0.858** (RF, pca_16)     | 0.608 (LGBM)            | TBD                   |
+| **RE-free** | TBD                 | **0.903** (LGBM, raw_200D) | 0.873 (MLP)             | TBD                   |
+
 - **The correction is much harder than the previous numbers suggested.** With genuine
   measured data the best pairs models explain about half of the variance for RE
   compounds and about a third for RE-free compounds; the old R² of 0.77–0.90 was an
