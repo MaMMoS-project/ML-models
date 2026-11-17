@@ -10,28 +10,24 @@ project `compound-to-simulated-ms` is identical but targets the *simulated* (DFT
 > **Trained in log-space.** Ms spans ~6 orders of magnitude, so models are trained on
 > `log1p(Ms)`; `predict_ms.py` applies `expm1` so predictions come back in physical A/m.
 
-> **What the target actually is (important).** The source databases report the *collinear /
-> fully-aligned* magnetic moment per cell. For **ferromagnets** this equals the physical
-> saturation magnetisation, so metals/intermetallics predict well (~±10–20%). For
-> **ferrimagnets** (spinel ferrites, garnets like YIG, magnetite Fe₃O₄) it is the
-> *uncompensated* moment — the antiparallel sublattices are **not** cancelled — so the
-> training Ms, and hence the model, is several-fold **larger** than the true net Ms
-> (e.g. Fe₃O₄ training ≈ 1.6×10⁶ vs physical ≈ 4.8×10⁵ A/m). Read predictions for
-> ferrimagnetic oxides as the collinear moment, not the net saturation magnetisation.
-> (Deduplication uses the pymatgen *reduced formula*, so spellings like CoFe₂O₄ / Fe₂CoO₄
-> are pooled.) See `first_model_analysis.txt` and `further_improvements.txt`.
->
-> **You can verify this yourself.** `data/validation_ferrimagnetic_compounds_reference.csv` lists 13 known
-> ferrimagnets with their *measured net* Ms. Run
-> `python src/validate_reference_data.py --ref data/validation_ferrimagnetic_compounds_reference.csv`
-> and you will see the model over-predict every one — median ≈ +360 %, e.g. Fe₃O₄ +259 %,
-> YIG +503 %, up to +9700 % for Gd₃Fe₅O₁₂ (near its compensation point) — confirming that
-> the learned quantity is the collinear moment, not the net Ms.
+> **What the target is (important).** The model is trained on **genuinely measured**
+> saturation magnetisation, pooled from literature compilations, the Bhandari tables and the
+> NEMAD magnetic-materials database (`Experimental == True` rows only). **Materials Project is
+> deliberately excluded**: its `total_magnetization` is a DFT value — the *collinear /
+> uncompensated* sublattice moment, not a measurement — which over-estimates ferrimagnets
+> several-fold. Because the labels are now real *net* Ms, the model reproduces the physical
+> saturation magnetisation, **including for ferrimagnets**: on the held-out reference set it now
+> predicts Fe₃O₄ ≈ 0.31 (real ≈ 0.48), YIG ≈ 0.145 (real ≈ 0.14) and MnFe₂O₄ ≈ 0.26 (real ≈ 0.40)
+> MA/m — versus the old MP-DFT model's +252 %…+554 % over-predictions. The residual bias is now a
+> mild *under*-prediction of the strongest ferromagnets (e.g. pure Fe), a consequence of the
+> smaller, noisier genuinely-measured dataset (4,464 compounds vs the old 9,939 MP-DFT ones).
+> (Deduplication uses the pymatgen *reduced formula*, so spellings like CoFe₂O₄ / Fe₂CoO₄ are
+> pooled.) See `first_model_analysis.txt` and `further_improvements.txt`.
 
 ## Pipeline overview
 
 ```
-data/<raw sources>                         (per-project copies of the 7 raw files)
+data/raw/<sources>                         (literature + Bhandari I/XIII + NEMAD; no Materials Project)
   └─ src/preprocess_ms_data.py   ──► preprocessed_data/Experimental_Ms{,_all,_RE,_RE-Free}.csv
        └─ src/create_embeddings.py        ──► outputs/*_w_embeddings.pkl        (200-D)
             └─ src/compress_embeddings_pca.py ──► outputs/*_w_embeddings_PCA.pkl (+PCA 8/16/32/64)
@@ -59,11 +55,13 @@ Python ≥ 3.12. Create a venv and install `requirements.txt`:
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
-(The SLURM scripts `source .venv/bin/activate`; adjust if your environment differs.)
+(On the cluster the SLURM scripts load `python-waterboa/2025.06` + `cuda/13.0` and `source` the
+shared `BSW` venv — adjust the `source` line if your environment differs. `clean.sh` wipes all
+generated outputs to force a fresh run.)
 
 ## 1. Pre-process the raw data
 
-`src/preprocess_ms_data.py` reads the raw **experimental** Ms sources from `data/`, converts
+`src/preprocess_ms_data.py` reads the raw **experimental** Ms sources from `data/raw/`, converts
 each to A/m, pools all values per composition into a **single median** (no mean, no
 median-of-medians), flags rare-earth membership (pymatgen), drops unparsable formulae,
 **drops low-Ms compounds** (`--ms-threshold`, default 50000 A/m, as in `my_ms`), and by
@@ -75,24 +73,34 @@ python src/preprocess_ms_data.py --include-ferrimagnets   # keep known ferrimagn
 python src/preprocess_ms_data.py --ms-threshold 0   # keep all Ms magnitudes
 ```
 
-**`--include-ferrimagnets`** (default: off → ferrimagnets dropped). For ferrimagnets the
-training Ms is the *collinear / uncompensated* moment, not the net saturation magnetisation
-(see the "What the target actually is" note above), so by default the script removes the
+**`--include-ferrimagnets`** (default: off → ferrimagnets dropped). This default is inherited
+from the earlier Materials-Project-based version of this project and from the sibling project
+`compound-to-simulated-ms`, where the Ms of a ferrimagnet is the *collinear / uncompensated*
+DFT moment rather than the net magnetisation. With the genuinely measured data used now (see
+the "What the target is" note above) that reason no longer applies — the measured values of
+ferrimagnets are their real net Ms — and the default is kept only so that both Ms projects
+treat the same compounds alike. By default the script therefore still removes the
 compounds it can confidently identify as ferrimagnetic — magnetite (Fe₃O₄), classic spinel
 ferrites (MFe₂O₄), iron garnets (R₃Fe₅O₁₂) and hexaferrites (MFe₁₂O₁₉) — a **curated,
-high-confidence subset** (~18, to be extended). The script prints a warning either way:
+high-confidence subset** (**5** compounds in the current data: BaFe₁₂O₁₉, SrFe₁₂O₁₉, CoFe₂O₄,
+Sr₀.₇La₀.₃Fe₁₂O₁₉ and Sr₀.₇Pr₀.₃Fe₁₂O₁₉; the rule is to be extended). The script prints a warning
+either way:
 - default → `CAREFUL: the dataset MAY STILL CONTAIN UNKNOWN ferrimagnets` (composition cannot
   identify ferrimagnetism in general);
 - with the flag → `CAREFUL: N KNOWN ferrimagnets ARE INCLUDED`.
 
-Raw sources (in `data/`) and their conversion to A/m:
+Raw sources (in `data/raw/`) and their conversion to A/m:
 
 | source | sep | composition col | value col | → A/m |
 |---|---|---|---|---|
 | `literature_values.csv` | `;` | `Compound` | `mu0Ms (T)` | `/ µ0` |
 | `Bhandari_I_exp.csv` | `\|` | `Material` | `Ms_exp (MA/m)` | `× 1e6` |
 | `Bhandari_XIII_exp.csv` | `\|` | `Material` | `Ms (MA/m)` | `× 1e6` |
-| `mp_fm_dedup_exp_data.csv` | `,` | `formula_pretty` | `total_magnetization_normalized_vol` | `× µ_B/Å³` |
+| `Nemad_extracted_Ms.csv` | `,` (`#`-headers) | `composition` | `Ms` | already A/m |
+
+**Materials Project is intentionally NOT a source** — its `total_magnetization` is a DFT value
+(the collinear/uncompensated moment), not a measurement, so the `load_mp_exp` loader is kept in
+the code for reference but deliberately left out of `EXP_LOADERS`.
 
 Outputs (`preprocessed_data/`): `Experimental_Ms.csv` (composition, Ms, contains_re),
 `Experimental_Ms_all.csv`, `Experimental_Ms_RE.csv`, `Experimental_Ms_RE-Free.csv`.
@@ -117,16 +125,22 @@ python src/train_ms_re.py
 python src/train_ms_re_free.py
 ```
 
-Which model families run is set in **`training_config.yaml`** (currently **LightGBM + RF**,
-`re_features: true`). Training is in `log1p(Ms)` space; metrics/plots are reported in log1p
+Which model families run is set in **`training_config.yaml`** (currently **all four** — Linear,
+Random Forest, LightGBM, MLP — with `re_features: true`). Training is in `log1p(Ms)` space; metrics/plots are reported in log1p
 units. Outputs: `results/onnx_models/<Dataset>_<emb>_<model>[_refeats]_e<N>.onnx`,
 per-dataset `*_results[_agg].csv`, and `results/exp_ms_best_by_dataset.csv`.
 
 ### Configuration (`training_config.yaml`)
-- `re_features: true` — append 7 rare-earth physics features → 207-D input; ONNX gets a
-  `_refeats` suffix (raw_200D only). `predict_ms` computes & appends them automatically.
-- `models:` — per-family `enabled` / `ensemble`. Only the best + 2nd-best families
-  (LightGBM, Random Forest) are enabled; Linear and MLP are disabled (far behind on Ms).
+- `re_features: true` — append 7 rare-earth physics features → 207-D input; the ONNX file gets a
+  `_refeats` suffix. **All embedding variants (raw_200D + PCA 8/16/32/64) are ONNX-exportable**: a
+  `_pca_passthrough` helper folds the embedding-only PCA and the feature pass-through into one
+  equivalent PCA over the full 207-D input, so PCA + scaler are baked into the graph and the ONNX
+  consumes the raw `[embedding | RE features]` vector. `predict_ms` computes & appends the RE
+  features automatically.
+- `models:` — per-family `enabled` / `ensemble`. All four families are enabled; **RF and LightGBM
+  dominate** (they take every per-dataset best), Linear is well behind, and the **MLP is numerically
+  unstable** on this small dataset (a few ensemble members produce extreme A/m outliers via
+  `expm1`). The deployed best models are therefore all RF or LGBM.
 
 ## 5. Predict
 
@@ -147,16 +161,16 @@ python src/predict_ms.py --compound Fe --best --no-disclaimer   # suppress the d
 
 > **Are these compounds actually new?** `python -m src.check_new_materials` cross-checks every
 > formula in `new_materials.txt` against the raw sources, the training set, and the validation
-> references (matched by reduced formula) and writes `new_materials_known.txt`. For the shipped
-> list all 8 are already present in the data — so predicting them is in-sample, not a
-> generalisation test.
+> references (matched by reduced formula) and writes `new_materials_known.txt`. Re-run it after any
+> data change — whether the shipped formulas are in-sample or genuinely new depends on the current
+> training set.
 
-**Reliability disclaimer.** By default `predict_ms.py` prints a disclaimer to **stderr**
-before predicting (except for `--list`), warning that the learned target is the DFT
-collinear moment — correct for ferromagnets but an over-estimate for ferri-/antiferromagnets
-(ferrites, garnets, oxides), so predictions must be checked and used with care. It goes to
-stderr, so it never pollutes the machine-readable table on stdout. Pass **`--no-disclaimer`**
-to suppress it (e.g. for scripted/batch use).
+**Reliability disclaimer.** By default `predict_ms.py` prints a disclaimer to **stderr** before
+predicting (except for `--list`); it goes to stderr so it never pollutes the machine-readable table
+on stdout. Pass **`--no-disclaimer`** to suppress it (e.g. for scripted/batch use). Note: the
+disclaimer text baked into `predict_ms.py` still describes the old MP-DFT behaviour (ferrimagnet
+over-prediction) and is **outdated** for this genuinely-measured model — it should be revised.
+Predictions remain a model estimate and antiferromagnet/compensated cases should still be sanity-checked.
 
 `--best`/`--all` auto-detect rare-earth content and pick the right dataset's model(s). The
 RE and RE-Free models do not extrapolate across the RE boundary, so `predict_ms` **refuses**
@@ -164,7 +178,11 @@ a mismatched `--model` (use an `All_*` model, which is valid for both).
 
 ## 6. Results
 
-All models trained with the default option where known ferrimagnets are dropped and ms-threshold is 50000 (A/m).
+All models trained with the default options (known ferrimagnets dropped, `--ms-threshold 50000`).
+Training set after reduced-formula dedup, the threshold and ferrimagnet removal: **4,464 compounds**
+(RE 3,007 / RE-free 1,457), from the genuinely-measured sources only — **no Materials Project**.
+Metrics are the ensemble mean ± std over ten random 80/20 splits in `log1p(Ms)` space; `MAE_Am` is
+the mean absolute error back in A/m and `MedRelErr` the median relative error.
 
 ### Best model per dataset
 

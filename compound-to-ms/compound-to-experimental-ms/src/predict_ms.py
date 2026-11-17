@@ -68,22 +68,21 @@ DISCLAIMER = """\
 ================================================================================
   DISCLAIMER - please read before using these predictions
 --------------------------------------------------------------------------------
-  This model predicts saturation magnetisation (Ms) from a compound's formula.
-  Its training data is overwhelmingly DFT-derived and was computed assuming
-  COLLINEAR FERROMAGNETIC order, so the learned quantity is really the
-  fully-aligned magnetic moment:
-    * for genuine FERROMAGNETS  -> it equals the physical Ms (reliable);
-    * for FERRIMAGNETS / antiferromagnets / non-collinear magnets -> it is the
-      UNCOMPENSATED sublattice sum, typically SEVERAL TIMES TOO LARGE
-      (e.g. magnetite Fe3O4, spinel ferrites, garnets/YIG, hexaferrites).
-  Ferrimagnetism CANNOT be identified from composition alone, so the training
-  set most likely still contains unreliable simulated Ms values for unknown
-  ferrimagnetic compounds, and this model may silently OVER-PREDICT Ms for them
-  (oxides / ferrites in particular).
-  => Treat every prediction as PROVISIONAL. Verify against experiment or a
-     proper magnetic-structure calculation before relying on it, and use the
-     results with great care - especially for oxides, ferrites, garnets, and
-     rare-earth / transition-metal compounds.
+  This model predicts the saturation magnetisation (Ms) of a compound from its
+  chemical formula. It is trained on GENUINELY MEASURED Ms (literature + Bhandari
+  tables + the NEMAD database; Materials Project / DFT data are deliberately
+  EXCLUDED), so the learned quantity is the real net Ms - including for
+  ferrimagnets, which the earlier DFT-trained model over-predicted several-fold.
+  Even so, treat every prediction as PROVISIONAL:
+    * accuracy is modest - the genuinely-measured dataset is small and noisy
+      (held-out R2 ~ 0.55-0.62, median relative error ~ 20-25%);
+    * the strongest ferromagnets tend to be mildly UNDER-predicted (e.g. pure Fe);
+    * known ferrimagnets are removed from the training set, so predictions for
+      ferrites / garnets / oxides are held-out extrapolation (now in the right
+      range, but use with care);
+    * antiferromagnets, compensated and non-collinear magnets are out of domain.
+  => Verify against experiment or a proper magnetic-structure calculation before
+     relying on any value.
 ================================================================================"""
 
 

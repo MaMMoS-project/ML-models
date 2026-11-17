@@ -24,13 +24,13 @@
     # => No RE vs RE-Free conflict: top-2 = {LGBM, RF} for both (only the #1/#2 order
     #    flips, and we keep both). Linear and MLP are far behind everywhere -> disabled.
     linear:
-      enabled: false
+      enabled: true
       ensemble: 10
     rf:
       enabled: true
       ensemble: 10
     mlp:
-      enabled: false
+      enabled: true
       ensemble: 10
     lgbm:
       enabled: true
