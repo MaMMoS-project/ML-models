@@ -598,16 +598,6 @@ These results distinguish three augmentation sources:
 | Tc_sim       | RE-Augm      | raw_200D  | FCNN  | **0.837** | 82.151  | 43.402 |
 | Tc_sim       | RE-Free-Augm | pca_8     | LASSO | **0.829** | 142.285 | 84.329 |
 
-## **5. Augmented dataset — no embeddings, with additional features**
-
-These are your separately saved results with both `--re-features` and `--delta-learning` enabled.
-
-| Dataset      | Model | R²        | RMSE  | MAE   |
-| ------------ | ----- | --------- | ----- | ----- |
-| RE-Free-Augm | FCNN  | **0.873** | 0.295 | 0.159 |
-| All-Augm     | FCNN  | **0.792** | 0.395 | 0.222 |
-| RE-Augm      | LGBM  | **0.608** | 0.620 | 0.430 |
-
 ## **6. Overall comparison — highest R² per dataset category**
 
 Selecting the highest R² from the results in sections 1–4:
