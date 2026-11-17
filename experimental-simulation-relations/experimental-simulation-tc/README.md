@@ -598,7 +598,7 @@ These results distinguish three augmentation sources:
 | Tc_sim       | RE-Augm      | raw_200D  | FCNN  | **0.837** | 82.151  | 43.402 |
 | Tc_sim       | RE-Free-Augm | pca_8     | LASSO | **0.829** | 142.285 | 84.329 |
 
-## **6. Overall comparison — highest R² per dataset category**
+## **5. Overall comparison — highest R² per dataset category**
 
 Selecting the highest R² from the results in sections 1–4:
 
