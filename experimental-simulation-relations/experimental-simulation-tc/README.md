@@ -541,41 +541,93 @@ All-Augm_combined_augmented_lgbm.onnx                         590.7
 ```
 
 ## 📈 Model Performance Comparison
+TODO: rewrite text
+**Best model per dataset** — curated re-build (November 2026), delta-learning
+experiment (`training_config.delta.yaml`: `delta_learning:true`, `re_features:true`, `cv:5`). 
+R², RMSE and MAE are **5-fold cross-validated means** on the reduced-formula-deduplicated data.
 
-**Best (deployed) model per dataset** — curated re-build (November 2026), delta-learning
-experiment (`training_config.delta.yaml`: `delta_learning:true`, `re_features:true`, `cv:5`),
-fast-trio families (LightGBM / Random Forest / Linear). R², RMSE and MAE are **5-fold
-cross-validated means** on the reduced-formula-deduplicated **paired** data. The deployed
-models use **no augmentation** and **no embedding** (see the note below).
+# **Overview of all model results**
 
-| Dataset       | Best model     | Embedding | R²    | RMSE [K] | MAE [K] |
-|---------------|----------------|-----------|-------|----------|---------|
-| All-Pairs     | Linear Regression| none    | 0.900 | 81.4     | 42.59   |
-| RE-Pairs      | Symbolic Regression | none | 0.942 | 42.2     | 17.9    |
-| RE-Free-Pairs | Lasso       | none         | 0.687 | 137.8    | 79.1    |
+I've organized your Curie-temperature prediction results into four main categories, keeping the Pairs and Augmented datasets separate and distinguishing models with and without embeddings.
 
-**Results Augmented Data**
+All R², RMSE and MAE values below are rounded to **3 decimals**. RMSE and MAE are in K.
 
-**Highest R² including MLP**:
-| Dataset      | Best model        | Augmentation               | R²        | RMSE [K] | MAE [K] |
-| ------------ | ----------------- | -------------------------- | --------- | -------- | ------- |
-| All-Augm     | Linear Regression | Combined (Tc_exp + Tc_sim) | 0.902     | 86.6     | 43.36   |
-| RE-Augm      | MLP (FCNN)        | Tc_exp                     | **0.969** | 46.2     | 15.75   |
-| RE-Free-Augm | MLP (FCNN)        | Tc_sim                     | **0.820** | 132.3    | 78.54   |
+## **1. Pairs dataset — without embeddings**
 
-**Highest R² excluding MLP**:
-| Dataset      | Best model        | Augmentation               | R²        | RMSE [K] | MAE [K] |
-| ------------ | ----------------- | -------------------------- | --------- | -------- | ------- |
-| All-Augm     | Linear Regression | Combined (Tc_exp + Tc_sim) | 0.902     | 86.6     | 43.36   |
-| RE-Augm      | LightGBM          | Combined (Tc_exp + Tc_sim) | 0.962     | 52.3     | 16.01   |
-| RE-Free-Augm | Linear Regression | Tc_exp                     | **0.819** | 119.5    | 74.90   |
+| Dataset       | Model | R²        | RMSE    | MAE    |
+| ------------- | ----- | --------- | ------- | ------ |
+| RE-Pairs      | FCNN  | **0.944** | 41.531  | 19.609 |
+| All-Pairs     | FCNN  | **0.903** | 80.430  | 41.017 |
+| RE-Free-Pairs | FCNN  | **0.693** | 136.514 | 79.485 |
 
-**Overall Best Results**
-| Dataset      | Best model        | Augmentation               | R²        | RMSE [K] | MAE [K] |
-| ------------ | ----------------- | -------------------------- | --------- | -------- | ------- |
-| All-Augm     | Linear Regression | Combined (Tc_exp + Tc_sim) | 0.902     | 86.6     | 43.36   |
-| RE-Augm      | MLP (FCNN)        | Tc_exp                     | **0.969** | 46.2     | 15.75   |
-| RE-Free-Augm | MLP (FCNN)        | Tc_sim                     | **0.820** | 132.3    | 78.54   |
+## **2. Pairs dataset — with embeddings**
+
+| Dataset       | Embedding | Model | R²        | RMSE    | MAE    |
+| ------------- | --------- | ----- | --------- | ------- | ------ |
+| RE-Pairs      | pca_8     | FCNN  | **0.937** | 46.726  | 24.512 |
+| All-Pairs     | pca_8     | FCNN  | **0.909** | 76.550  | 43.246 |
+| RE-Free-Pairs | pca_16    | RIDGE | **0.877** | 107.372 | 76.074 |
+
+## **3. Augmented dataset — without embeddings**
+
+These results distinguish three augmentation sources:
+
+| Augmentation | Dataset      | Model  | R²        | RMSE    | MAE    |
+| ------------ | ------------ | ------ | --------- | ------- | ------ |
+| Combined     | RE-Augm      | LGBM   | **0.962** | 52.343  | 16.013 |
+| Combined     | All-Augm     | LINEAR | **0.902** | 86.625  | 43.361 |
+| Combined     | RE-Free-Augm | FCNN   | **0.815** | 116.936 | 70.500 |
+| Tc_exp       | RE-Augm      | FCNN   | **0.969** | 46.240  | 15.747 |
+| Tc_exp       | All-Augm     | FCNN   | **0.888** | 89.790  | 41.036 |
+| Tc_exp       | RE-Free-Augm | LINEAR | **0.819** | 119.483 | 74.897 |
+| Tc_sim       | RE-Augm      | FCNN   | **0.923** | 57.728  | 16.406 |
+| Tc_sim       | All-Augm     | FCNN   | **0.893** | 90.729  | 41.469 |
+| Tc_sim       | RE-Free-Augm | FCNN   | **0.820** | 132.253 | 78.541 |
+
+## **4. Augmented dataset — with embeddings**
+
+| Augmentation | Dataset      | Embedding | Model | R²        | RMSE    | MAE    |
+| ------------ | ------------ | --------- | ----- | --------- | ------- | ------ |
+| Combined     | RE-Augm      | raw_200D  | LGBM  | **0.982** | 36.441  | 17.436 |
+| Combined     | All-Augm     | pca_32    | LGBM  | **0.934** | 69.916  | 36.329 |
+| Combined     | RE-Free-Augm | pca_16    | FCNN  | **0.853** | 104.625 | 64.053 |
+| Tc_exp       | RE-Augm      | raw_200D  | LGBM  | **0.979** | 38.976  | 19.212 |
+| Tc_exp       | All-Augm     | pca_32    | LGBM  | **0.945** | 61.970  | 33.248 |
+| Tc_exp       | RE-Free-Augm | pca_64    | LGBM  | **0.893** | 84.469  | 51.429 |
+| Tc_sim       | All-Augm     | pca_8     | FCNN  | **0.905** | 83.276  | 43.727 |
+| Tc_sim       | RE-Augm      | raw_200D  | FCNN  | **0.837** | 82.151  | 43.402 |
+| Tc_sim       | RE-Free-Augm | pca_8     | LASSO | **0.829** | 142.285 | 84.329 |
+
+## **5. Augmented dataset — no embeddings, with additional features**
+
+These are your separately saved results with both `--re-features` and `--delta-learning` enabled.
+
+| Dataset      | Model | R²        | RMSE  | MAE   |
+| ------------ | ----- | --------- | ----- | ----- |
+| RE-Free-Augm | FCNN  | **0.873** | 0.295 | 0.159 |
+| All-Augm     | FCNN  | **0.792** | 0.395 | 0.222 |
+| RE-Augm      | LGBM  | **0.608** | 0.620 | 0.430 |
+
+## **6. Overall comparison — highest R² per dataset category**
+
+Selecting the highest R² from the results in sections 1–4:
+
+| Dataset       | Best configuration | Model | R²        | RMSE [K] | MAE [K] |
+| ------------- | ------------------ | ----- | --------- | -------- | ------- |
+| RE-Pairs      | No embedding       | FCNN  | **0.944** | 41.531   | 19.609  |
+| All-Pairs     | Embedding pca_8    | FCNN  | **0.909** | 76.550   | 43.246  |
+| RE-Free-Pairs | Embedding pca_16   | RIDGE | **0.877** | 107.372  | 76.074  |
+| RE-Augm       | Combined, raw_200D | LGBM  | **0.982** | 36.441   | 17.436  |
+| All-Augm      | Tc_exp, pca_32     | LGBM  | **0.945** | 61.970   | 33.248  |
+| RE-Free-Augm  | Tc_exp, pca_64     | LGBM  | **0.893** | 84.469   | 51.429  |
+
+## **Main observations**
+
+- **RE-Augm performs best overall:** The combined augmented dataset with raw_200D embeddings achieves R² = 0.982.
+- **Tc_exp augmentation is particularly strong:** It gives the best R² for All-Augm and RE-Free-Augm among the source-specific results.
+- **Embeddings improve All-Pairs:** The pca_8 FCNN outperforms the no-embedding FCNN in R².
+- **RE-Pairs performs strongly without embeddings:** Its R² is 0.944, slightly higher than the embedding-based result.
+- **RE-Free remains the most challenging subset:** Its best R² is lower than that of RE and All across both Pairs and Augmented datasets.
 
 > **RE-free is the hard case** (R² ≈ 0.687): after the UU provenance re-curation the RE-free
 > pairs shrink to 125 genuine simulation–experiment pairs whose correction ΔTc = Tc_exp − Tc_sim
