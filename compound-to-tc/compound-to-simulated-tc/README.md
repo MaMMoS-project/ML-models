@@ -1,4 +1,3 @@
-
 # Predicting simulated Curie temperatures from compound embeddings
 
 This pipeline trains machine learning models that predict simulated Curie temperatures
@@ -367,9 +366,26 @@ Latest run: re_features: true, N = 10 members.
 
 | Dataset | Embedding | Model | N  | R²    | R² std | MAE     | MAE std | RMSE    | RMSE std |
 | ------- | --------- | ----- | -- | ----- | ------ | ------- | ------- | ------- | -------- |
-| RE      | raw_200D  | RF    | 10 | 0.760 | 0.068  | 55.856  | 5.427   | 94.302  | 15.090   |
+| RE      | raw_200D  | RF    | 10 | 0.760 | 0.068  | 55.856  | 5.427   | 94.302  | 15.091   |
+| All     | raw_200D  | RF    | 10 | 0.656 | 0.061  | 93.432  | 6.226   | 156.325 | 14.977   |
 | RE-Free | raw_200D  | RF    | 10 | 0.377 | 0.111  | 195.310 | 14.908  | 276.861 | 36.036   |
 
+### All Materials — all models × embeddings (ensemble mean ± std, with RE features)
+
+Latest run: 4 families, re_features: true, N = 10 members.
+
+| Dataset | Embedding | Model | N  | R²    | R² std | MAE     | MAE std | RMSE    | RMSE std |
+| ------- | --------- | ----- | -- | ----- | ------ | ------- | ------- | ------- | -------- |
+| All     | raw_200D  | RF    | 10 | 0.656 | 0.061  | 93.432  | 6.226   | 156.325 | 14.977   |
+| All     | pca_64    | RF    | 10 | 0.640 | 0.050  | 98.729  | 6.297   | 159.996 | 13.300   |
+| All     | pca_64    | LGBM  | 10 | 0.634 | 0.059  | 98.975  | 5.987   | 161.211 | 14.890   |
+| All     | pca_32    | RF    | 10 | 0.634 | 0.049  | 98.472  | 6.000   | 161.485 | 12.268   |
+| All     | raw_200D  | LGBM  | 10 | 0.634 | 0.082  | 93.447  | 7.128   | 160.962 | 17.215   |
+| All     | pca_32    | LGBM  | 10 | 0.628 | 0.047  | 100.986 | 4.629   | 162.753 | 11.015   |
+| All     | pca_16    | RF    | 10 | 0.624 | 0.057  | 97.929  | 6.440   | 163.429 | 13.066   |
+| All     | pca_8     | RF    | 10 | 0.615 | 0.060  | 99.072  | 5.865   | 165.515 | 14.378   |
+| All     | pca_16    | LGBM  | 10 | 0.580 | 0.072  | 103.176 | 6.478   | 172.620 | 16.112   |
+| All     | pca_8     | LGBM  | 10 | 0.574 | 0.066  | 105.021 | 6.306   | 173.899 | 14.618   |
 
 ### RE Materials — all models × embeddings (ensemble mean ± std, with RE features)
 
