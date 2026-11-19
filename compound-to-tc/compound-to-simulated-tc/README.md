@@ -362,6 +362,7 @@ MAE and RMSE in Kelvin lower is better.
 > variance is sizeable (note the ± std).
 
 ### Best model per dataset (ensemble mean ± std)
+Latest run: re_features: true, N = 10 members.
 
 | Dataset | Embedding | Model | N  | R²    | R² std | MAE     | MAE std | RMSE    | RMSE std |
 | ------- | --------- | ----- | -- | ----- | ------ | ------- | ------- | ------- | -------- |

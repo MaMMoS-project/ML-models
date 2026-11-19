@@ -29,10 +29,10 @@
       enabled: false
       ensemble: 10
     rf:
-      enabled: true
+      enabled: false
       ensemble: 10
     mlp:
-      enabled: true
+      enabled: false
       ensemble: 10
     lgbm:
       enabled: true
